@@ -1,0 +1,215 @@
+---
+layout: post
+title: "Unity3D - 着色器"
+date: 2014-03-14 17:39:06 +0800
+comments: true
+categories: 
+---
+
+#材质和着色器
+
+在Unity里,着色器(Shader)定义了游戏物体(GameObject)的着色方式,包括纹理、颜色、顶点属性的设定等。
+
+着色器使用ShaderLab语言定义着色过程,而这个过程中所需的具体属性和纹理资源则被放在了材质球(Material)上来设置。
+
+我们在为一个游戏物体设置着色时,首先要创建一个空的材质球,然后将写好的Shader文件拖到材质球上,最后将材质球上绑定到物体上。
+
+#着色器文件结构
+
+一,显示名称
+
+文件的第一行是Shader的显示名称,当我们在面板上选择Shader文件时就会出现这个名字
+
+	Shader "Custom/NewShader" {
+		//...
+	}
+
+二,属性(Properties)
+
+Shader里使用的变量或参数,可以在材质球(Material)上被编辑
+
+
+	_Name("Display Name", type) = defaultValue[{options}]
+	
+- _Name:变量名
+- Display Name:在Material面板上的显示名称
+- type:属性的类型:
+	1. Color - 颜色值，由RGBA四个分量组成；
+	2. 2D - 一张2的阶数大小（256，512之类）的贴图。这张贴图将在采样后被转为对应基于模型UV的每个像素的颜色，最终被显示出来；
+	3. Rect - 一个非2阶数大小的贴图；
+	4. Cube - 即Cube map texture（立方体纹理），简单说就是6张有联系的2D贴图的组合，主要用来做反射效果（比如天空盒和动态反射），也会被转换为对应点的采样；
+	5. Range(min, max) - 一个介于最小值和最大值之间的浮点数，一般用来当作调整Shader某些特性的参数（比如透明度渲染的截止值可以是从0至1的值等）；
+	6. Float - 任意一个浮点数；
+	7. Vector - 一个四维数,可以用作颜色和方向；
+
+- defaultValue:定义了这个属性的默认值，通过输入一个符合格式的默认值来指定对应属性的初始值（某些效果可能需要某些特定的参数值来达到需要的效果，虽然这些值可以在之后在进行调整，但是如果默认就指定为想要的值的话就省去了一个个调整的时间，方便很多）。
+	1. Color - 以0～1定义的rgba颜色，默认值比如(1,1,1,1)；
+	2. 2D/Rect/Cube - 对于贴图来说，默认值可以为一个代表默认tint颜色的字符串，可以是空字符串或者”white”,”black”,”gray”,”bump”中的一个
+	3. Float，Range - 某个指定的浮点数
+	4. Vector - 一个4维数，写为 (x,y,z,w)
+
+- {option}:
+它只对2D，Rect或者Cube贴图有关，在写输入时我们最少要在贴图之后写一对什么都不含的空白的{}，当我们需要打开特定选项时可以把其写在这对花括号内。如果需要同时打开多个选项，可以使用空白分隔。可能的选择有ObjectLinear, EyeLinear, SphereMap, CubeReflect, CubeNormal中的一个，这些都是OpenGL中TexGen的模式。
+
+# 三,SubShader
+
+一个Shader里可能包含多个SubShader，程序根据条件选择最终使用的SubShader
+	
+	SubShader{
+		//逻辑内容		
+	} 
+	
+# 四,Tags 
+	
+Tags 由键值对组成,它告诉渲染引擎SubShader渲染对象时的条件。例如,在渲染非透明物体时才能使用该SubShader:
+	
+	Tags{
+		"RenderType"="Opaque"
+	}
+	
+- RenderType对应值:
+	1. Opaque:渲染非透明物体
+	2. Transparent:渲染含有透明物体
+	3. TransparentCutout: 镂空透明
+	4. Background: 天空盒 
+	5. Overlay: GUITexture, Halo, Flare shaders.
+	6. TreeOpaque: terrain engine tree bark. 
+	7. TreeTransparentCutout: terrain engine tree leaves. 
+	8. TreeBillboard: terrain engine billboarded trees. 
+	9. Grass: terrain engine grass. 
+	10. GrassBillboard: terrain engine billboarded grass. 
+
+除了指定渲染类型以外，我们还可以在Tags里设置渲染顺序: 
+
+	Tags{
+		"RenderType"="Opaque"
+		"Queue" = "Transparent"
+	}
+	
+- Queue:以下是四种预定义渲染顺序(值小的先渲染):
+	1. Background（1000）:渲染天空盒、背景等对象
+	2. Geometry(default 2000):默认值，渲染非透明物体
+	3. Transparent（2000）:渲染透明物体
+	4. Overlay（4000）:渲染叠加效果，最后渲染的对象。
+
+这几种渲染类型实际上是定义好的整数值，我们也可以写成这种形式`"Queue" = "Transparent + 1"`,能使渲染物体在渲染透明物体后渲染。
+
+#五,IgnoreProjector
+
+不会被投影(Projector)影响。（比如,设置此值,让半透明的物体不受投影影响。）
+
+	"IgnoreProjector" = "True"
+
+#六,LOD
+
+
+LOD 是Levels of Detail的简称，着色器细节。当该SubShader的LOD值小于LOD阈值时才起作用。
+	
+	LOD 200
+	
+- Unity内建的着色器LOD值:
+	1. VertexLit kind of shaders = 100
+	2. Decal, Reflective VertexLit = 150
+	3. Diffuse = 200
+	4. Diffuse Detail, Reflective Bumped Unlit, Reflective Bumped VertexLit = 250
+	5. Bumped, Specular = 300
+	6. Bumped Specular = 400
+	7. Parallax = 500
+	8. Parallax Specular = 600
+
+#七,CG程序
+
+	CGPROGRAM
+	
+		#pragma surface surf Lambert
+		
+		sampler2D _MainTex;
+
+		struct Input {
+			float2 uv_MainTex;
+		};
+
+		void surf (Input IN, inout SurfaceOutput o) {
+			half4 c = tex2D (_MainTex, IN.uv_MainTex);
+			o.Albedo = c.rgb;
+			o.Alpha = c.a;
+		}
+	ENDCG
+
+一段以`CGPROGRAM`为开始，以`ENDCG`结束的Cg语言代码块。
+	
+	#pragma surface surf Lambert
+
+编译指令，定义了一个表面着色器，它的处理函数surf,指定光照模型Lambert
+
+该指令的格式如下:
+	
+	#pragma surface surfaceFunction lightModel [optionalparams] 
+	
+其中:
+
+- surface 声明为表面着色器
+- surfaceFuction 是Shader的指定实现方法 
+- lightMode[optionalparams]是Shader使用的光照模型	
+
+	sampler2D _MainTex;
+
+声明了一个`sampler2D`类型贴图对象`_MainTex`，对应Properties代码块里声明的`_MainTex`,因为整个Shader实际是由两部分组成，一部分是被Unity编译和执行的程序。而另一部分是Cg语言声明的代码块，若是想使用Properties声明的对象，就必须在Cg代码块里重新声明一下，才能使用这个变量。
+
+	struct Input {
+			float2 uv_MainTex;
+		};
+
+这里定义了一个结构体，并声明了一个名为uv_MainTex的对象。float2是指可以存放两个浮点数类型的数据格式，以此类推，float3、float4就可以存放三个、四个浮点数。uv_MainTex表示_MainTex贴图的uv值。
+
+	void surf (Input IN, inout SurfaceOutput o) {
+			half4 c = tex2D (_MainTex, IN.uv_MainTex);
+			o.Albedo = c.rgb;
+			o.Alpha = c.a;
+		}
+	
+surf函数将输入的内容转化为制定的格式然后输出，其中text2D函数是对贴图_MainTex进行纹理采样。
+
+	float4 tex2D(sampler2D samp, float2 s)
+	
+- samp:采样的目标
+- s:采样的UV坐标.
+
+<http://http.developer.nvidia.com/Cg/tex2D.html>
+
+SurfaceOutput结构如下:
+
+	struct SurfaceOutput {
+    	half3 Albedo;     //像素的颜色
+    	half3 Normal;     //像素的法向值
+    	half3 Emission;   //像素的发散颜色
+    	half Specular;    //像素的镜面高光
+    	half Gloss;       //像素的发光强度
+    	half Alpha;       //像素的透明度
+	};
+	
+half3 和 float2 相似，只不过精度不一样。
+
+
+#八,回退(Fallback)
+
+	FallBack "Diffuse"
+
+当所有着色器都无法在硬件设备上运行时,回退并指定一个新的着色器。
+	
+	FallBack off 
+	
+当所有着色器都无法在硬件设备上运行时,关闭回退。
+
+
+参考:
+
+[着色器参考](http://uec.unity3d.com/learning/document?file=/Components/SL-Reference.html "")
+
+[WIKI:UV mapping](http://en.wikipedia.org/wiki/UV_mapping "")
+
+[Set up an object with different LODs](http://docs.unity3d.com/Documentation/Manual/LevelOfDetail.html "")
+
+[材质和着色器](http://uec.unity3d.com/learning/document?file=/Manual/Materials.html "")
+
+[ShaderLab 语法：回退](http://uec.unity3d.com/learning/document?file=/Components/SL-Fallback.html "")

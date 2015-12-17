@@ -1,0 +1,276 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>Cocos - 使用自动批绘制 - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="Cocos - 使用自动批绘制 自动批绘制 在3.0版本以后,Cocos2d-x里的图形渲染实现了自动批绘制(Auto-batching)的优化。引擎的渲染部分对相同材质的连续渲染指令(QuadCommand)进行过滤,如果当前的渲染对象的材质和上一次渲染的材质一样,就不渲染了, &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="//ajax.useso.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<link href='http://fonts.useso.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2015/11/19/cocos-auto-batching">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">Cocos - 使用自动批绘制</h2>
+    
+  </header>
+
+  <div class="entry_content"><h1>自动批绘制</h1>
+
+<p>在3.0版本以后,Cocos2d-x里的图形渲染实现了自动批绘制(Auto-batching)的优化。引擎的渲染部分对相同材质的连续渲染指令(QuadCommand)进行过滤,如果当前的渲染对象的材质和上一次渲染的材质一样,就不渲染了,保存一下所需的信息,继续遍历下一个,直到发现当前材质和上一个材质不一样，才重新开始渲染。</p>
+
+<p>这样一来,渲染指令里相邻的且材质ID相同的多个draw call就能减少为一个,过程如下图:</p>
+
+<p><img src="/images/2015/10/auto-batching.png" alt="" /></p>
+
+<p>最简单的满足条件就是我们用同一张图片连续创建精灵,这些精灵在绘制时只需要一个draw call:</p>
+
+<pre><code>for (int i = 0; i &lt; 10000; i++)
+{
+    Sprite* sprite = Sprite::create("HelloWorld.png");
+    sprite-&gt;setPosition(Point(CCRANDOM_0_1() * winSize.width, CCRANDOM_0_1() * winSize.height));
+    this-&gt;addChild(sprite);
+}
+</code></pre>
+
+<p>需要注意的是,在渲染开始前引擎会对渲染指令根据zOrder进行一次排序。所以,连续添加的相同Sprite需要保证期zOrder是一样的。当然,我们也可以利用zOrder排序的这个机制,对非连续添加的相同纹理精灵设置相同zOrder来满足自动批绘制的条件:</p>
+
+<pre><code>for(int i = 0; i &lt; 10000; i++)
+{
+    Sprite* sprite1 = Sprite::create("CloseNormal.png");
+    sprite1-&gt;setPosition(Point(CCRANDOM_0_1() * winSize.width, 0 + CCRANDOM_0_1() * winSize.height));
+    this-&gt;addChild(sprite1);
+
+    Sprite* sprite2 = Sprite::create("CloseSelected.png");
+    sprite2-&gt;setPosition(Point(CCRANDOM_0_1() * winSize.width, 0 + CCRANDOM_0_1() * winSize.height));
+    this-&gt;addChild(sprite2);
+    sprite2-&gt;setZOrder(1);
+}
+</code></pre>
+
+<p>由于,Auto-batching的使用条件是使用QuadCommands渲染命令的连续的相同材质ID的Sprite或ParticleSystem objects。所以,我们也可以使用精灵帧表单来实现Auto-batching。</p>
+
+<pre><code>SpriteFrameCache::getInstance()-&gt;addSpriteFramesWithFile("TankMovePlist.plist");
+for(int i = 0; i &lt; 10000; i++)
+{
+    char buf[64];
+    sprintf(buf,"image/M26_b_%d.png", i%8 + 4);
+    SpriteFrame *frame= SpriteFrameCache::getInstance()-&gt;getSpriteFrameByName(buf);
+    Sprite *sprite = Sprite::createWithSpriteFrame(frame);
+    sprite-&gt;setPosition(Point(CCRANDOM_0_1() * winSize.width, 0 + CCRANDOM_0_1() * winSize.height));
+    this-&gt;addChild(sprite);
+}
+</code></pre>
+
+<p>进而将Auto-Batching用在动画上:</p>
+
+<pre><code>SpriteFrameCache::getInstance()-&gt;addSpriteFramesWithFile("TankMovePlist.plist");
+for(int i = 0; i &lt; 700; i++)
+{
+    auto s_tank = Sprite::createWithSpriteFrameName("image/M26_b_4.png");
+
+    auto tankMoveAnimation = Animation::create();
+    tankMoveAnimation-&gt;setDelayPerUnit(0.1);
+    tankMoveAnimation-&gt;addSpriteFrame(SpriteFrameCache::getInstance()-&gt;getSpriteFrameByName("image/M26_b_4.png"));
+    tankMoveAnimation-&gt;addSpriteFrame(SpriteFrameCache::getInstance()-&gt;getSpriteFrameByName("image/M26_b_5.png"));
+    tankMoveAnimation-&gt;addSpriteFrame(SpriteFrameCache::getInstance()-&gt;getSpriteFrameByName("image/M26_b_6.png"));
+    tankMoveAnimation-&gt;addSpriteFrame(SpriteFrameCache::getInstance()-&gt;getSpriteFrameByName("image/M26_b_7.png"));
+    tankMoveAnimation-&gt;addSpriteFrame(SpriteFrameCache::getInstance()-&gt;getSpriteFrameByName("image/M26_b_8.png"));
+    tankMoveAnimation-&gt;addSpriteFrame(SpriteFrameCache::getInstance()-&gt;getSpriteFrameByName("image/M26_b_9.png"));
+    tankMoveAnimation-&gt;addSpriteFrame(SpriteFrameCache::getInstance()-&gt;getSpriteFrameByName("image/M26_b_10.png"));
+    tankMoveAnimation-&gt;addSpriteFrame(SpriteFrameCache::getInstance()-&gt;getSpriteFrameByName("image/M26_b_11.png"));
+    s_tank-&gt;runAction(RepeatForever::create(Animate::create(tankMoveAnimation)));
+    s_tank-&gt;setPosition(CCRANDOM_0_1() * winSize.width, 0 + CCRANDOM_0_1() * winSize.height);
+    addChild(s_tank);
+}
+</code></pre>
+
+<p>运行效果:</p>
+
+<p><img src="/images/2015/10/tank_move.png" alt="" /></p>
+
+<h1>使用SpriteBatchNode绘制精灵</h1>
+
+<p>和Auto-batching的对绘制优化的策略一样,SpriteBatchNode将多个精灵放到一个纹理上,绘制的时候直接统一绘制该texture，不需要单独绘制子节点。</p>
+
+<pre><code>SpriteBatchNode* batchNode = SpriteBatchNode::create("HelloWorld.png", 10000);
+addChild( batchNode);
+
+for ( int i = 0; i &lt; 10000; ++i)
+{
+    Sprite* sprite = Sprite::createWithTexture( batchNode-&gt;getTexture());
+    sprite-&gt;setPosition(Point(CCRANDOM_0_1() * winSize.width, 0 + CCRANDOM_0_1() * winSize.height));
+    batchNode-&gt;addChild( sprite);
+}
+</code></pre>
+
+<p>再添一个官网文档上提供的例子:</p>
+
+<pre><code>auto batch = SpriteBatchNode::create("Images/grossini_dance_atlas.png", 1);
+addChild(batch, 0, kTagSpriteBatchNode);        
+
+auto sprite1 = Sprite::createWithTexture(batch-&gt;getTexture(), Rect(85*0, 121*1, 85, 121));
+auto sprite2 = Sprite::createWithTexture(batch-&gt;getTexture(), Rect(85*1, 121*1, 85, 121));
+
+auto s = Director::getInstance()-&gt;getWinSize();
+sprite1-&gt;setPosition( Point( (s.width/5)*1, (s.height/3)*1) );
+sprite2-&gt;setPosition( Point( (s.width/5)*2, (s.height/3)*1) );
+
+batch-&gt;addChild(sprite1, 0, kTagSprite1);
+batch-&gt;addChild(sprite2, 0, kTagSprite2);
+</code></pre>
+
+<h1>参见:</h1>
+
+<ul>
+<li><a href="https://github.com/chukong/cocos-docs/blob/master/manual/framework/native/v3/auto-batching/zh.md">https://github.com/chukong/cocos-docs/blob/master/manual/framework/native/v3/auto-batching/zh.md</a></li>
+<li><a href="http://blog.csdn.net/chenqiai0/article/details/46820669">http://blog.csdn.net/chenqiai0/article/details/46820669</a></li>
+<li><a href="http://www.cocos2d-x.org/docs/tutorial/framework/html5/parkour-game-with-javascript-v3.0/chapter5/zh">在cocos2d-js上运行动画</a></li>
+</ul>
+
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2015-11-19 16:52:57 +0800" pubdate>Nov 19<span>th</span>, 2015</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2015 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2015/11/19/cocos-auto-batching';
+	var disqus_url = 'http://sbxfc.github.io/blog/2015/11/19/cocos-auto-batching';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

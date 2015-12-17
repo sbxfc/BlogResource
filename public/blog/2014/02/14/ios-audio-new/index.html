@@ -1,0 +1,403 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>iOS - 音频格式的选择 - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="iOS - 音频格式的选择 iOS系统支持大部分音频格式的编码(录音)和解码(播放) 首选格式 1,对于未压缩的（最高品质）的音频，封装在CAF文件中的16位、低位字节、线性PCM音频数据。可以用Command-line tool来将音频文件转化为上述格式: /usr/bin/afconvert &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="//ajax.useso.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<link href='http://fonts.useso.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2014/02/14/ios-audio-new">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">iOS - 音频格式的选择</h2>
+    
+  </header>
+
+  <div class="entry_content"><p>iOS系统支持大部分音频格式的编码(录音)和解码(播放)</p>
+
+<h1>首选格式</h1>
+
+<p><font color='#bd260d'><strong>1,对于未压缩的（最高品质）的音频，封装在CAF文件中的16位、低位字节、线性PCM音频数据。</strong></font>可以用Command-line tool来将音频文件转化为上述格式:</p>
+
+<pre><code>/usr/bin/afconvert -f caff -d LEI16 {INPUT} {OUTPUT}
+</code></pre>
+
+<p><font color='#bd260d'><strong>2,对于压缩音频，当每次只需播放一个声音，或者当不需要和iPod同时播放音频时，适合使用AAC格式的CAF或m4a文件</strong></font></p>
+
+<p><font color='#bd260d'><strong>3,如果需要在同时播放多路声音时减少内存开销，请使用IMA4 (IMA/ADPCM)压缩格式，这样可以减少文件尺寸，同时在解压缩过程中对CPU的影响又最小。和线性PCM数据一样，请将IMA4数据封装在CAF文件中。</strong></font></p>
+
+<h1>解码(播放)支持:</h1>
+
+<table>
+<thead>
+<tr>
+<th align="left">音频格式 </th>
+<th align="left"> 硬件解码 </th>
+<th align="left"> 软件解码</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left">    AAC (MPEG-4 Advanced Audio Coding) </td>
+<td align="left"> Yes </td>
+<td align="left"> Yes, starting in iOS 3.0</td>
+</tr>
+<tr>
+<td align="left">    ALAC (Apple Lossless) </td>
+<td align="left"> Yes  </td>
+<td align="left"> Yes, starting in iOS 3.0</td>
+</tr>
+<tr>
+<td align="left">    HE-AAC (MPEG-4 High Efficiency AAC) </td>
+<td align="left"> Yes  </td>
+<td align="left"> &ndash;</td>
+</tr>
+<tr>
+<td align="left">    iLBC (internet Low Bitrate Codec, another format for speech)    </td>
+<td align="left"> &ndash;</td>
+<td align="left"> Yes</td>
+</tr>
+<tr>
+<td align="left">    IMA4 (IMA/ADPCM) </td>
+<td align="left"> &ndash;  </td>
+<td align="left"> Yes</td>
+</tr>
+<tr>
+<td align="left">Linear PCM (uncompressed, linear pulse-code modulation) </td>
+<td align="left"> &ndash;  </td>
+<td align="left"> Yes</td>
+</tr>
+<tr>
+<td align="left">    MP3 (MPEG-1 audio layer 3) </td>
+<td align="left"> Yes  </td>
+<td align="left"> Yes, starting in iOS 3.0</td>
+</tr>
+<tr>
+<td align="left">    µ-law and a-law </td>
+<td align="left"> &ndash;  </td>
+<td align="left"> Yes</td>
+</tr>
+</tbody>
+</table>
+
+
+<h1>编码(播放)支持:</h1>
+
+<table>
+<thead>
+<tr>
+<th align="left">音频格式 </th>
+<th align="left"> 硬件编码 </th>
+<th align="left"> 软件编码</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left">AAC (MPEG-4 Advanced Audio Coding) </td>
+<td align="left"> Yes, starting in iOS 3.1 for iPhone 3GS and iPod touch (2nd generation) Yes, starting in iOS 3.2 for iPad </td>
+<td align="left"> Yes, starting in iOS 4.0 for iPhone 3GS and iPod touch (2nd generation)</td>
+</tr>
+<tr>
+<td align="left">ALAC (Apple Lossless) </td>
+<td align="left"> &ndash;  </td>
+<td align="left"> Yes</td>
+</tr>
+<tr>
+<td align="left">iLBC (internet Low Bitrate Codec, another format for speech) </td>
+<td align="left"> &ndash;</td>
+<td align="left"> Yes</td>
+</tr>
+<tr>
+<td align="left">IMA4 (IMA/ADPCM) </td>
+<td align="left"> &ndash;  </td>
+<td align="left"> Yes</td>
+</tr>
+<tr>
+<td align="left">Linear PCM (uncompressed, linear pulse-code modulation) </td>
+<td align="left"> &ndash;  </td>
+<td align="left"> Yes</td>
+</tr>
+<tr>
+<td align="left">MP3 (MPEG-1 audio layer 3) </td>
+<td align="left"> &ndash;  </td>
+<td align="left"> Yes</td>
+</tr>
+<tr>
+<td align="left">µ-law and a-law </td>
+<td align="left"> &ndash;  </td>
+<td align="left"> Yes</td>
+</tr>
+</tbody>
+</table>
+
+
+<h1>AVAudioPlayer</h1>
+
+<p>在iOS程序里,Apple建议使用此类播放本地音频文件。在使用AVAudioPlayer时要引入<font color='#bd260d'><strong>AVFoundation.framework</strong></font>框架。</p>
+
+<p>AudioManager.h</p>
+
+<pre><code>#import &lt;AVFoundation/AVFoundation.h&gt;
+@interface AudioManager : NSObject &lt;AVAudioPlayerDelegate&gt;
+@end
+</code></pre>
+
+<p>AudioManager.m</p>
+
+<pre><code>- (void) play
+{
+        if (player != nil)
+        {
+             //访问isPlaying属性,首先要验证player指针是否为空,空指针会出错 EXC_BAD_ACCESS
+            if (player.isPlaying == YES)
+                [player stop];
+        }
+
+        // 设置音乐文件路径
+        NSString *soundFilePath = [[NSBundle mainBundle] pathForResource:audio ofType: @"caf"];
+
+        // 判断是否可以访问这个文件
+        if ([[NSFileManager defaultManager] fileExistsAtPath:soundFilePath])
+        {
+            NSError* error;
+            // 设置 player
+            player = [[AVAudioPlayer alloc] initWithContentsOfURL:
+                      [NSURL fileURLWithPath:soundFilePath] error:&amp;error];
+
+            // 调节音量 (范围从0到1)
+            player.volume = 0.4f;
+
+            // 准备buffer，减少播放延时的时间
+            [player prepareToPlay];
+
+            // 设置播放次数，0为播放一次，负数为循环播放
+            [player setNumberOfLoops:0];
+
+            //设置代理
+            [player setDelegate: self];
+
+            [player play];
+        }
+}
+
+    //暂停
+- (void)pause
+{
+    [player pause];
+}
+
+//停止
+- (void)stop
+{
+    player.currentTime = 0;  //当前播放时间设置为0
+    [player stop];
+}
+
+//播放完成后的委托函数
+- (void) audioPlayerDidFinishPlaying: (AVAudioPlayer *) player successfully: (BOOL) completed {
+    if (completed == YES) {
+        NSLog(@"播放完毕");
+    }
+}
+</code></pre>
+
+<p>除可以监听完成播放之外,还支持以下几个委托方法：</p>
+
+<ul>
+<li><em>audioPlayerDecodeErrorDidOccur 解码错误</em></li>
+<li><em>audioPlayerBeginInteruption 处理中断</em></li>
+<li><em>audioPlayerEndInteruption 处理中断结束</em></li>
+</ul>
+
+
+<p>相关属性:</p>
+
+<p><a href="https://developer.apple.com/library/ios/documentation/AVFoundation/Reference/AVAudioPlayerClassReference/Chapters/Reference.html#//apple_ref/doc/uid/TP40008067">https://developer.apple.com/library/ios/documentation/AVFoundation/Reference/AVAudioPlayerClassReference/Chapters/Reference.html#//apple_ref/doc/uid/TP40008067</a></p>
+
+<h1>AudioServicesPlaySystemSound</h1>
+
+<p>除 AVAudioPlayer 外,AudioServicesPlaySystemSound也可以用于播放音频文件。但AudioServicesPlaySystemSound常被用于播放一段简单的音效或调用设备的震动，其中音效时长要在30s以内，不支持对音效基本的控制，但可以设置一个回调函数，来控制对音效的清理及其他操作。</p>
+
+<p>使用时,需要引入框架 <font color='#bd260d'><strong>AudioToolbox.framework</strong></font></p>
+
+<p>一,震动:</p>
+
+<pre><code>AudioServicesPlaySystemSound(kSystemSoundID_Vibrate);
+</code></pre>
+
+<p>二,播放声音:</p>
+
+<pre><code>- (void) playAudio
+{
+    SystemSoundID soundID;
+    NSString *url = [[NSBundle mainBundle] pathForResource: @"alert" ofType: @"caf"];
+    AudioServicesCreateSystemSoundID((__bridge CFURLRef)[NSURL fileURLWithPath:url], &amp;soundID);
+    AudioServicesAddSystemSoundCompletion(soundID, NULL, NULL, SoundFinished,(__bridge_retained void *)self);
+    AudioServicesPlaySystemSound(soundID);
+}
+
+//音效播放完毕后调用
+static void SoundFinished(SystemSoundID soundID,void *myself)
+{
+    //AudioServicesDisposeSystemSoundID(soundID);  
+
+    MyClass *theClass = (__bridge MyClass *)myself;
+    CFRelease(myself);
+    [theClass playAudio];//循环播放
+}
+</code></pre>
+
+<p>Note:Sounds played with System Sound Services are not subject to configuration using your audio session.</p>
+
+<h1>参见</h1>
+
+<p>Using Audio:<br>
+<a href="https://developer.apple.com/library/ios/documentation/AudioVideo/Conceptual/MultimediaPG/UsingAudio/UsingAudio.html">https://developer.apple.com/library/ios/documentation/AudioVideo/Conceptual/MultimediaPG/UsingAudio/UsingAudio.html</a></p>
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2014-02-14 11:53:47 +0800" pubdate>Feb 14<span>th</span>, 2014</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2015 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2014/02/14/ios-audio-new';
+	var disqus_url = 'http://sbxfc.github.io/blog/2014/02/14/ios-audio-new';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

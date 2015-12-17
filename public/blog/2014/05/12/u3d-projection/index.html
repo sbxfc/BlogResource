@@ -1,0 +1,218 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>Unity-正交、透视相机原理 - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="Unity-正交、透视相机原理 一,透视投影相机 (Perspective Camera) 使用透视相机获取的景物类似人眼中的真实世界,有“近大远小”的效果。 在这张透视照相机投影图中，灰色的部分是视景体，是可能被渲染的物体所在的区域。fov是视景体竖直方向上的张角，如侧视图所示。 &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="//ajax.useso.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<link href='http://fonts.useso.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2014/05/12/u3d-projection">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">Unity-正交、透视相机原理</h2>
+    
+  </header>
+
+  <div class="entry_content"><p>一,透视投影相机 (Perspective Camera)</p>
+
+<hr />
+
+<p>使用透视相机获取的景物类似人眼中的真实世界,有“近大远小”的效果。</p>
+
+<p><img src="/images/2014/5/perspective-camera.jpg" alt="" /></p>
+
+<p>在这张透视照相机投影图中，灰色的部分是视景体，是可能被渲染的物体所在的区域。fov是视景体竖直方向上的张角，如侧视图所示。</p>
+
+<p>照相机水平方向和竖直方向长度的比值（width / height），通常设为视景体的横纵比例。</p>
+
+<p><code>near</code>和<code>far</code>分别是照相机到视景体最近、最远的距离，均为正值，且<code>far</code>应大于<code>near</code>。</p>
+
+<p>透视投影矩阵就是根据这些值计算出的,下面是一段OpenGL里生成投影矩阵的代码。</p>
+
+<pre><code>glm::mat4 projection = glm::perspective(fov, width/height, near, far);
+</code></pre>
+
+<!--more-->
+
+
+<br><br>
+
+
+<p>二,正交投影相机 (Orthographic Camera)</p>
+
+<hr />
+
+<p>正交相机获得的景象，类似几何课上黑板上画的效果。在三维空间内平行的线，投影到二维空间中也一定是平行的.</p>
+
+<p><img src="/images/2014/5/orthographic.png" alt="按实际比例显示景物，没有变形" /></p>
+
+<p><img src="/images/2014/5/orthographic-camera.jpg" alt="" /></p>
+
+<p>图中,<code>left</code>, <code>right</code>, <code>top</code>, <code>bottom</code>, <code>near</code>, <code>far</code>,这六个参数分别代表正交投影照相机拍摄到的空间的六个面的位置，这两个面围成一个长方体，我们称其为视景体（Frustum）。只有在视景体内部（下图中的灰色部分）的物体才可能显示在屏幕上，而视景体外的物体会在显示之前被裁减掉。</p>
+
+<p>其中,照相机的横竖比例确定，(<code>right</code> &ndash; <code>left</code>)与(<code>top</code> &ndash; <code>bottom</code>)的比例与视景体宽度与高度的比例一致。</p>
+
+<p><code>near</code>与<code>far</code>都是指到照相机位置在深度平面的位置，而照相机不应该拍摄到其后方的物体，因此这两个值应该均为正值。为了保证场景中的物体不会因为太近或太远而被照相机忽略，一般<code>near</code>的值设置得较小，<code>far</code>的值设置得较大，具体值视场景中物体的位置等决定。</p>
+
+<br>
+
+
+<p>三,正交相机和透视相机的选择</p>
+
+<hr />
+
+<p>一般说来，对于制图、建模软件通常使用正交投影，这样不会因为投影而改变物体比例；<br>对于其他大多数应用，通常使用透视投影，因为这更接近人眼的观察效果。</p>
+
+<br><br>
+
+
+<p>OpenGL- 透视矩阵:<br>
+<a href="http://rungame.me/blog/2014/09/08/gl-projection-matrices/">http://rungame.me/blog/2014/09/08/gl-projection-matrices/</a></p>
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2014-05-12 16:46:05 +0800" pubdate>May 12<span>th</span>, 2014</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2015 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2014/05/12/u3d-projection';
+	var disqus_url = 'http://sbxfc.github.io/blog/2014/05/12/u3d-projection';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

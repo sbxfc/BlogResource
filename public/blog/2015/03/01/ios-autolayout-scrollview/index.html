@@ -1,0 +1,252 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>Xib下的自动布局 - ScrollView(一) - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="Xib下的自动布局 - ScrollView(一) 为ScrollView布局实际上是为ScrollView里的content设置布局。区别于一般组件,ScrollView有一个contentSize的概念。contentSize是ScrollView填充的内容大小, &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="//ajax.useso.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<link href='http://fonts.useso.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2015/03/01/ios-autolayout-scrollview">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">Xib下的自动布局 - ScrollView(一)</h2>
+    
+  </header>
+
+  <div class="entry_content"><p>为ScrollView布局实际上是为ScrollView里的content设置布局。<br>区别于一般组件,ScrollView有一个contentSize的概念。contentSize是ScrollView填充的内容大小,<br>ScrollView会根据这个范围来设置滚动区域。</p>
+
+<p>假如我们对ScrollView里的内容按照一般组件那样设置布局。很容易出现组件内容不能拖动<br>或者直接在布局界面就出错的情况:
+(无法确定拖动的区域)</p>
+
+<p><em>has ambiguous scrollable content height</em><br>
+<em>has ambiguous scrollable content width</em> <br></p>
+
+<!--more-->
+
+
+<hr />
+
+<h1>为ScrollView设置布局</h1>
+
+<p>一,新建一个xib取名为MyScrollView.xib</p>
+
+<p>二,在viewDidLoad里加载该Xib,并设置xib距离父视图的四个边的边距为0。</p>
+
+<pre><code>- (void)viewDidLoad {
+    [super viewDidLoad];
+
+    //加载xib文件
+    [self loadScrollView];
+}
+/**
+ * 加载xib,并设置布局全屏显示。
+*/
+-(void)loadScrollView
+{
+    MyScrollView *myScrollView = [[[NSBundle mainBundle] loadNibNamed:@"MyScrollView" owner:self options:nil] firstObject];
+    [self.view addSubview:myScrollView];
+    //...
+    //设置xib距离父视图的四个边的距离为0
+    //...
+}
+</code></pre>
+
+<p>三,打开新建的MyScrollView.xib,拖入一个ScrollView组件,设置距离四个边的距离为0。<br>
+再拖入一个View到ScrollView上,同样设置四个方向边距为0。<br>
+此时会报错:</p>
+
+<p><em>has ambiguous scrollable content height</em><br><em>has ambiguous scrollable content width</em><br></p>
+
+<p><strong>为View设置了四个方向的边距,但是ScrollView并不知道contentSize的大小。</strong><br>
+<strong>设置四个边距实际是告诉ScrollView内容会“撑到”多大。</strong><br>
+<strong>ScrollView必须知道四条边多大来确定contentSize的大小。</strong></p>
+
+<p>四,设置View和ScrollView的宽度相等(<strong>Equal Widths</strong>)。此时错误只剩下一个:</p>
+
+<p><em>has ambiguous scrollable content height</em></p>
+
+<p>我们为其设置了两边的宽度,但高度还未确定。接下来,我们通过向View添加组件来填充View的高度。</p>
+
+<p>五,在View上再拖入一个子View并设置四个方向上的边距为10,高度为2000,设置背景色为粉色,此时错误消失。<br>运行会看到一个可以上下拖动的粉色面板。</p>
+
+<br>
+
+
+<hr />
+
+<h1>组件内置大小</h1>
+
+<p>假如有多个子View,他们纵向依次间隔排列。但中间一个View并不确定高度(至少在xib布局时无法给出一个明确高度)。如果是普通的View,这种布局没有问题,但对于ScrollView就会出错:</p>
+
+<p><em>has ambiguous scrollable content height</em></p>
+
+<p>此时,我们可以为其设置<strong>intrinsic size</strong>(内置大小),属性面板里的 <strong>intrinsic size</strong> 选项。一个原始的UIView对象，它的内置大小为0。我们通过设置占位符来改变内置宽、高，也可以根据需要只设置其中一项。</p>
+
+<p>然后在xib绑定类的awakeFromNib函数里设置该View的高度约束,awakeFromNib函数在约束生效前执行。若没有设置高度约束也不会出错,但该View不显示。因为组件的内置大小是由组件本身的内容所确定的。UIView不像UIButton或UILabel,它的内容为空,运行时UIView的内置大小为0。</p>
+
+<pre><code>- (void)awakeFromNib {
+    [super awakeFromNib];
+
+    //重新设置高度
+    [self.topSubView addConstraint:[NSLayoutConstraint
+                                 constraintWithItem:self.topSubView
+                                 attribute:NSLayoutAttributeHeight
+                                 relatedBy:NSLayoutRelationEqual
+                                 toItem:nil
+                                 attribute:NSLayoutAttributeNotAnAttribute
+                                 multiplier:1
+                                 constant:250]];
+}
+</code></pre>
+
+<hr />
+
+<p>完整代码:<a href="https://github.com/sbxIOS/AutoLayoutUIScrollView">https://github.com/sbxIOS/AutoLayoutUIScrollView</a></p>
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2015-03-01 19:09:49 +0800" pubdate>Mar 1<span>st</span>, 2015</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2015 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2015/03/01/ios-autolayout-scrollview';
+	var disqus_url = 'http://sbxfc.github.io/blog/2015/03/01/ios-autolayout-scrollview';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

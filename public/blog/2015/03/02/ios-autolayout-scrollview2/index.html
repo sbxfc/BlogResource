@@ -1,0 +1,199 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>Xib下的自动布局 - ScrollView(二) - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="Xib下的自动布局 - ScrollView(二) 在ScrollView上布局时,有一些区域不能确定大小。我们可以为这些区域设置一个UIView并通过修改intrinsic size里的占位符来完成约束。利用这个还有用的技巧,我们可以在这块区域上动态填充期望的内容。 &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="//ajax.useso.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<link href='http://fonts.useso.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2015/03/02/ios-autolayout-scrollview2">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">Xib下的自动布局 - ScrollView(二)</h2>
+    
+  </header>
+
+  <div class="entry_content"><p>在ScrollView上布局时,有一些区域不能确定大小。我们可以为这些区域设置一个UIView并通过修改<strong>intrinsic size</strong>里的占位符来完成约束。利用这个还有用的技巧,我们可以在这块区域上动态填充期望的内容。比如在上面动态加载一个xib文件。当填充的内容超过UIView的大小时,只要设置好xib和UIView之间的布局,内容区就会自动被扩充。</p>
+
+<p>这些操作一般会在<code>awakeFromNib</code>函数里进行设置,<code>awakeFromNib</code>在布局生效前被执行。</p>
+
+<p>下图中,红色区域设置了占位符高度:</p>
+
+<p><img src="/images/2015/3/autolayout-scrollview-before.png" alt="" /></p>
+
+<!--more-->
+
+
+<p>运行时,因为UIView没有添加内容,红色区域不显示,如下图:</p>
+
+<p><img src="/images/2015/3/autolayout-scrollview-after.png" alt="" /></p>
+
+<p>在上一部分,我们提到UIView的默认<strong>intrinsic size</strong>值为0。但对于其他组件,如UILabel,UIButton这些有内容的组件内置大小不为0。将红色区域换成一个UIButton,无需设置<strong>intrinsic size</strong>的值,我们发现ScrollView也不会报错。</p>
+
+<p>运行时一下,我们看到UIButton显示出来了:</p>
+
+<p><img src="/images/2015/3/autolayout-button-after.png" alt="" /></p>
+
+<hr />
+
+<h2>动态加载xib</h2>
+
+<p>在ScrollView里,我们可以使用一个UIView作为占位容器,设置<strong>intrinsic size</strong>值。<br>
+在运行时,往UIView上动态添加Xib,并设置布局。</p>
+
+<p>下图中绿色区域动态加载了一个包含UILabel的xib文件:</p>
+
+<p><img src="/images/2015/3/autolayout-xib-after.png" alt="" /></p>
+
+<hr />
+
+<p>完整代码:<a href="https://github.com/sbxIOS/AutoLayoutScrollView2">https://github.com/sbxIOS/AutoLayoutScrollView2</a>
+ <!--more--></p>
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2015-03-02 11:45:34 +0800" pubdate>Mar 2<span>nd</span>, 2015</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2015 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2015/03/02/ios-autolayout-scrollview2';
+	var disqus_url = 'http://sbxfc.github.io/blog/2015/03/02/ios-autolayout-scrollview2';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

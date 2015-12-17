@@ -1,0 +1,292 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>Unity3D - 漫反射着色（二） - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="Unity3D - 漫反射着色（二） Lambert定律 当光照射在物体表面时,无论光的入射角度如何，都会向所有方向发生反射。反射光的亮度只和入射角度有关,与观察者角度无关。光线越平行于物体表面时，反射光越弱，表面越暗。光线越垂直于表面时，反射光越强，表面越亮。这种各向同性的反射叫漫反射。 &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="//ajax.useso.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<link href='http://fonts.useso.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2014/03/24/u3d-diffuse-shading-2">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">Unity3D - 漫反射着色（二）</h2>
+    
+  </header>
+
+  <div class="entry_content"><h1>Lambert定律</h1>
+
+<p>当光照射在物体表面时,无论光的入射角度如何，都会向所有方向发生反射。反射光的亮度只和入射角度有关,与观察者角度无关。光线越平行于物体表面时，反射光越弱，表面越暗。光线越垂直于表面时，反射光越强，表面越亮。这种各向同性的反射叫漫反射。</p>
+
+<p>漫反射的光强近似地服从于Lambert定律,即漫反射光的光强仅与入射光的方向和反射点处表面法向夹角的余弦成正比:</p>
+
+<pre><code>Idiffuse =Id * Kd * cosθ 
+</code></pre>
+
+<ul>
+<li><code>Idiffuse</code>漫反射光强</li>
+<li><code>Id</code>为点光源</li>
+<li><code>Kd(0&lt;Kd&lt;1)</code>表示物体表面该点对漫反射光的反射属性（金属材质比木材质的反射要好）</li>
+<li><code>θ</code>是入射光线的方向与物体表面该点处法线N的夹角，或称为入射角<code>(0≤θ≤90°)</code>,
+入射角为零时，说明光线垂直于物体表面，漫反射光强最大;90°时光线与物体表面平行，物体接收不到任何光线。</li>
+</ul>
+
+
+<p><img src="/images/2014/3/diffuse.jpg" alt="diffuse" /></p>
+
+<p>若L表示入射点指向光源的单位向量,N表示入射点的单位法向量。由<a href="http://rungame.me/blog/2014/04/23/vector-projection/">向量的点积</a>定律可知<strong>cosθ = N * L</strong>。</p>
+
+<p>Lambert定律就可以写为:</p>
+
+<pre><code>Idiffuse = Id * Kd *(N * L)
+</code></pre>
+
+<h1>Lambert光照模型</h1>
+
+<p>在Unity里,我们使用Lambert光照模型近似地反映漫反射。Lambert光照模型由环境光和漫反射光两部分组成。</p>
+
+<p>Lambert光照模型被写为:</p>
+
+<pre><code>I= IaKa (环境光) + Idiffuse= IaKa + Id * Kd *(N * L)
+</code></pre>
+
+<p>上一部分的最后的光照模型就是Lambert光照模型:</p>
+
+<pre><code>inline float4 LightingLambert (SurfaceOutput s, fixed3 lightDir, fixed atten)
+{
+    //计算cosθ
+    float difLight = max(0, dot (s.Normal, lightDir));
+    float4 col;
+    col.rgb = s.Albedo * _LightColor0.rgb * (difLight * atten * 2);
+    col.a = s.Alpha;
+    return col;     
+}
+</code></pre>
+
+<ul>
+<li><strong>dot(arg1,arg2)</strong> 乘积</li>
+<li><strong>max(arg1,arg2)</strong> 取两者中的最大值，因为第一个参数是0.所以我们取得的值都是大于、等于0的。</li>
+</ul>
+
+
+<p>NOTE:在Lambert光照模型里, <code>difLight * atten * 2</code> 中的*2，是为了增加光照强度。</p>
+
+<hr />
+
+<h1>Half Lambert 光照模型</h1>
+
+<p>Half Lamber是大名鼎鼎的Valve公司在制作半条命时，为了使阴暗区域的光亮得到补强，而设计的光照模型。</p>
+
+<p>half-Lambert 光照模型代码实现:</p>
+
+<pre><code>    inline float4 LightingBasicDiffuse (SurfaceOutput s, fixed3 lightDir, fixed atten)
+    {
+        float difLight = dot (s.Normal, lightDir);
+        float hLambert = difLight * 0.5 + 0.5; 
+
+        float4 col;
+        col.rgb = s.Albedo * _LightColor0.rgb * (hLambert * atten * 2);
+        col.a = s.Alpha;
+        return col;
+    }
+</code></pre>
+
+<p>上面的half-Lambert光照模型是在Lambert的基础上得来的。其中只是用hLambert取代了漫反射中的difLight(<strong>即cosθ值</strong>)。hLambert取difLight的<code>*0.5+0.5</code>后的结果。</p>
+
+<p>下图中,我们可以比较原始的difLight（<strong>即cosθ</strong>）的值和新的hLambert的区别。原本的difLight是一条穿越(0,0)点的余弦曲线。重新计算处理之后的hLambert,其取值全都大于0。</p>
+
+<p><img src="/images/2014/3/half.png" alt="half.png" /></p>
+
+<p>原先的计算公式里，在区间[-1,0]部分,我们利用<code>max</code>函数将这些角度上的值转化为0,随着光照的角度变化，在[-1,1]这个区间的颜色变化显得比较生硬。而half-Lambert光照模型有一个很好的渐变的过程，每个角度对应的值都会比Lambert更高,表现出来也就更亮。</p>
+
+<hr />
+
+<h1>使用渐变图(RAMP)控制漫反射光强变化</h1>
+
+<p><img src="/images/2014/3/ramp_texture.png" alt="ramp_texture.png" /></p>
+
+<p>使用图片编辑器（比如PS),创建一个渐变图如上图。修改Properties,添加一段声明</p>
+
+<pre><code>_RampTexture ("Ramp Texture", 2D) = "white"{}
+</code></pre>
+
+<p>在CG代码里声明贴图变量:</p>
+
+<pre><code>sampler2D _RampTexture;
+</code></pre>
+
+<p>修改光照模型:</p>
+
+<pre><code>inline float4 LightingBasicDiffuse (SurfaceOutput s, fixed3 lightDir, fixed atten)
+    {
+        float difLight = dot (s.Normal, lightDir);
+        float hLambert = difLight * 0.5 + 0.5;
+        float3 ramp = tex2D(_RampTexture, float2(hLambert)).rgb;
+
+        float4 col;
+        col.rgb = s.Albedo * _LightColor0.rgb * (ramp);
+        col.a = s.Alpha;
+        return col;
+    }
+</code></pre>
+
+<p>我们使用了一张269*33的贴图，其中颜色的变化只在横向x轴方向,y轴方向颜色值无变化。</p>
+
+<p>我们已知hLambert是一个介于[0，1]值,假如此刻hLambert取值为0.3，那么经float2函数强制转型之后就变成了(0.3,0)的形式。</p>
+
+<p>因为y方向颜色值是固定的，那么<code>0.3*269=80.7</code>,那么它将去贴图上取(80.7,0)点的颜色值。</p>
+
+<p>我们没有使用顶点的UV值，而是基于漫反射即光线方向在贴图上取值，最终模型表面的颜色也是与光线方向高度关联的。</p>
+
+<hr />
+
+<p>参考:</p>
+
+<p>着色器代码:<br><a href="https://github.com/sbxUnity/u3dLambertShader">https://github.com/sbxUnity/u3dLambertShader</a></p>
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2014-03-24 10:30:58 +0800" pubdate>Mar 24<span>th</span>, 2014</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2015 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2014/03/24/u3d-diffuse-shading-2';
+	var disqus_url = 'http://sbxfc.github.io/blog/2014/03/24/u3d-diffuse-shading-2';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

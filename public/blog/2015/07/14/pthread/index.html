@@ -1,0 +1,316 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>pthread - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="pthread POSIX线程 pthread即POSIX thread,是POSIX标准的线程API。(POSIX是包括Unix、Linux、OS系统等绝大多数操作系统支持的API标准。) 使用pthread创建一个线程非常简单,调用pthread_create函数, &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="//ajax.useso.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<link href='http://fonts.useso.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2015/07/14/pthread">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">pthread</h2>
+    
+  </header>
+
+  <div class="entry_content"><h1>POSIX线程</h1>
+
+<p>pthread即POSIX thread,是POSIX标准的线程API。(POSIX是包括Unix、Linux、OS系统等绝大多数操作系统支持的API标准。)</p>
+
+<p>使用pthread创建一个线程非常简单,调用pthread_create函数,传入pthread_t类型的线程ID指针和回调的函数指针。</p>
+
+<pre><code>pthread_create(&amp;tid,NULL,func,NULL);
+</code></pre>
+
+<p>线程终止:</p>
+
+<ul>
+<li><p>线程函数返回(return)时线程终止。</p></li>
+<li><p>被同一进程的另外线程cancel掉。</p></li>
+<li><p>调用pthread_exit函数退出线程。</p></li>
+</ul>
+
+
+<p><a href="https://zh.wikipedia.org/wiki/POSIX%E7%BA%BF%E7%A8%8B">查看POSIX线程支持的操作系统</a></p>
+
+<!-- more -->
+
+
+<h1>互斥锁</h1>
+
+<p>线程之间可以共享内存空间,这意味着不同线程可以读取内存中的同一个变量。但是不同线程在同一时间修改一个内存对象会造成一些不可预知的结果。</p>
+
+<p>为了避免意外发生,我们需要用到pthread里一个非常重要的数据结构 —— 互斥对象(mutex)。互斥对象在使用时结合互斥锁 pthread_mutex_lock() 和 pthread_mutex_unlock()使用。</p>
+
+<p>它的工作是这样的:线程B锁定了一个互斥对象(mutex),如果线程A也试图锁定该互斥对象时,线程A就进入睡眠状态。一旦线程B释放了互斥对象（通过 pthread_mutex_unlock(),线程A 就能够锁定这个互斥对象（换句话说，线程A就将从 pthread_mutex_lock() 函数调用中返回,同时互斥对象被重新锁定）。同样地,当线程A正锁定互斥对象时,如果线程C试图锁定互斥对象的话,线程C也将临时进入睡眠状态。</p>
+
+<pre><code>pthread_mutex_lock(&amp;mymutex);
+
+ //在这里进行多线程环境下的数据修改工作,
+ //因为mymutex被锁定,凡是此时试图锁定mymutex的线程都会进入睡眠,
+ //直到函数unlock执行之后才被重新唤醒。
+
+pthread_mutex_unlock(&amp;mymutex);
+</code></pre>
+
+<p>对已锁定的互斥对象上调用 pthread_mutex_lock() 的所有线程都将进入睡眠状态,这些睡眠的线程将“排队”访问这个互斥对象。</p>
+
+<p>1）互斥对象使用时需要初始化:</p>
+
+<p>静态初始化:</p>
+
+<pre><code>pthread_mutex_t myLock = PTHREAD_MUTEX_INITIALIZER;
+</code></pre>
+
+<p>动态初始化:</p>
+
+<pre><code>pthread_mutex_t myLock;
+pthread_mutex_init(&amp;myLock,NULL);
+</code></pre>
+
+<p>2）销毁互斥对象</p>
+
+<p>一旦初始化完之后,我们就可以根据实际情况对对象实施加锁和解锁,但需要注意的是如果是动态初始化(使用pthread_mutex_init()初始化)的互斥对象,在释放或废弃条件变量之前,需要清理它:</p>
+
+<pre><code>/*
+ * 使用pthread_mutex_init()初始的互斥对象,
+ * 应使用 pthread_mutex_destroy() 清理它。
+ * pthread_mutex_destroy() 接受一个指向 pthread_mutext_t 的指针作为参数
+ * 并释放创建互斥对象时分配给它的任何资源。
+ */
+pthread_mutex_destroy(myLock);   
+</code></pre>
+
+<p>3）尝试锁定</p>
+
+<p>使用 pthread_mutex_trylock() 可以尝试锁定互斥对象。如果互斥对象当前处于解锁状态，那么您将获得该锁并且函数将返回零。然而,如果互斥对象已锁定,这个调用也不会阻塞。</p>
+
+<h1>条件变量</h1>
+
+<p>如果线程在等待某个特定条件发生,按照上面的方式,就需要对数据结构不停地加锁、解锁进行检测,这样不但浪费时间和资源，而且繁忙查询的效率也非常低。这时,我们可以用pthread_cond_wait()方法。</p>
+
+<p>以查询特殊条件为例:<br>
+首先,线程A执行对数据的检测并没有找到满足条件的数据。此时,通过pthread_cond_wait()函数将线程A设置为等待休眠状态:</p>
+
+<pre><code> /*
+ * 线程A操作
+ */
+pthread_mutex_lock(&amp;mymutex);
+//检测数据条件 
+pthread_cond_wait(&amp;mycond, &amp;mymutex);
+</code></pre>
+
+<p>调用pthread_cond_wait()所做的第一件事就是对互斥对象进行解锁（其他线程可以修改数据条件）,并等待条件mycond发生。</p>
+
+<p>此时,pthread_cond_wait() 调用还未返回,对互斥对象的解锁会立即发生。等待条件mycond通常是一个阻塞操作。这意味着线程将睡眠,在它苏醒之前不会消耗 CPU 周期。这正是我们期待发生的情况。线程将一直睡眠，直到特定条件发生,在这期间不会发生任何浪费 CPU 时间的繁忙查询。从线程的角度来看,它只是在等待 pthread_cond_wait() 调用返回。</p>
+
+<p>假如另一个线程B锁定了mymutex并对数据条件做了修改。在对互斥对象解锁之后,线程B会立即调用函数 pthread_cond_broadcast(&amp;mycond)。此操作之后，线程B将使所有等待 mycond 条件变量的线程立即苏醒。这意味着第一个线程（仍处于 pthread_cond_wait() 调用中）现在将苏醒。</p>
+
+<pre><code> /*
+ * 线程B操作
+ */
+pthread_mutex_lock(&amp;mymutex);
+
+//修改数据条件操作 
+
+pthread_mutex_unlock(&amp;mymutex);
+pthread_cond_broadcast(&amp;mycond);
+</code></pre>
+
+<p>您可能会认为在线程B调用 pthread_cond_broadcast(&amp;mymutex) 之后，线程A的 pthread_cond_wait() 会立即返回。不是那样!实际上，pthread_cond_wait() 将执行最后一个操作:重新锁定 mymutex。一旦 pthread_cond_wait() 锁定了互斥对象,那么它将返回并允许线程A继续执行。</p>
+
+<p>1）初始化和清除</p>
+
+<p>和互斥对象一样,条件变量在使用时也需要初始化:</p>
+
+<pre><code>pthread_cond_t mycond;
+pthread_cond_init(&amp;mycond,NULL);
+</code></pre>
+
+<p>在释放或废弃条件变量之前，需要毁坏它,如下所示:</p>
+
+<pre><code>pthread_cond_destroy(&amp;mycond);
+</code></pre>
+
+<p>2）等待</p>
+
+<p>一旦初始化了互斥对象和条件变量，就可以等待某个条件，如下所示:</p>
+
+<pre><code>pthread_cond_wait(&amp;mycond, &amp;mymutex);
+</code></pre>
+
+<p>请注意，代码在逻辑上应该包含 mycond 和 mymutex。一个特定条件只能有一个互斥对象,而且条件变量应该表示互斥数据“内部”的一种特殊的条件更改。一个互斥对象可以用许多条件变量（例如，cond_empty、cond_full、cond_cleanup），但每个条件变量只能有一个互斥对象。</p>
+
+<p>3）发送信号和广播</p>
+
+<p>对于发送信号和广播，需要注意一点。如果线程更改某些共享数据，而且它想要唤醒所有正在等待的线程，则应使用 pthread_cond_broadcast 调用，如下所示：</p>
+
+<pre><code>pthread_cond_broadcast(&amp;mycond);
+</code></pre>
+
+<p>在某些情况下，活动线程只需要唤醒第一个正在睡眠的线程。假设您只对队列添加了一个工作作业。那么只需要唤醒一个工作程序线程（再唤醒其它线程是不礼貌的！）:</p>
+
+<pre><code>pthread_cond_signal(&amp;mycond);
+</code></pre>
+
+<p>此函数只唤醒一个线程。</p>
+
+<h1>参见</h1>
+
+<p>POSIX 线程(WIKI):<a href="https://zh.wikipedia.org/wiki/POSIX%E7%BA%BF%E7%A8%8B">https://zh.wikipedia.org/wiki/POSIX%E7%BA%BF%E7%A8%8B</a></p>
+
+<p>POSIX 线程详解:<a href="http://www.ibm.com/developerworks/cn/linux/thread/posix_thread1/#icomments">http://www.ibm.com/developerworks/cn/linux/thread/posix_thread1/#icomments</a></p>
+
+<p>POSIX 线程详解，第 2部分:<a href="https://www.ibm.com/developerworks/cn/linux/thread/posix_thread2/">https://www.ibm.com/developerworks/cn/linux/thread/posix_thread2/</a></p>
+
+<h1>完整代码</h1>
+
+<p><a href="https://github.com/sbxfc/PThreads">https://github.com/sbxfc/PThreads</a></p>
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2015-07-14 10:28:45 +0800" pubdate>Jul 14<span>th</span>, 2015</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2015 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2015/07/14/pthread';
+	var disqus_url = 'http://sbxfc.github.io/blog/2015/07/14/pthread';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

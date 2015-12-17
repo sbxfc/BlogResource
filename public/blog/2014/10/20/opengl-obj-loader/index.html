@@ -1,0 +1,285 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>OpenGL - 绘制OBJ模型 - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="OpenGL - 绘制OBJ模型 obj模型是Alias|Wavefront公司设计并开发的一种3D模型的文件格式。我们可以通过maya等大部分建模工具,将3D模型信息导出并保存到obj文件中。并且通过该文件的格式加载并渲染模型。
+因为是文本格式，我们可以直接查看obj文件。 &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="//ajax.useso.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<link href='http://fonts.useso.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2014/10/20/opengl-obj-loader">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">OpenGL - 绘制OBJ模型</h2>
+    
+  </header>
+
+  <div class="entry_content"><p>obj模型是Alias|Wavefront公司设计并开发的一种3D模型的文件格式。我们可以通过maya等大部分建模工具,将3D模型信息导出并保存到obj文件中。并且通过该文件的格式加载并渲染模型。<br>
+因为是文本格式，我们可以直接查看obj文件。以简单的立方体文件为例:<br>
+<a href="http://people.sc.fsu.edu/~jburkardt/data/obj/cube.obj">http://people.sc.fsu.edu/~jburkardt/data/obj/cube.obj</a><br>
+#是注释部分,v 表示顶点, vn 表示法线, f 是每个面的信息。</p>
+
+<pre><code>f v1//vn1 v2//vn2 v3//vn3 ...
+</code></pre>
+
+<p>每个面由不定数量的顶点组成。其中 v1//vn1 表示每个顶点包含一个顶点索引和法线索引。
+相应的还有下面这种格式:</p>
+
+<pre><code>f v1/vt1/vn1 v2/vt2/vn2 v3/vt3/vn3 ....
+</code></pre>
+
+<p>表示顶点由 顶点索引/UV点索引/法线索引 组成。</p>
+
+<pre><code>f v1/vt1 v2/vt2 v3/vt3 ...
+</code></pre>
+
+<p>以及表示顶点由 顶点索引/UV点索引 组成的面。</p>
+
+<p>obj Wiki:<br>
+<a href="http://en.wikipedia.org/wiki/Wavefront_.obj_file">http://en.wikipedia.org/wiki/Wavefront_.obj_file</a><br>
+obj文件格式详解:<br>
+<a href="http://www.cppblog.com/lovedday/archive/2008/06/13/53153.html">http://www.cppblog.com/lovedday/archive/2008/06/13/53153.html</a></p>
+
+<p>上面的立方体的有12个三角形面组成，但我们也可能遇到四边形或五边形。在函数<code>exportFaceGroupToShape</code>里,我们将其统一转成三角形。我们以组(group)的形式解析并绘制模型。</p>
+
+<p>定义每个group的格式:</p>
+
+<pre><code>typedef struct
+{
+    std::vector&lt;unsigned int&gt;   indices;      //顶点索引
+    std::vector&lt;float&gt;          positions;  //顶点坐标
+    std::vector&lt;float&gt;          normals;      //顶点法线
+    std::vector&lt;float&gt;          texcoords;    //顶点的UV坐标
+    std::vector&lt;int&gt;            material_ids;//顶点对应的材质信息
+} mesh_r;
+
+typedef struct
+{
+    std::string name;   //组名
+    mesh_r       mesh;
+} shape_r;
+</code></pre>
+
+<p>indices包含了这个组所有顶点信息的索引。<code>positions</code> <code>normals</code> <code>texcoords</code> 和 <code>material_ids</code>分别是顶点索引对应的相应顶点信息。其中材质ID<code>material_ids</code>数组对应了每个顶点的材质信息。材质ID的索引对应的材质数组materials,它包含了所有顶点的材质信息，每个顶点通过ID去对应相应的材质信息。格式如下:</p>
+
+<pre><code>typedef struct
+{
+    std::string name;
+
+    float ambient[3];
+    float diffuse[3];
+    float specular[3];
+    float transmittance[3];
+    float emission[3];
+    float shininess;
+    float ior;
+    float dissolve;
+    int illum;
+
+    std::string ambient_texname;
+    std::string diffuse_texname;
+    std::string specular_texname;
+    std::string normal_texname;
+    std::map&lt;std::string, std::string&gt; unknown_parameter;
+} material_r;
+</code></pre>
+
+<p>OBJ文件的解析涉及到文件的读取和文件格式的转换,不详细解释。渲染的时候，我是根据每个组创建VAO然后绑定相应顶点数据。最后用一个循环的形式，通过<code>glDrawElements</code>将模型绘制出来。可能还有其他更好的办法，因为对渲染还不是很熟悉，暂时只用到这一种：</p>
+
+<pre><code>for(int i = 0 ; i &lt; shapersNum ;i++)
+{
+    glGenVertexArrays(1,&amp;m_vao[i]);
+    glBindVertexArray(m_vao[i]);
+
+        GLuint m_vbo[4];
+        glGenBuffers(4, m_vbo);
+        glBindBuffer(GL_ARRAY_BUFFER, m_vbo[0]);
+        glBufferData(GL_ARRAY_BUFFER, shapes[i].mesh.positions.size()*sizeof(GLfloat), &amp;shapes[i].mesh.positions[0], GL_STATIC_DRAW);
+
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,0,0);
+
+        glBindBuffer(GL_ARRAY_BUFFER, m_vbo[1]);
+        glBufferData(GL_ARRAY_BUFFER, shapes[i].mesh.normals.size()*sizeof(GLfloat), &amp;shapes[i].mesh.normals[0], GL_STATIC_DRAW);
+
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1,3,GL_FLOAT,GL_FALSE,0,0);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_vbo[3]);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, shapes[i].mesh.indices.size()*sizeof(GLuint), &amp;shapes[i].mesh.indices[0], GL_STATIC_DRAW);
+
+    glBindVertexArray(0);
+}
+</code></pre>
+
+<p>绘制代码:</p>
+
+<pre><code>for(int i = 0 ; i &lt; size ;i++)
+{
+    glBindVertexArray(m_vao[i]);
+    glDrawElements(GL_TRIANGLES,(GLsizei)shapes[i].mesh.indices.size(),GL_UNSIGNED_INT,0);
+    glBindVertexArray(0);
+}
+</code></pre>
+
+<p>接下来将会将顶点的材质<code>material</code>绑定到VAO上，与传递顶点、法线的类似的形式，将材质信息传递到着色器。加载出来的没有贴图的汽车模型:</p>
+
+<p><img src="/images/2014/10/obj-car.png" alt="obj" /></p>
+
+<p>这里在网上找到的一个小的OBJ模型库:<br>
+<a href="http://people.sc.fsu.edu/~jburkardt/data/obj/obj.html">http://people.sc.fsu.edu/~jburkardt/data/obj/obj.html</a></p>
+
+<p>tinyobjloader:<br>
+<a href="http://syoyo.github.io/tinyobjloader/">http://syoyo.github.io/tinyobjloader/</a></p>
+
+<h1>完整代码:</h1>
+
+<p><a href="https://github.com/sbxfc/OpenGLDrawOBJ">https://github.com/sbxfc/OpenGLDrawOBJ</a></p>
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2014-10-20 14:19:21 +0800" pubdate>Oct 20<span>th</span>, 2014</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2015 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2014/10/20/opengl-obj-loader';
+	var disqus_url = 'http://sbxfc.github.io/blog/2014/10/20/opengl-obj-loader';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

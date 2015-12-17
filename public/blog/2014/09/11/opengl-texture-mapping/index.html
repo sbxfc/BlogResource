@@ -1,0 +1,296 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>OpenGL - 纹理映射  - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="OpenGL - 纹理映射 纹理映射 纹理映射就是将纹理上的像素映射到屏幕像素的过程。 和处理顶点数据不同,纹理对象在顶点、像素着色器的任意次调用中,都可以访问整个纹理对象。而顶点缓冲数据只是一次一个元素地提供给顶点着色器，并且顶点着色器没有任何方式访问其他的元素。为此， &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="//ajax.useso.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<link href='http://fonts.useso.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2014/09/11/opengl-texture-mapping">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">OpenGL - 纹理映射 </h2>
+    
+  </header>
+
+  <div class="entry_content"><h1>纹理映射</h1>
+
+<p>纹理映射就是将纹理上的像素映射到屏幕像素的过程。</p>
+
+<p>和处理顶点数据不同,纹理对象在顶点、像素着色器的任意次调用中,都可以访问整个纹理对象。而顶点缓冲数据只是一次一个元素地提供给顶点着色器，并且顶点着色器没有任何方式访问其他的元素。为此，OpenGL提供了专门用于处理纹理的对象结构,用于存储纹理数据。像GLTEXTURE1D、GLTEXTURE2D、GLTEXTURE3D,我们经常使用的2D纹理用到的是GLTEXTURE2D对象。<br></p>
+
+<h1>纹理坐标</h1>
+
+<p>对于一张512*512大小的2D 纹理,它是一个width*height个像素值的二维数组。为了获取某个具体的像素值，我们会使用他们的横、纵向的坐标来获取该单元。区别于空间坐标系，OpenGL将纹理空间的坐标系记为s、t、r。r是代表depth的值,因为除了传统的2D纹理，OpenGL还支持3D纹理，即GLTEXTURE3D。<br></p>
+
+<p>在纹理空间中，纹理数组里的元素均匀分布在纹理空间中。对于2D纹理，纹理空间一个从[0,0]到[1,1]的正方形坐标区间。对于1D纹理、3D纹理，纹理空间分别是从0到1的线性区间和从[0，0，0]到[1，1，1]的划分。其中，边界[0，0]映射2D纹理的第一个元素，随后沿着s坐标轴和t坐标轴向右、向上分布。</p>
+
+<p>在一张512*512的纹理中，如果一个顶点的纹理坐标是[0.2,0.1],那么它在该纹理采样之后得到的纹理单元就是[512x0.2,512x0.1]即[102.4,51.2]。在OpenGL里提供了多种纹理过滤方式。最容易理解的是GL_NEAREST,即直接取整的方式，这时顶点获取的纹理单元就是[102，51]。但这种方式并不理想，会产生锯齿现象，这些会在纹理过滤中讲到。</p>
+
+<h1>创建纹理</h1>
+
+<p>首先生成纹理名称,和其他OpenGL对象一样，使用glGen{}的形式返回该纹理的唯一名字mTextureId,然后通过glActiveTexture函数激活相应的纹理单元,GPU上只有有限数量的纹理单元可用于渲染:</p>
+
+<pre><code>glGenTextures(1, &amp;mTextureId);
+glActiveTexture(GL_TEXTURE0);
+</code></pre>
+
+<p>和其他OpenGL对象一样,创建一个纹理对象之后,为了操作该纹理对象,我们必须绑定该纹理对象:</p>
+
+<pre><code>glBindTexture(GL_TEXTURE_2D, mTextureId);
+</code></pre>
+
+<p>当我们绑定当前纹理之后,我们就可以对当前的纹理对象进行操作。我们通过glTexImage2D函数,向显卡内存上传指定纹理的纹理数据:</p>
+
+<pre><code>glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, imgBuf);
+</code></pre>
+
+<p>使用glTexImage2D(1D、3D)函数指定纹理的格式和数据源，并为纹理对象分配内存。不像glBufferData,glTexImage2D要求对分配内存的所有的格式信息预先提出,并且使用该方法纹理贴图的每一维的大小必须是2的幂，包括边框</p>
+
+<pre><code>void glTexImage2D(
+        GLenum target,  
+        GLint level,  
+        GLint internalformat,  
+        GLsizei width,  
+        GLsizei height,  
+        GLint border,  
+        GLenum format,  
+        GLenum type,  
+        const GLvoid * data
+    );
+</code></pre>
+
+<ul>
+<li><p>target:指定纹理单元的类型。可选择的值GL_TEXTURE_2D,GL_TEXTURE_CUBE_MAP_POSITIVE_X,GL_TEXTURE_CUBE_MAP_NEGATIVE_X,GL_TEXTURE_CUBE_MAP_POSITIVE_Y,GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,GL_TEXTURE_CUBE_MAP_POSITIVE_Z,GL_TEXTURE_CUBE_MAP_NEGATIVE_Z,这里我们使用的是2D纹理。</p></li>
+<li><p>level:指定层次细节(LOD)。一个纹理对象可能包含多个分辨率的相同图像，这些图像称作mipmap层，每个mipmap层数都有一个LOD索引，范围从0到最高分辨率。当从更低分辨率取样时可以依次从更小的&#8221;mipmaps&#8221;层次中取样。现在只有一个mipmap层，所以该值为0。</p></li>
+<li><p>internalformat:指定纹理的内部格式,internalformat参数告诉GPU每个纹理元素使用的颜色组分，以及以什么样的精度存储。可选择的值GL_ALPHA,GL_LUMINANCE,GL_LUMINANCE_ALPHA,GL_RGB,GL_RGBA.</p></li>
+<li><p>width/height:纹理的高度和宽度。宽度和高度参数指定纹理元素在s和t坐标轴上的数目。</p></li>
+<li><p>border:边界的宽度。(border参数在OpenGL ES上是废弃的并且总是应该设置为0)。</p></li>
+<li><p>format:源文件格式,源文件格式参数声明了我们的像素的组成顺序。(而且在OpenGL ES里要求和internalformat参数值相同。)</p></li>
+<li><p>type:指定数据类型。以下是OpenGL ES要求的类型,GL_UNSIGNED_BYTE,GL_UNSIGNED_SHORT_5_6_5,GL_UNSIGNED_SHORT_4_4_4_4,GL_UNSIGNED_SHORT_5_5_5_1</p></li>
+<li><p>data:纹理数据在内存中的指针</p></li>
+</ul>
+
+
+<p><strong>uniform变量</strong></p>
+
+<pre><code>glUniform1i(textureLocation,0);
+</code></pre>
+
+<p>通过uniform变量来设置纹理单元索引。<br>
+uniform变量在shader里不能被修改，只能通过外部修改其值。<br>
+使用glUniform*函数给uniform变量赋值。<br>
+函数格式:<br></p>
+
+<pre><code>glUniform{dim}{type}
+</code></pre>
+
+<ul>
+<li>dim:表示类型的大小(比如,int或float的是1，vec2是2，vec3是3，等等)</li>
+<li>type对应相应的类型：要么是i表示integer，要么是f表示float。</li>
+</ul>
+
+
+<h1>纹理过滤</h1>
+
+<p>在纹理映射过程中，纹理元素与屏幕上的像素几乎不是一一对应的。一般情况下，在把纹理映射到几何图形的表面上时，我们需要对其进行拉伸或收缩。对一个纹理贴图的拉伸或收缩来计算颜色片段的过程称为纹理过滤。</p>
+
+<pre><code>void glTexParameteri(   
+            GLenum  target,
+            GLenum pname,
+            GLint param
+        );
+</code></pre>
+
+<ul>
+<li><p>target :操作的纹理类型。GL_TEXTURE_2D(2D纹理),GL_TEXTURE_CUBE_MAP</p></li>
+<li><p>pname : 参数类型GL_TEXTURE_MIN_FILTER,GL_TEXTURE_MAG_FILTER,GL_TEXTURE_WRAP_S,GL_TEXTURE_WRAP_T</p></li>
+<li><p>param : 参数值，该参数值和具体的参数类型有关。</p></li>
+</ul>
+
+
+<p><strong>1,GL_TEXTURE_MAG_FILTER</strong></p>
+
+<pre><code>glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+</code></pre>
+
+<p>指当纹理图象被使用到一个大于它的形状上时（即：有可能纹理图象中的一个像素会被应用到实际绘制时的多个像素。例如将一幅256x256的纹理图象应用到一个512x512的正方形），应该如何处理。可选择的设置有GL_NEAREST和GL_LINEAR，前者表示“使用纹理中坐标最接近的一个像素的颜色作为需要绘制的像素颜色”，后者表示“使用纹理中坐标最接近的若干个颜色，通过加权平均算法得到需要绘制的像素颜色”。前者只经过简单比较，需要运算较少，可能速度较快，后者需要经过加权平均计算，其中涉及除法运算，可能速度较慢（但如果有专门的处理硬件，也可能两者速度相同）。从视觉效果上看，前者效果较差，在一些情况下锯齿现象明显，后者效果会较好（但如果纹理图象本身比较大，则两者在视觉效果上就会比较接近）。</p>
+
+<p><strong>2,GL_TEXTURE_MIN_FILTER</strong></p>
+
+<pre><code>glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+</code></pre>
+
+<p>指当纹理图象被使用到一个小于（或等于）它的形状上时（即有可能纹理图象中的多个像素被应用到实际绘制时的一个像素。例如将一幅256x256的纹理图象应用到一个128x128的正方形），应该如何处理。可选择的设置有:<br>
+GL_NEAREST,GL_LINEAR,GL_NEAREST_MIPMAP_NEAREST,GL_NEAREST_MIPMAP_LINEAR,GL_LINEAR_MIPMAP_NEAREST和GL_LINEAR_MIPMAP_LINEAR。其中后四个涉及到mipmap。前两个选项则和GL_TEXTURE_MAG_FILTER中的类似。此参数似乎是必须设置的（在我的计算机上，不设置此参数将得到错误的显示结果，但我目前并没有找到根据）。</p>
+
+<p><strong>3,GL_TEXTURE_WRAP_S</strong></p>
+
+<pre><code>glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP);
+</code></pre>
+
+<p>指当纹理坐标的第一维坐标值大于1.0或小于0.0时，应该如何处理。<br></p>
+
+<p>GL_CLAMP:即超过1.0的按1.0处理，不足0.0的按0.0处理。<br>
+GL_REPEAT:即对UV坐标值加上一个合适的整数（可以是正数或负数），得到一个在[0.0, 1.0]范围内的值，然后用这个值作为新的纹理坐标。</p>
+
+<p><strong>4,GL_TEXTURE_WRAP_T</strong></p>
+
+<p>与GL_TEXTURE_WRAP_S相似，指当纹理坐标的第二维坐标值大于1.0或小于0.0时，应该如何处理。</p>
+
+<h1>其他:</h1>
+
+<p>glActiveTexture:<br>
+<a href="https://www.opengl.org/sdk/docs/man2/xhtml/glActiveTexture.xml">https://www.opengl.org/sdk/docs/man2/xhtml/glActiveTexture.xml</a></p>
+
+<h1>完整代码:</h1>
+
+<p><a href="https://github.com/sbxfc/OpenGLTextureMapping">https://github.com/sbxfc/OpenGLTextureMapping</a></p>
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2014-09-11 09:58:11 +0800" pubdate>Sep 11<span>th</span>, 2014</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2015 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2014/09/11/opengl-texture-mapping';
+	var disqus_url = 'http://sbxfc.github.io/blog/2014/09/11/opengl-texture-mapping';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

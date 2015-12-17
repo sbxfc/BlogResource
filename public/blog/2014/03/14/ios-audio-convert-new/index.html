@@ -1,0 +1,216 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>iOS - Mac下音频格式转换 - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="iOS - Mac下音频格式转换 查看音频信息 首先,cd到文件所在目录下,然后输入afinfo指令查看文件信息 afinfo 李荣浩-老街.mp3 输出结果: File: 李荣浩-老街.mp3
+File type ID: MPG3
+Num Tracks: 1
+----
+Data format &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="//ajax.useso.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<link href='http://fonts.useso.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2014/03/14/ios-audio-convert-new">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">iOS - Mac下音频格式转换</h2>
+    
+  </header>
+
+  <div class="entry_content"><h1>查看音频信息</h1>
+
+<p>首先,cd到文件所在目录下,然后输入<font color='#bd260d'><strong>afinfo</strong></font>指令查看文件信息</p>
+
+<pre><code>afinfo 李荣浩-老街.mp3
+</code></pre>
+
+<p>输出结果:</p>
+
+<pre><code>File:           李荣浩-老街.mp3
+File type ID:   MPG3
+Num Tracks:     1
+----
+Data format:     2 ch,  44100 Hz, '.mp3' (0x00000000) 0 bits/channel, 0 bytes/packet, 1152 frames/packet, 0 bytes/frame
+                no channel layout.
+estimated duration: 318.824475 sec
+audio bytes: 12752979
+audio packets: 12205
+bit rate: 320000 bits per second
+packet size upper bound: 1052
+maximum packet size: 1045
+audio data file offset: 10939
+optimized
+audio 14059008 valid frames + 576 priming + 576 remainder = 14060160
+----
+</code></pre>
+
+<h1>格式转化</h1>
+
+<p>使用<font color='#bd260d'><strong>afconvert</strong></font>命令可将音频文件转化为指定格式。</p>
+
+<p>格式如下:</p>
+
+<pre><code>afconvert -d [out data format] -f [out  file format] [in file] [out file]
+</code></pre>
+
+<p>以转化IMA4压缩格式的CAF音频文件为例:（参见<a href="http://rungame.me/blog/2014/02/14/iOS-audio/">iOS首选音频格式</a>）</p>
+
+<pre><code>afconvert -d ima4 -f caff 李荣浩-老街.mp3 李荣浩-老街.caf
+</code></pre>
+
+<p>其中,<code>-d</code> 指定压缩格式,<code>-f</code> 指定文件格式</p>
+
+<h1>批量转化</h1>
+
+<p>在包含音频文件的目录下:</p>
+
+<pre><code>find . -name '*.mp3' -exec afconvert -f caff -d ima4 {} \;
+</code></pre>
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2014-03-14 10:45:07 +0800" pubdate>Mar 14<span>th</span>, 2014</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2015 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2014/03/14/ios-audio-convert-new';
+	var disqus_url = 'http://sbxfc.github.io/blog/2014/03/14/ios-audio-convert-new';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

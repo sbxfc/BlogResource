@@ -1,0 +1,417 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>Blinn-Phong 光照模型 - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="Blinn-Phong 光照模型 Blinn-Phong 光照模型 Blinn-Phong 比 Phong 光照模型更加柔和、平滑和快速。它用更少的代码实现了与Phong几乎相同的效果。 与Phong不同，Blinn-Phong光照模型没有去计算反射光线向量R, &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="//ajax.useso.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<link href='http://fonts.useso.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2014/04/24/u3d-blinn-phong">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">Blinn-Phong 光照模型</h2>
+    
+  </header>
+
+  <div class="entry_content"><blockquote><h4>Blinn-Phong 光照模型</h4></blockquote>
+
+<p>Blinn-Phong 比 Phong 光照模型更加柔和、平滑和快速。它用更少的代码实现了与Phong几乎相同的效果。</p>
+
+<p>与Phong不同，Blinn-Phong光照模型没有去计算反射光线向量R,而是取入射光线L和实现方向V的中间向量halfVector，通常也称之为半角向量。（半角向量蕴含着丰富的信息价值。）</p>
+
+<!--more-->
+
+
+<pre><code>float3 halfVector = normalize (lightDir + viewDir);
+</code></pre>
+
+<p>最后，我们简单的用顶点的法向量N去乘以新计算的半角向量，计算出一个镜面反射光的强度。</p>
+
+<pre><code>float NdotH = max (0, dot (s.Normal, halfVector));
+</code></pre>
+
+<p>贴代码:</p>
+
+<pre><code>Shader "custom/CustomBlinnPhong"
+{
+    Properties 
+    {
+        _MainTint ("Diffuse Tint", Color) = (1,1,1,1)
+        _MainTex ("Base (RGB)", 2D) = "white" {}
+        _SpecularColor ("Specular Tint", Color) = (1,1,1,1)
+        _SpecPower ("Specular Power", Range(0.1, 120)) = 3  
+    }
+
+    SubShader 
+    {
+        Tags { "RenderType"="Opaque" }
+        LOD 200
+
+        CGPROGRAM
+        #pragma surface surf CustomBlinnPhong
+
+        sampler2D _MainTex;
+        sampler2D _SpecularMask;
+        float4 _MainTint;
+        float4 _SpecularColor;
+        float _SpecPower;
+
+
+        inline fixed4 LightingCustomBlinnPhong (SurfaceOutput s, fixed3 lightDir, half3 viewDir, fixed atten)
+        {
+            float3 halfVector = normalize (lightDir + viewDir);
+
+            float diff = max (0, dot (s.Normal, lightDir));
+
+            float NdotH = max (0, dot (s.Normal, halfVector));
+            float spec = pow (NdotH, _SpecPower);
+
+            float4 c;
+            c.rgb = (s.Albedo * _LightColor0.rgb * diff) + (_LightColor0.rgb * _SpecularColor.rgb * spec) * (atten * 2);
+            c.a = s.Alpha;
+            return c;
+        }
+
+        struct Input 
+        {
+            float2 uv_MainTex;
+            float2 uv_SpecularMask;
+        };
+
+        void surf (Input IN, inout SurfaceOutput o) 
+        {
+            float4 c = tex2D (_MainTex, IN.uv_MainTex) * _MainTint;
+            o.Albedo = c.rgb;
+            o.Alpha = c.a;
+        }
+        ENDCG
+    } 
+    FallBack "Diffuse"
+}
+</code></pre>
+
+<blockquote><h4>创建基于纹理贴图的镜面反射效果</h4>
+
+<p>在反射模型计算中，添加了纹理贴图的RGB值。</p></blockquote>
+
+<p>设置属性,新增加了名为<code>_SpecularMask</code>的贴图:</p>
+
+<pre><code>_MainTint ("Diffuse Tint", Color) = (1,1,1,1)
+_MainTex ("Base (RGB)", 2D) = "white" {}
+_SpecularColor ("Specular Tint", Color) = (1,1,1,1)
+_SpecularMask ("Specular Texture", 2D) = "white" {}
+_SpecPower ("Specular Power", Range(0.1, 120)) = 3  
+</code></pre>
+
+<p>在CG代码块里声明属性:</p>
+
+<pre><code>sampler2D _MainTex;
+sampler2D _SpecularMask;
+float4 _MainTint;
+float4 _SpecularColor;
+float _SpecPower;
+</code></pre>
+
+<p>在SubShader里添加结构体<code>SurfaceCustomOutput</code>,这个是surf函数传递给光照模型的物体表面属性:</p>
+
+<pre><code>struct SurfaceCustomOutput 
+{
+    fixed3 Albedo;
+    fixed3 Normal;
+    fixed3 Emission;
+    fixed3 SpecularColor;
+    half Specular;
+    fixed Gloss;
+    fixed Alpha;
+};
+</code></pre>
+
+<p>将自定义的结构体，添加到我们的光照模型函数里,使用的Phong光照模型:(注意 s.SpecularColor 这是我们在surf函数里通过取纹理贴图取得的颜色值，并在计算中去影响镜面反射效果。)</p>
+
+<pre><code>inline fixed4 LightingCustomPhong (SurfaceCustomOutput s, fixed3 lightDir, half3 viewDir, fixed atten)
+    {
+        //Calculate diffuse and the reflection vector
+        float diff = dot(s.Normal, lightDir);
+        float3 reflectionVector = normalize(2.0 * s.Normal * diff - lightDir);
+
+        //Calculate the Phong specular
+        float spec = pow(max(0.0f,dot(reflectionVector, viewDir)), _SpecPower) * s.Specular;
+        float3 finalSpec = s.SpecularColor * spec * _SpecularColor.rgb;
+
+        //Create final color
+        fixed4 c;
+        c.rgb = (s.Albedo * _LightColor0.rgb * diff) + (_LightColor0.rgb * finalSpec);
+        c.a = s.Alpha;
+        return c;
+    }
+</code></pre>
+
+<p>修改我们shader的编译命令:</p>
+
+<pre><code>#pragma surface surf CustomPhong
+</code></pre>
+
+<p>既然，我们要使用贴图来修改镜面反射时顶点颜色的计算，所以我们要存储这张贴图的UV值。将贴图变量前面加上uv字符并放入Input结构体内来获取贴图的UV值。</p>
+
+<pre><code>struct Input 
+{
+    //Get uv information from the Input Struct
+    float2 uv_MainTex;
+    float2 uv_SpecularMask;
+};
+</code></pre>
+
+<p>最后，我们修改我们最关键的surf函数，在surf函数里，我们将我们的贴图信息传入光照模型并最终修改模型的镜面反射效果。</p>
+
+<pre><code>//模型表面贴图
+float4 c = tex2D (_MainTex, IN.uv_MainTex) * _MainTint;
+//带有镜面反射纹理的贴图
+float4 specMask = tex2D(_SpecularMask, IN.uv_SpecularMask) * _SpecularColor;
+
+//Set the parameters in the Output Struct
+o.Albedo = c.rgb;
+o.Specular = specMask.r;
+o.SpecularColor = specMask.rgb;
+o.Alpha = c.a;
+</code></pre>
+
+<p>附贴图:
+模型表面贴图:</p>
+
+<p><img src="/images/2014/4/specular_tint.jpg" alt="" /></p>
+
+<p>反射模型计算的贴图:</p>
+
+<p><img src="/images/2014/4/specular_normal.jpg" alt="" /></p>
+
+<p>最终代码:</p>
+
+<pre><code>Shader "custom/SpecularMask" 
+{
+    Properties 
+    {
+        //Set properties here so we can feed our shader information
+        //from the inspector in the editor
+        _MainTint ("Diffuse Tint", Color) = (1,1,1,1)
+        _MainTex ("Base (RGB)", 2D) = "white" {}
+        _SpecularColor ("Specular Tint", Color) = (1,1,1,1)
+        _SpecularMask ("Specular Texture", 2D) = "white" {}
+        _SpecPower ("Specular Power", Range(0.1, 120)) = 3  
+    }
+
+    SubShader 
+    {
+        Tags { "RenderType"="Opaque" }
+        LOD 200
+
+        CGPROGRAM
+        #pragma surface surf CustomPhong
+
+        //get the data from our properties block
+        sampler2D _MainTex;
+        sampler2D _SpecularMask;
+        float4 _MainTint;
+        float4 _SpecularColor;
+        float _SpecPower;
+
+        //Create a custom Output Struct
+        struct SurfaceCustomOutput 
+        {
+            fixed3 Albedo;
+            fixed3 Normal;
+            fixed3 Emission;
+            fixed3 SpecularColor;
+            half Specular;
+            fixed Gloss;
+            fixed Alpha;
+        };
+
+        inline fixed4 LightingCustomPhong (SurfaceCustomOutput s, fixed3 lightDir, half3 viewDir, fixed atten)
+        {
+            //Calculate diffuse and the reflection vector
+            float diff = dot(s.Normal, lightDir);
+            float3 reflectionVector = normalize(2.0 * s.Normal * diff - lightDir);
+
+            //Calculate the Phong specular
+            float spec = pow(max(0.0f,dot(reflectionVector, viewDir)), _SpecPower) * s.Specular;
+            float3 finalSpec = s.SpecularColor * spec * _SpecularColor.rgb;
+
+            //Create final color
+            fixed4 c;
+            c.rgb = (s.Albedo * _LightColor0.rgb * diff) + (_LightColor0.rgb * finalSpec);
+            c.a = s.Alpha;
+            return c;
+        }
+
+        struct Input 
+        {
+            //Get uv information from the Input Struct
+            float2 uv_MainTex;
+            float2 uv_SpecularMask;
+        };
+
+        void surf (Input IN, inout SurfaceCustomOutput o) 
+        {
+            //Get the color information from the textures
+            float4 c = tex2D (_MainTex, IN.uv_MainTex) * _MainTint;
+            float4 specMask = tex2D(_SpecularMask, IN.uv_SpecularMask) * _SpecularColor;
+
+            //Set the parameters in the Output Struct
+            o.Albedo = c.rgb;
+            o.Specular = specMask.r;
+            o.SpecularColor = specMask.rgb;
+            o.Alpha = c.a;
+        }
+        ENDCG
+    } 
+    FallBack "Diffuse"
+}
+</code></pre>
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2014-04-24 18:32:32 +0800" pubdate>Apr 24<span>th</span>, 2014</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2015 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2014/04/24/u3d-blinn-phong';
+	var disqus_url = 'http://sbxfc.github.io/blog/2014/04/24/u3d-blinn-phong';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

@@ -1,0 +1,268 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>iOS - Notification & Delegation - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="iOS - Notification & Delegation Notification 和 Delegation 是两种间接通信模式,二者都是MVC模式中的重要通信机制。 Notification 1）KVO : KVO是通知(Notification)的一种, &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="//ajax.useso.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<link href='http://fonts.useso.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2014/02/14/ios-notification-delegate">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">iOS - Notification & Delegation</h2>
+    
+  </header>
+
+  <div class="entry_content"><p>Notification 和 Delegation 是两种间接通信模式,二者都是MVC模式中的重要通信机制。</p>
+
+<h1>Notification</h1>
+
+<p>1）KVO : KVO是通知(Notification)的一种,主要用于MVC中Controller层和Model层之间的通信。我们知道,在MVC中Controller层可以直接访问Model里的数据,但是Model却不允许直接访问Controller。</p>
+
+<p>当Model层发生改变时,需要通知Controller去处理一些界面操作,这时就可以使用KVO。KVO是key-value observing的缩写,即当某个属性发生变化时通知它的观察者对象（observer）。</p>
+
+<pre><code>//设置观察标记
+@property (nonatomic, strong) id ageObserveToken;
+
+//设置观察者                                                  
+self.ageObserveToken = [KeyValueObserver  observeObject:person
+                         keyPath:@"age"
+                          target:self
+                        selector:@selector(ageDidChange:)
+                         options:NSKeyValueObservingOptionNew];
+</code></pre>
+
+<p>age是对象person的一个属性,当age被重新赋值时(NSKeyValueObservingOptionNew),函数ageDidChange就会触发。</p>
+
+<p>如果不再需要监听某个属性改变:</p>
+
+<pre><code>[self removeObserver:person forKeyPath:@"age"];
+</code></pre>
+
+<p>2）NSNotificationCenter 消息中心。除了KVO以外,还可以通过消息中心进行消息散发,使用方法很简单:</p>
+
+<p>在Controller上监听一个消息:</p>
+
+<pre><code>/* 
+ * 注册一个名为loginComplete的消息
+*/
+[[NSNotificationCenter defaultCenter]  addObserver:self selector:@selector(showMenu:) name:@"loginComplete" object:nil];
+</code></pre>
+
+<p>在相应的条件处罚时手动发出一条消息:</p>
+
+<pre><code>[[NSNotificationCenter defaultCenter] postNotificationName:@"loginComplete" object:nil userInfo:[NSDictionary dictionaryWithObject:@"paul" forKey:@"username"]];
+</code></pre>
+
+<p>可以取消一条订阅信息:</p>
+
+<pre><code>[[NSNotificationCenter defaultCenter] removeObserver:self];  
+</code></pre>
+
+<h1>Notification &amp;&amp; Block</h1>
+
+<pre><code>NSOperationQueue *mainQueue = [NSOperationQueue mainQueue];
+[[NSNotificationCenter defaultCenter] 
+ addObserverForName:@"loginComplete" 
+ object:nil
+ queue:mainQueue
+ usingBlock:^(NSNotification *notification)
+ {
+      NSLog(@"Notification received!");
+      NSDictionary *userInfo = notification.userInfo;
+ }];
+</code></pre>
+
+<h1>Delegation</h1>
+
+<p>除了Model层和Controller层通信模式以外,在Controller层和View层之间也有类似的通信方式。</p>
+
+<p>在Controller 和 View层,Controller可以直接访问View,而View层如果想操作Controller,需要在View和Controller之间建立一种间接的通信方式 &ndash; Delegation(代理)。</p>
+
+<p>Delegation描述了一个对象需要别人要帮它做的事情。View是那个需要被辅助的对象,而Controller为其实现相应的帮助。在这里,对象view在绘制时需要一些数据来完成,这时,他向Controller索取帮助,因为view不能直接访问Controller,所以为要为其设置一个delegate。</p>
+
+<p>首先声明一个委托协议 MyViewDelegate,并在该协议里声明需要帮助函数getSourceData:</p>
+
+<pre><code>//view.h
+@protocol MyViewDelegate
+- (NSArray*) getSourceData;  
+@end 
+</code></pre>
+
+<p>然后声明一个delegate对象(注意,这里delegate被设置成弱引用):</p>
+
+<pre><code>//view.h
+@property (nonatomic, weak) id &lt;MyViewDelegate&gt; delegate; 
+</code></pre>
+
+<p>当view进行绘制时,调用相应的函数发出通知给那些代理对象:</p>
+
+<pre><code>//view.m
+//调用委托方法
+- (void) action{
+    [self.delegate getSourceData];
+}
+</code></pre>
+
+<p>Controller 通过实现协议来完成相应的委托:</p>
+
+<pre><code>//controller.h
+@interface MyController:UIViewController &lt;MyViewDelegate&gt; { 
+
+}
+
+//controller.m
+view.delegate = self; 
+
+- (NSArray*) getSourceData{
+    //...返回数据
+}   
+</code></pre>
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2014-02-14 10:07:43 +0800" pubdate>Feb 14<span>th</span>, 2014</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2015 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2014/02/14/ios-notification-delegate';
+	var disqus_url = 'http://sbxfc.github.io/blog/2014/02/14/ios-notification-delegate';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

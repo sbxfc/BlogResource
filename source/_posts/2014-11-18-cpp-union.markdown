@@ -1,0 +1,42 @@
+---
+layout: post
+title: "C/C++ 联合体"
+date: 2014-11-18 10:58:11 +0800
+comments: true
+categories: 
+---
+联合体
+
+---
+
+当多个数据占用同一片内存,多种类型，多个对象，多个事物只取其一时,需要使用联合体。<br>联合体的大小取决于联合体中最大的变量。
+
+<!--more-->
+
+	union mval //定义联合体
+	{
+	    int n1[9];
+	    int n2;
+	    int n3;
+	};
+	
+	int main(int argc,const char * argv[])
+	{
+	    mval u;
+	    printf("0x%x\n",&u.n1);
+	    printf("0x%x\n",&u.n2);
+	    printf("0x%x\n",&u.n3);
+	    
+	    u.n2 = 1;
+	    printf("%d\n",u.n1[0]);
+	    return 0;
+	}
+    
+屏幕输出：<br>
+*0x5fbff838*<br>
+*0x5fbff838*<br>
+*0x5fbff838*<br>
+*1*<br>
+因为联合体是共用内存的,变量n2占用的内存其实就是n1[0]的地址。所以给n2赋值就是给n1数组赋值。
+
+

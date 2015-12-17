@@ -1,0 +1,288 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>Unity3D - 实现PS效果的Shader - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="Unity3D - 实现PS效果的Shader 在Photoshop里，所有编辑工具和混合模式全部是基于像素的数学运算，无论与其他任何值进行乘、除、加、减运算, 最终都会在编辑的图片上返回一个新像素。 贴图: Shader "customShader/PhotoshopLevels" { &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="//ajax.useso.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<link href='http://fonts.useso.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2014/04/15/u3d-photoshop-levels-effect">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">Unity3D - 实现PS效果的Shader</h2>
+    
+  </header>
+
+  <div class="entry_content"><p>在Photoshop里，所有编辑工具和混合模式全部是基于像素的数学运算，无论与其他任何值进行乘、除、加、减运算,  <br></p>
+
+<p>最终都会在编辑的图片上返回一个新像素。</p>
+
+<p>贴图:</p>
+
+<p><img src="/images/2014/4/photoshop_levels_effect.jpg" alt="photoshop_levels_effect.jpg" /></p>
+
+<pre><code>Shader "customShader/PhotoshopLevels" 
+{
+    Properties 
+    {
+        _MainTex ("Base (RGB)", 2D) = "white" {}
+
+        //Add the Input Levels Values
+        _inBlack ("Input Black", Range(0, 255)) = 0
+        _inGamma ("Input Gamma", Range(0, 2)) = 1.61
+        _inWhite ("Input White", Range(0, 255)) = 255
+
+        //Add the Output Levels
+        _outWhite ("Output White", Range(0, 255)) = 255
+        _outBlack ("Output Black", Range(0, 255)) = 0
+    }
+
+    SubShader 
+    {
+        Tags { "RenderType"="Opaque" }
+        LOD 200
+
+        CGPROGRAM
+        #pragma surface surf Lambert
+
+        sampler2D _MainTex;
+
+        //Add these variables
+        //to the CGPROGRAM
+        float _inBlack;
+        float _inGamma;
+        float _inWhite;
+        float _outWhite;
+        float _outBlack;
+
+        struct Input 
+        {
+            float2 uv_MainTex;
+        };
+
+        //调整色阶
+        float GetPixelLevel(float pixelColor)
+        {
+            float pixelResult;
+            pixelResult = (pixelColor * 255.0);
+            pixelResult = max(0, pixelResult - _inBlack);
+            pixelResult = saturate(pow(pixelResult / (_inWhite - _inBlack), _inGamma));
+            pixelResult = (pixelResult * (_outWhite - _outBlack) + _outBlack)/255.0;    
+            return pixelResult;
+        }
+
+
+        void surf (Input IN, inout SurfaceOutput o) 
+        {
+            half4 c = tex2D (_MainTex, IN.uv_MainTex);
+
+            float outRPixel  = GetPixelLevel(c.r);
+            float outGPixel  = GetPixelLevel(c.g);
+            float outBPixel  = GetPixelLevel(c.b);
+
+            //调整RGB通道后的颜色值    
+            o.Albedo = float3(outRPixel,outGPixel,outBPixel);
+            o.Alpha = c.a;
+        }
+        ENDCG
+    } 
+    FallBack "Diffuse"
+}
+</code></pre>
+
+<p>设置一些可控的变量,我们可以在操作面板对其做出修改:</p>
+
+<pre><code>_inBlack ("Input Black", Range(0, 255)) = 0
+_inGamma ("Input Gamma", Range(0, 2)) = 1.61
+_inWhite ("Input White", Range(0, 255)) = 255
+
+//Add the Output Levels
+_outWhite ("Output White", Range(0, 255)) = 255
+_outBlack ("Output Black", Range(0, 255)) = 0
+</code></pre>
+
+<p>tex2D函数取得贴图的UV值</p>
+
+<pre><code>                half4 c = tex2D (_MainTex, IN.uv_MainTex);
+</code></pre>
+
+<p>然后对每个像素的RGB通道的值做调整:</p>
+
+<pre><code>float outRPixel  = GetPixelLevel(c.r);
+float outGPixel  = GetPixelLevel(c.g);
+float outBPixel  = GetPixelLevel(c.b);
+</code></pre>
+
+<p>关键是重新获取像素的函数GetPixelLevel,我们传入一个像素值，然后返回一个调整后的像素：</p>
+
+<pre><code>float GetPixelLevel(float pixelColor)
+</code></pre>
+
+<p>其中，下面的代码将通道的值[0,1]，转化为32位的计算机二进制颜色取值区间[0,255]</p>
+
+<pre><code>pixelResult = (pixelColor * 255.0);
+</code></pre>
+
+<p>减去_inBlack属性，让该通道像素变暗,并且确保该值不小于0</p>
+
+<pre><code>pixelResult = max(0, pixelResult - _inBlack);
+</code></pre>
+
+<p>将修改后的像素值，除以一个计算后（<em>inWhite &ndash; </em>inBlack）的新<em>inWhite值，这样能够提升像素值，并让该像素更亮。<br>
+然后，计算将计算结果进行</em>inGamma次幂运算，移除中间值(midpoit)。最后利用saturate函数，将其压缩到区间[0,1]</p>
+
+<pre><code>pixelResult = saturate(pow(pixelResult / (_inWhite - _inBlack), _inGamma));
+</code></pre>
+
+<p>最后，再次修改像素值,让最终输出结果的最大像素，最小像素可控。然后除以 255 转化为区间[0,1]</p>
+
+<pre><code>pixelResult = (pixelResult * (_outWhite - _outBlack) + _outBlack)/255.0;    
+</code></pre>
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2014-04-15 19:10:23 +0800" pubdate>Apr 15<span>th</span>, 2014</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2015 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2014/04/15/u3d-photoshop-levels-effect';
+	var disqus_url = 'http://sbxfc.github.io/blog/2014/04/15/u3d-photoshop-levels-effect';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

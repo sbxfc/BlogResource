@@ -1,0 +1,230 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>iOS - NSArray - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="iOS - NSArray NSArray 和其子类 NSMutableArray 是iOS里用来存储有序对象的集合。其中,前者是不可变数的并且是线程安全的,可以同时在多个线程中迭代。 NSMutableArray是可变的,你可以随时添加和删除里面的元素。 初始化一个NSMutableArray &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="//ajax.useso.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<link href='http://fonts.useso.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2014/02/27/ios-array">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">iOS - NSArray</h2>
+    
+  </header>
+
+  <div class="entry_content"><p>NSArray 和其子类 NSMutableArray 是iOS里用来存储有序对象的集合。其中,前者是不可变数的<font color="#bd260d"><strong>并且是线程安全的,</strong></font>可以同时在多个线程中迭代。 NSMutableArray是可变的,你可以随时添加和删除里面的元素。</p>
+
+<h1>初始化一个NSMutableArray</h1>
+
+<p>1,通过已有数组数据进行初始化</p>
+
+<pre><code>NSMutableArray *mutableObjects = [array mutableCopy] ?: [NSMutableArray array];
+</code></pre>
+
+<p>2.使用arrayWithArray:初始化,无论参数 array 是否为空都会返回一个非空对象:</p>
+
+<pre><code>NSMutableArray *mutableObjects = [NSMutableArray arrayWithArray:array];
+</code></pre>
+
+<h1>排序</h1>
+
+<p>一,第一种方式是使用 <font color="#bd260d"><strong>NSSortDescriptor:</strong></font></p>
+
+<p>在使用 NSSortDescriptor 排序时,如果你的排序对象使用 <font color="#bd260d"><strong>@property、@synthesize</strong></font>来创建包含存取方法的成员变量</p>
+
+<pre><code>@property (nonatomic,copy) NSString* property;
+</code></pre>
+
+<p>此时,你的排序对象是 <font color="#bd260d"><strong>_property</strong></font>。 @property、@synthesize会为你隐式的创建存取方法和变量_property</p>
+
+<pre><code>- (NSString*) property {
+        return _property;
+}
+
+- (void) setProperty: (NSString*) newValue {
+    _property = newValue;
+}
+</code></pre>
+
+<p>指定排序对象_property:</p>
+
+<pre><code>NSSortDescriptor *sorterSex = [NSSortDescriptor sortDescriptorWithKey:@"_sex" ascending:YES];
+NSSortDescriptor *sorterAge = [NSSortDescriptor sortDescriptorWithKey:@"_age" ascending:NO];
+NSArray *descriptor = [NSArray arrayWithObjects:sorterAge,sorterAge,nil];
+family = [family sortedArrayUsingDescriptors: descriptor];
+</code></pre>
+
+<p>在上面代码中,性别0代指女性,1代指男性。我们选择了升序排列(ascending:YES),即女性(sex == 0)排列在前的规则。同时,我们把sorterSex作为第一个元素放入描述数组descriptor里,这样,sorterSex会比sorterAge排序优先:</p>
+
+<pre><code>[NSArray arrayWithObjects:sorterSex,sorterAge,nil];
+</code></pre>
+
+<p>二,使用<font color="#bd260d"><strong>Block</strong></font></p>
+
+<pre><code>family = [family sortedArrayUsingComparator:^(Person* obj1, Person* obj2)
+{
+    if([obj1.name isEqualToString:@"SJJ"]){
+        //把SJJ排在第一位
+        return (NSComparisonResult)NSOrderedAscending;
+    }
+    else if(obj1.age &gt; obj2.age){
+        //把年龄大的排在前面
+        return (NSComparisonResult)NSOrderedAscending;
+    }
+    else if(obj1.sex == 1){
+        //把男性排在后面
+        return (NSComparisonResult)NSOrderedDescending;
+    }
+
+    return (NSComparisonResult)NSOrderedAscending;
+}];
+</code></pre>
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2014-02-27 09:41:48 +0800" pubdate>Feb 27<span>th</span>, 2014</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2015 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2014/02/27/ios-array';
+	var disqus_url = 'http://sbxfc.github.io/blog/2014/02/27/ios-array';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

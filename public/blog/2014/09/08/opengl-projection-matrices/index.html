@@ -1,0 +1,204 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>OpenGL - 透视投影 - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="OpenGL - 透视投影 我们知道,在计算机中3D场景本身并非真实存在的,而是通过一系列的数据来模拟出来的效果,最终通过渲染将它隐射到屏幕上。这就类似于绘画时,我们在脑子里虚构了一个场景，然后通过一些技巧,比如近大远小等等将它跃然纸上。 如果使用过一段时间的3D引擎,我们就会知道相机这个东西。 &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="//ajax.useso.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<link href='http://fonts.useso.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2014/09/08/opengl-projection-matrices">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">OpenGL - 透视投影</h2>
+    
+  </header>
+
+  <div class="entry_content"><p>我们知道,在计算机中3D场景本身并非真实存在的,而是通过一系列的数据来模拟出来的效果,最终通过渲染将它隐射到屏幕上。这就类似于绘画时,我们在脑子里虚构了一个场景，然后通过一些技巧,比如近大远小等等将它跃然纸上。</p>
+
+<p>如果使用过一段时间的3D引擎,我们就会知道相机这个东西。实际上相机并非真实存在的,像其他术语一样,它是人们为了模拟3D世界上的一个观察点而形象地设置的一个概念。在3D绘制中有透视相机和平行相机,他们对应的分别是透视投影和正交投影。</p>
+
+<p>参见: <a href="http://rungame.me/blog/2014/05/12/u3d-projection/">http://rungame.me/blog/2014/05/12/u3d-projection/</a></p>
+
+<h1>透视</h1>
+
+<p>在OpenGL里,默认以原点为相机的观察点,沿着z轴的负方向来来绘制x、y、z坐标范围为[-1,1]的场景内容（在一些引擎里坐标系可能远大于[-1,1],但最终都要通过矩阵转化为[-1,1]这个坐标系）。</p>
+
+<p>但是,我们习惯以原点为中心点来构建场景,这样相机就与场景就重合了,导致什么也看不到。所以,我们要想方设法把相机转移到一个远离场景的位置。使用glm库的lookAt的函数可以改变相机的位置。</p>
+
+<pre><code>glm::lookAt(glm::vec3 const &amp; eye,     //相机位置
+            glm::vec3 const &amp; center,   //相机观察的点
+            glm::vec3 const &amp; up);       //世界的朝上方向,没有特殊情况填(0,1,0)
+</code></pre>
+
+<p>看到这个函数,我们也就能知道到需要怎么做了,因为场景在原点所以观察点的位置center应该是(0,0,0)。而相机的位置eye需要设置一个远离(0,0,0)点的位置,比如在正上方(0.0f,0.0f,3.0f)。</p>
+
+<pre><code>glm::lookAt(glm::vec3(0.0f,0.0f,3.0f),
+            glm::vec3(0,0,0),
+            glm::vec3(0,1,0));
+</code></pre>
+
+<p><strong>需要注意的是,在3D世界里,我们想观察一座山时,我们不是改变相机位置而是通过改变山的位置。lookAt函数的原理也是如此,lookAt函数通过一系列的矩阵转换(具体就是translate和rotate)将3D空间的世界进行转换从而让相机能观察到。</strong></p>
+
+<p>在真实世界中,人在观察物体时通常会有“近大远小”的感觉，而在透视相机里通过perspective矩阵模拟了该效果。perpective函数设置了一个四方锥，并将靠近四方锥近面的物体变大，而靠近底面的物体变小,最后转化为一个x、y、z的范围为[-1,1]的立方体。(参见:<a href="http://rungame.me/blog/2014/05/12/u3d-projection/">http://rungame.me/blog/2014/05/12/u3d-projection/</a>)</p>
+
+<pre><code>glm::mat4 perspective(float fovy,        //张角角度
+                        float aspect,     //视口比例为屏幕宽高比
+                        float zNear,      //近平面距离
+                        float zFar);      //远平面距离
+</code></pre>
+
+<p>我们在实例里添加了一个通过AD键来控制模型旋转的矩阵Model。</p>
+
+<h1>完整代码</h1>
+
+<p>接上一部分代码,加入了投影、视图转换,并设置<code>A</code> <code>D</code>键控制旋转</p>
+
+<p><a href="https://github.com/sbxfc/OpenGLProjectionMatrices">https://github.com/sbxfc/OpenGLProjectionMatrices</a></p>
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2014-09-08 15:42:32 +0800" pubdate>Sep 8<span>th</span>, 2014</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2015 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2014/09/08/opengl-projection-matrices';
+	var disqus_url = 'http://sbxfc.github.io/blog/2014/09/08/opengl-projection-matrices';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

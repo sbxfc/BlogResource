@@ -1,0 +1,188 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>Javascript - 基于Prototype的对象结构 - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="Javascript - 基于Prototype的对象结构 Javascript是基于Prototype的编程语言,而非我们熟悉的基于Class的编程语言。 在Javascript里,当我们new一个对象实例时,该对象的Prototype属性会被实例继承, &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="//ajax.useso.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<link href='http://fonts.useso.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2015/12/03/js-prototype">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">Javascript - 基于Prototype的对象结构</h2>
+    
+  </header>
+
+  <div class="entry_content"><p>Javascript是基于Prototype的编程语言,而非我们熟悉的基于Class的编程语言。</p>
+
+<p>在Javascript里,当我们new一个对象实例时,该对象的Prototype属性会被实例继承,但是Prototype和实例之间是引用关系。</p>
+
+<p>当我们为实例对象的一个属性赋值时实际上并不是对Prototype里的属性进行修改,而是在实例上设置一个新属性。当程序访问该实例上的属性时,编译器会首先搜索实例自身的属性(即新添加的属性),如果没找到才会去搜索其继承的Prototype上的值:</p>
+
+<pre><code>function Person{}
+Person.prototype.name = "ss";
+
+var p = new Person();
+//p身上没有name属性,转而去Person身上找
+console.log(p.name);
+
+//该name属性非Person上的name属性
+p.name = "p";
+console.log(p.name);
+</code></pre>
+
+<h1>参见:</h1>
+
+<ul>
+<li><a href="http://www.ruanyifeng.com/blog/2010/05/object-oriented_javascript_encapsulation.html">http://www.ruanyifeng.com/blog/2010/05/object-oriented_javascript_encapsulation.html</a></li>
+<li><a href="http://www.cnblogs.com/mindsbook/archive/2009/09/19/javascriptYouMustKnowPrototype.html">http://www.cnblogs.com/mindsbook/archive/2009/09/19/javascriptYouMustKnowPrototype.html</a></li>
+</ul>
+
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2015-12-03 18:11:18 +0800" pubdate>Dec 3<span>rd</span>, 2015</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2015 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2015/12/03/js-prototype';
+	var disqus_url = 'http://sbxfc.github.io/blog/2015/12/03/js-prototype';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

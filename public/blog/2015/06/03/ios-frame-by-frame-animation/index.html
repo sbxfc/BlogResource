@@ -1,0 +1,201 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>iOS - 帧时长可控的逐帧动画 - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="iOS - 帧时长可控的逐帧动画 UIImageView组件可以通过设置 animationImages、anmiamtionDurations 等参数来实现逐帧动画。 但是,如果我们想单独改变某一帧的播放时间,通过UIImageView现有的API却不能实现。那么, &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="//ajax.useso.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<link href='http://fonts.useso.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2015/06/03/ios-frame-by-frame-animation">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">iOS - 帧时长可控的逐帧动画</h2>
+    
+  </header>
+
+  <div class="entry_content"><p>UIImageView组件可以通过设置 animationImages、anmiamtionDurations 等参数来实现逐帧动画。 但是,如果我们想单独改变某一帧的播放时间,通过UIImageView现有的API却不能实现。那么,我们就会考虑自己定义一个这样的逐帧动画。</p>
+
+<p>当你选择诸如 <font color="#bd260d"><strong>CADisplayLink</strong></font> 、 <font color="#bd260d"><strong>NSTimer</strong></font>等时间驱动来绘制这样的的动画时,很可能会遇到一个问题。当这样的动画在同一个界面被大量使用时,会带来不小的CPU消耗、甚至是帧阻塞问题。通常情况下 UIView动画 或者 CAAnimation 驱动的动画任务几乎不受系统影响。所以,我们可以选择用 UIView 或 CAAnimation 等来封装我们的自定义动画。</p>
+
+<p>实际上,UIImageView动画本身就是一个封装了传统动画API的image view。其实现方式是通过修改image view在layer上的contents属性来完成动画播放的:</p>
+
+<!-- more -->
+
+
+<pre><code>&lt;CAKeyframeAnimation:0x8e5b020; 
+    removedOnCompletion = 0; 
+    delegate = &lt;_UIImageViewExtendedStorage: 0x8e49230&gt;; 
+    duration = 2.5; 
+    repeatCount = 2.14748e+09; 
+    calculationMode = discrete; 
+    values = (
+        "&lt;CGImage 0x8d6ce80&gt;",
+        "&lt;CGImage 0x8d6d2d0&gt;",
+        "&lt;CGImage 0x8d5cd30&gt;"
+    ); 
+    keyPath = contents
+&gt;
+</code></pre>
+
+<p>所以,我们可以通过修改contents来实现自定义动画。创建一个CAKeyframeAnimation动画,设置 keyTimes 来控制每帧时长。keyTimes里的元素表示每帧图片出现在动画总时长duration里的相对位置,其取值为区间[0,1]上的比例值。且 keyTimes 里元素个数要比values值多1个,使循环播放时首尾帧动画可以衔接起来。</p>
+
+<pre><code>CAKeyframeAnimation *animation = [CAKeyframeAnimation animationWithKeyPath:@"contents"];
+animation.calculationMode = kCAAnimationDiscrete;
+animation.keyTimes = keyTimes;
+animation.values = images;
+animation.duration = 7.0f;
+animation.repeatCount = HUGE_VAL;
+[imageView.layer addAnimation:animation forKey:nil];   
+</code></pre>
+
+<h1>代码</h1>
+
+<p><a href="https://github.com/sbxfc/FrameByFrameAnimation">https://github.com/sbxfc/FrameByFrameAnimation</a></p>
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2015-06-03 10:12:57 +0800" pubdate>Jun 3<span>rd</span>, 2015</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2015 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2015/06/03/ios-frame-by-frame-animation';
+	var disqus_url = 'http://sbxfc.github.io/blog/2015/06/03/ios-frame-by-frame-animation';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

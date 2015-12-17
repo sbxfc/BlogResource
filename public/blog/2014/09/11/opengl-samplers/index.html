@@ -1,0 +1,194 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>OpenGL - 采样器 - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="OpenGL - 采样器 采样器是OpenGL 3.3中加入的特性。
+在此之前,当你使用同一张纹理但过滤方式不同时,你需要创建两个不同的纹理对象,然后分别设置不同的过滤。
+使用采样器之后,你可以将过滤等属性设置绑定到一个特定的采样器上，然后在使用纹理时,绑定与相应的采样器绑定即可。 一, &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="//ajax.useso.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<link href='http://fonts.useso.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2014/09/11/opengl-samplers">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">OpenGL - 采样器</h2>
+    
+  </header>
+
+  <div class="entry_content"><p>采样器是OpenGL 3.3中加入的特性。<br>
+在此之前,当你使用同一张纹理但过滤方式不同时,你需要创建两个不同的纹理对象,然后分别设置不同的过滤。
+使用采样器之后,你可以将过滤等属性设置绑定到一个特定的采样器上，然后在使用纹理时,绑定与相应的采样器绑定即可。</p>
+
+<p>一,定义并设置采样器:</p>
+
+<pre><code>glGenSamplers(1,&amp;g_Sampler1);
+glSamplerParameteri(g_Sampler1, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+glSamplerParameteri(g_Sampler1, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+</code></pre>
+
+<p>二,使用时与纹理绑定:</p>
+
+<pre><code>glActiveTexture(GL_TEXTURE0);
+glEnable(GL_TEXTURE_2D);
+glBindTexture(GL_TEXTURE_2D, g_texture1);
+glUniform1i(textureLocation1, 0);
+glBindSampler(0, g_Sampler1);
+</code></pre>
+
+<p><em>PS.采样器只设定过滤，寻址模式等属性。</em></p>
+
+<h1>完整代码:</h1>
+
+<ul>
+<li><p><a href="http://rungame.me/blog/2014/09/11/opengl-texture-mapping/">OpenGL-纹理映射</a></p></li>
+<li><p><a href="https://github.com/sbxfc/OpenGLSamplers">https://github.com/sbxfc/OpenGLSamplers</a></p></li>
+</ul>
+
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2014-09-11 15:53:26 +0800" pubdate>Sep 11<span>th</span>, 2014</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2015 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2014/09/11/opengl-samplers';
+	var disqus_url = 'http://sbxfc.github.io/blog/2014/09/11/opengl-samplers';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

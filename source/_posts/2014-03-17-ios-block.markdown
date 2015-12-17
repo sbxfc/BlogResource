@@ -1,0 +1,157 @@
+---
+layout: post
+title: "iOS - Block"
+date: 2014-03-17 15:21:33 +0800
+comments: true
+categories: 
+---
+
+Block是一个C语言语法以及运行时的一个特性,和标准C中的函数（函数指针）类似。但是其运行需要编译器和运行时支持,2010年发布iOS4时Apple开始支持Block。
+
+	int multiplier = 7;
+	int (^myBlock)(int) = ^(int num) {
+    	return num * multiplier;
+	};
+
+这是一段简单的Block程序。符号<font color="#bd260d">**^**</font>声明了一个名为myBlock的Block,它的左侧定义了该Block的返回值类型为int,<font color="#bd260d">**^**</font>右侧表示传入参数也是int类型。<font color="#bd260d">**=**</font>的右侧是myBlock主体的部分。<font color="#bd260d">**^(int num)**</font>设置一个名为num的传入参数。<font color="#bd260d">**{}**</font>包含的部分是block主体,该Block返回了一个乘积值。最后,整个Block以<font color="#bd260d">**;**</font>结束。
+
+myBlock的结构:
+
+![Blocks](/images/2014/3/blocks.jpg)
+
+<font color="#bd260d">**Block 可以访问同一域下的局部变量 multiplier 。但需要注意的是,虽然可以访问 multiplier 的引用但却不能对其做处理。**</font>
+
+
+#把Block当变量使用
+
+
+	int multiplier = 7;
+	int (^myBlock)(int) = ^(int num) {
+    	return num * multiplier;
+	};
+ 
+	printf("%d", myBlock(3));
+	// prints "21"
+
+
+
+# 直接使用Block
+
+你也可以不直接声明Block而直接使用定义部分。
+
+	char *myCharacters[3] = { "TomJohn", "George", "Charles Condomine" };
+ 
+	qsort_b(myCharacters, 3, sizeof(char *), ^(const void *l, const void *r) 	{
+    	char *left = *(char **)l;
+    	char *right = *(char **)r;
+    	return strncmp(left, right, 1);
+	});
+ 
+	// myCharacters is now { "Charles Condomine", "George", "TomJohn" }
+
+示例代码中,以`^`开始,剩下了Block的定义部分。  
+
+qsort_b与标准的qsort_r方法类似,区别在于qsort_b以Block为参数。  
+
+#在Cocoa中使用Block
+
+Cocoa Frameworks里很多用到了Block。  
+
+下面示例是NSArray在排序中对Block的使用:
+Block接收两个参数并返回一个NSComparator类型的比较结果。
+
+	NSArray *stringsArray = @[ @"string 1",
+                           @"String 21",
+                           @"string 12",
+                           @"String 11",
+                           @"String 02" ];
+
+	static NSStringCompareOptions comparisonOptions = NSCaseInsensitiveSearch | NSNumericSearch |
+        NSWidthInsensitiveSearch | NSForcedOrderingSearch;
+	NSLocale *currentLocale = [NSLocale currentLocale];
+ 	
+ 	//比较数组中的两个String对象，这里用到了Block。
+	NSComparator finderSortBlock = ^(id string1, id string2) {
+ 
+    	NSRange string1Range = NSMakeRange(0, [string1 length]);
+    	return [string1 compare:string2 options:comparisonOptions range:string1Range locale:currentLocale];
+	};
+ 
+	NSArray *finderSortArray = [stringsArray sortedArrayUsingComparator:finderSortBlock];
+	NSLog(@"finderSortArray: %@", finderSortArray);
+ 
+	/*
+	Output:
+	finderSortArray: (
+    	"string 1",
+    	"String 02",
+   	 	"String 11",
+    	"string 12",
+    	"String 21"
+	)
+	*/
+	
+**NOTE:**  
+	
+string1是数组里的元素，所以不会存在nil的情况。  </br>若一个值为nil的string1,根据Objective-C的消息调用规则，对nil发送的任何消息，都会得到nil的空指针,而它代表的值就是0,与NSOrderedSame的值相等。所以下列判断就会出问题。
+	
+	if ([string1 compare:@"some text"] == NSOrderedSame) {
+        // Do something
+    }
+    else {
+        // Do something else
+    }
+    
+正确写法:
+	
+	if (string1 != nill && [string1 compare:@"some text"] == NSOrderedSame) {
+        // Do something
+    }
+    else {
+        // Do something else
+    }
+    
+#局部变量声明 __block
+
+在上面的事例的基础上，我们增加一个整形的计数变量orderedSameCount，变量以__block声明。当该声明的局部变量在Block内发生变化时，外部的变量值也发生变化。
+
+	NSArray *stringsArray = @[ @"string 1",
+                          @"String 21", // <-
+                          @"string 12",
+                          @"String 11",
+                          @"Strîng 21", // <-
+                          @"Striñg 21", // <-
+                          @"String 02" ];
+ 
+	NSLocale *currentLocale = [NSLocale currentLocale];
+	__block NSUInteger orderedSameCount = 0;
+ 
+	NSArray *diacriticInsensitiveSortArray = [stringsArray sortedArrayUsingComparator:^(id string1, id string2) {
+ 
+    	NSRange string1Range = NSMakeRange(0, [string1 length]);
+    	NSComparisonResult comparisonResult = [string1 compare:string2 options:NSDiacriticInsensitiveSearch range:string1Range locale:currentLocale];
+ 
+    	if (comparisonResult == NSOrderedSame) {
+        	orderedSameCount++;
+    	}
+    	return comparisonResult;
+	}];
+ 
+	NSLog(@"diacriticInsensitiveSortArray: %@", diacriticInsensitiveSortArray);
+	NSLog(@"orderedSameCount: %d", orderedSameCount);
+ 
+	/*
+	Output:
+ 
+	diacriticInsensitiveSortArray: (
+    	"String 02",
+    	"string 1",
+    	"String 11",
+    	"string 12",
+    	"String 21",
+    	"Str\U00eeng 21",
+    	"Stri\U00f1g 21"
+	)
+	orderedSameCount: 2
+	*/
+

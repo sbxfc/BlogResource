@@ -1,0 +1,68 @@
+---
+layout: post
+title: "TCP套接字服务器 网络通信(四)"
+date: 2015-02-03 18:45:26 +0800
+comments: true
+categories: 
+---
+
+TCP套接字服务器
+---
+----
+
+和客户端一样,socket服务器通过调用socket函数创建套接口,指定期望的通信协议和套接字类型。
+	
+	SOCKET ServerSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+
+	if (ServerSocket == INVALID_SOCKET)
+	{
+		cout << "创建套接字失败!::" << GetLastError() << endl;
+		return -1;
+	}
+<!--more-->
+
+bind函数
+---
+----
+bind函数把一个本地协议地址赋予一个套接字。对于网际网协议,协议地址是32位的IPv4地址或128位的IPv6地址与16位的TCP或UDP端口号的组合。
+	
+	#include <sys/socket.h>
+	int bind(int sockfd,const struct sockaddr *myaddr,socklen_t addrlen);//返回：若成功则为0，若出错则为-1
+	
+历史上讲述bind函数的手册页面曾说"bind assigns a name to an unnamed socket(bind 函数为一个无名的套接字命名)"。使用“name”一词易于让人混淆，因为它具有诸如fool.boy.com之类域名的含义.bind函数其实与名字没有任何关系.它只是把一个协议地址赋予一个套接字，至于协议地址的含义则取决于协议本身。
+
+第二个参数是一个指向特定于协议地址结构的指针，第三个参数是该地址结构的长度。对于TCP,调用bind函数可以指定一个端口号，或指定一个IP地址，也可以两者都指定，还可以都不指定。
+
+- 服务器在启动时捆绑他们的众所周知的端口。如果一个TCP客户端或服务器未调用bind绑定一个端口，当调用connect或listen时，内核就要为相应的套接字选择一个临时端口。让内核来选择临时端口对于TCP客户端来说是正常的，除非应用程序需要一个预留端口。然而对于TCP服务器来说却极为罕见，因为服务器是通过它们的众所周知的端口被大家认识的。
+
+- 进程可以把一个特定的IP地址捆绑到它的套接字上，不过这个IP地址必须属于其所在主机的网络接口之一。对于TCP客户，这就为该套接字上发送的IP数据报指派了源IP地址。对于TCP服务器，这就限定该套接字只能接受那些目的地为这个IP地址的客户端连接。TCP客户端通常不把IP地址捆绑到它的套接字上。当连接套接字时，内核将根据所用外出网络接口来选择源IP地址,而所用外出接口则取决于所到达服务器所需的路径。如果TCP服务器没有把IP地址捆绑到它的套接字上，内核就把客户端发送的SYN的目的IP地址作为服务器的源IP地址。
+
+listen函数
+---
+---
+listen函数仅由TCP服务器调用,它做两件事情。
+
+1. 当socket函数创建一个套接字时，它被假设为一个主动套接字，也就是说，它是一个将调用connect发起连接的客户端套接字。listen函数把一个未连接的套接字转换成一个被动套接字，指示内核应该接受指向该套接字的连接请求。
+
+2. 本函数的第二个参数规定了内核应该为相应套接字排队的最大连接个数。
+
+	int listen(int sockfd,int baacklog);
+
+本函数通常应该在调用socket和bind这两个函数之后,并在调用accept之前调用。  
+
+accept函数
+---
+---
+
+accept函数由TCP服务器调用,用于从已完成连接队列头返回下一个已完成连接。如果已完成连接为空，那么进程被投入睡眠（假定套接字默认是阻塞方式）。
+
+
+	int accept(int sockfd,struct sockaddr* cliaddr,socket_len * addrlen);//返回：若成功返回非负描述符，若出错则为-1
+
+参数 cliaddr和addrlen用来返回已连接的对端进程的协议地址。addrlen是值-结果参数：调用前，我们将有*addrlen所引用的整数值置为由cliaddr所指的套接字地址结构的长度，返回时，该值即为由内核存放在该套接字地址结构内的确切字节数。
+
+如果accept成功，那么其返回值是由内核自动生成的一个全新的描述符。
+
+完整代码(vs2013):<br>
+<https://github.com/sbxNetwork/TCPSocketServer>
+	

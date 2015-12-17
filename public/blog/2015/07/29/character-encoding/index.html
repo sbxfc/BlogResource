@@ -1,0 +1,387 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>字符集及编码 - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="字符集及编码 计算机是二进制设备,并且识别的数据也是二进制格式。我们常用的字符、数字或者标点最终都要被转化成二进制的形式。一个char类型的数字1在内存里的存储: —————————————————
+|0|0|0|0|0|0|0|1|
+————————————————— &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="//ajax.useso.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<link href='http://fonts.useso.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2015/07/29/character-encoding">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">字符集及编码</h2>
+    
+  </header>
+
+  <div class="entry_content"><p>计算机是二进制设备,并且识别的数据也是二进制格式。我们常用的字符、数字或者标点最终都要被转化成二进制的形式。一个char类型的数字1在内存里的存储:</p>
+
+<pre><code>—————————————————
+|0|0|0|0|0|0|0|1|
+—————————————————
+</code></pre>
+
+<p>计算机处理二进制的形式的数据,但是我们使用计算机去工作或娱乐的时候很难追踪到二进制的影子。我们看到的是大量的文字、图片、甚至是影像等。这中间发生了什么呢？</p>
+
+<h1>前人的智慧</h1>
+
+<p>最初人们发明了无线电电报,并通过点(.)、划(&ndash;)和中间停顿将每个字符和标点符号彼此的发送出去。&#8221;滴&#8221; 和 &ldquo;嗒&rdquo; 分别代指点和划。比如字母‘X’对应的组合就是:</p>
+
+<pre><code>- . . -
+</code></pre>
+
+<p>单词之间使用小停顿,一个句子之间使用大停顿。这种把字符用可变长度的信号表示的编码方式称为莫尔斯电码。</p>
+
+<h1>ASCII</h1>
+
+<p>到了计算机时代,因为计算只识别&#8221;0&#8221;或&#8221;1&#8221;这两种数据,这很类似于莫尔斯电码里的点和划。于是,人们借鉴莫尔斯电码用8位的&#8221;0&#8221;和&#8221;1&#8221;的不同组合来表示英文中出现的26个小写字母、26个大些字母、英式符号、0-9的阿拉伯数字以及计算机终端的特殊动作,这就是ASCII码。</p>
+
+<p>大写的‘X’对应的ASCII码:</p>
+
+<pre><code>—————————————————
+|0|1|0|1|1|0|0|0|  = ‘X’
+—————————————————
+</code></pre>
+
+<p>字母&#8217;X&#8217;就是一个字符,而54个大小写字母、英式符号以及10个阿拉伯数字就是ASCII的字符集,&lsquo;0101 1000&#8217;这种八个字节的数据就是ASCII的编码。除此之外,还有几个概念。比如,还有一些概念:</p>
+
+<ul>
+<li>比特(bit) : 也可称为&#8221;位&#8221;,是计算机信息中的最小单位,是 binary digit(二进制数位)的缩写,指二进制中的一位。</li>
+<li>字节(byte): 计算机中信息计量的一种单位,一个位就代表&#8221;0&#8221;或&#8221;1&#8221;,每8个位(bit)组成一个字节(byte)</li>
+<li>字符(Character):文字与符号的总称,可以是各个国家的文字、标点符号、图形符号、数字等。</li>
+<li>字符集(Character
+Set):是多个字符的集合</li>
+<li>编码(Encoding):信息从一种形式或格式转换为另一种形式的过程</li>
+<li>字符编码(Character Encoding): 按照何种规则存储字符</li>
+</ul>
+
+
+<p>8位(bit)总共有2的8次方,256种不同的组合。而ASCII码只用到了128种,刚好占了后7位。</p>
+
+<h1>EASCII &amp; ANSI编码</h1>
+
+<p>最初计算机只在美国使用,这些字符显然足够用了。但是后来,计算机传到了欧洲各国,为了支持本国语言他们将后面128种没有使用到的字节编入本国的文字和符号。比如法国的 é 对应的编码为130(1000 0010)</p>
+
+<p>但是,这里又出现了新的问题。不同的国家有不同的字母,因此,哪怕它们都使用256个符号的编码方式,代表的字母却不一样。比如,
+130在法语编码中代表了é,在希伯来语编码中却代表了字母Gimel
+但是不管怎样,所有这些编码方式中,0&mdash;127表示的符号是一样的,不一样的只是128&mdash;255的这一段。
+EASCII由此应运而生,EASCII码比ASCII码扩充出来的符号包括表格符号、计算符号、希腊字母和特殊的拉丁符号。</p>
+
+<p>再后来,计算机传入了亚洲国家。对于像中国这样动辄几万个汉字字符的语言。使用ASCII码显示不行。于是中国国家标准总局在1981年,
+正式制订了中华人民共和国国家标准简体中文字符集,项目代号 <font color="#bd260d">GB2312</font> 或 <font color="#bd260d">GB2312-80</font>。</p>
+
+<p><img src="/images/2015/8/th.jpeg" alt="" /></p>
+
+<p>其他国家和地区也制定了不同的标准,比如日本的<font color="#bd260d">JIS</font> 、香港和台湾的繁体中文 <font color="#bd260d">BIG5</font></p>
+
+<h1>Unicode</h1>
+
+<p>由于每个国家都各自定义自己的标准,但带来的结果就是谁也不懂对方的编码体系。于是,世界相关组织意识到了这个问题,并开始尝试制定统一的编码标准。最初尝试做这件事情的两个组织是<font color="#bd260d">国际标准化组织(ISO)</font>和<font color="#bd260d">统一码联盟</font>。国际标准化组织(ISO)及国际电工委员会(IEC)于1984年联合成立了<font
+color="#bd260d">ISO/IEC小组</font>(GB为国标汉语拼音的首字母),主要用于开发统一编码项目；
+而Xerox、Apple等软件制造商则于1988年组成了统一码联盟,用于开发统一码项目。两个组织都在编写统一字符集,但后来他们发现各自在做相同的工作,同时世界上也不需要两个不兼容的字符集,于是两个组织就此合并了双方的工作成果,
+并为创立一个单一编码表而协同工作。</p>
+
+<p>1991年,两个组织共同的工作成果Unicode 1.0正式发布。(最新的一个版本 是2014年6月15日发布的Unicode 7.0。)</p>
+
+<h1>ISO/IEC 8859</h1>
+
+<p>ISO/IEC小组在1984年成立后的第三年(即1987年)开始启动ISO 8859标准的编写,ISO
+8859是一系列8位字符集的标准,主要为世界各地的不同语言(除CJK)而单独编写的字符集,一共定义了15个字符集:</p>
+
+<ul>
+<li>ISO/IEC 8859-1:西欧语言</li>
+<li>ISO/IEC 8859-2:中欧语言</li>
+<li>ISO/IEC 8859-3:南欧语言</li>
+<li>ISO/IEC 8859-4:北欧语言</li>
+<li>ISO/IEC 8859-5:斯拉夫语</li>
+<li>ISO/IEC 8859-6:阿拉伯语</li>
+<li>ISO/IEC 8859-7:希腊语</li>
+<li>ISO/IEC 8859-8:希伯来语</li>
+<li>ISO/IEC 8859-9:土耳其语</li>
+<li>ISO/IEC 8859-10:北日耳曼语</li>
+<li>ISO/IEC 8859-11:泰语</li>
+<li>ISO/IEC 8859-13:波罗的语族</li>
+<li>ISO/IEC
+8859-14: 凯尔特语族</li>
+<li>ISO/IEC 8859-15:西欧语言,收录芬兰语字母和大写法语重音字母,以及欧元(€)符号</li>
+<li>ISO/IEC 8859-16 :东南欧语言,主要供罗马尼亚语使用,并加入欧元(€)符号</li>
+</ul>
+
+
+<p>其中ISO/IEC 8859-1至ISO/IEC
+8859-4四个项目早在1982年就已经编写出来,只不过是由ANSI与ECMA合作完成,并于1985年正式公布,ISO/IEC小组成立后,
+这一成果被其收录,并改名为ISO/IEC 8859 前四个项目。 大家其实发现以上15个字符集中并没有代号为&#8221;ISO/IEC 8859
+-12&#8221;的字符集,据说-12号本来是预留给印度天城体梵文的,但后来却搁置了(阿三有了自己的编码－ISCII)。由于英语没有任何重音字母,
+故可使用以上十五个字符集中的任何一个来表示。</p>
+
+<h1>ISO/IEC 10646 / UCS</h1>
+
+<p>1993年,ISO/IEC 10646标准第一次发表,ISO/IEC 10646是ISO 646的扩展,定义了1个31位的字符集。ISO
+10646标准中定义的字符集为UCS,<font color="#bd260d">UCS是Universal Character
+Set的缩写,中文译作通用字符集。</font></p>
+
+<p>版本:</p>
+
+<ul>
+<li>ISO/IEC 10646-1:第一次发表于1993年,现在的公开版本是2000年发表的ISO/IEC 10646-1:2000。</li>
+<li>ISO/IEC 10646-2:在2001年发表。</li>
+</ul>
+
+
+<p>包含字符:</p>
+
+<p>最初的ISO 10646-1:1993的编码标准,即Unicode
+1.1,收录中国大陆、台湾、日本及韩国通用字符集的汉字共计20,902个,当然每个版本的Unicode标准的字符集所包含的字符数不尽相同,
+UCS包含了已知语言的所有字符,除了拉丁语、希腊语、斯拉夫语、希伯来语、阿拉伯语、亚美尼亚语、格鲁吉亚语,还包括中文、日文、韩文这样的方块文字,
+此外还包括了大量的图形、印刷、数学、科学符号。
+UCS给每个字符分配一个唯一的代码,并且赋予了一个正式的名字,通常在表示一个Unicode值的十六进制数的前面加上&#8221;U+&ldquo;,例如&#8221;U+0041&rdquo;
+代表字符&#8221;A&#8221;。</p>
+
+<p>编码方案:</p>
+
+<p>UCS仅仅是一个超大的字符集,关于UCS制定的编码方案有两种:UCS-2和UCS-4,<font color="#bd260d">Unicode默认以UCS-2编码。</font>
+顾名思义,UCS-2就是用两个字节编码,UCS-4就是用4个字节(实际上只用了31位,最高位必须为0)编码。那么UCS-
+2其实可以容纳的字符数为65536(2的16次方),而UCS-4可以容纳的字符数为2147483648(2的31次方)。其实对于UCS-
+2已经是完全够用了,基本可以包含世界所有国家的常用文字,如果需要考虑一些偏僻字,那么UCS-4则绝对可以满足了,
+21亿个字符哪怕是整个宇宙也够用了吧！</p>
+
+<h1>UTF-8</h1>
+
+<p>Unicode 诞生,随之而来的计算机网络也发展了起来,Unicode
+如何在网络上传输也是一个必须考虑的问题,于是在1992年,面向网络传输的UTF标准出现了。 UTF是Unicode Transformation
+Format的缩写,中文译作Unicode转换格式。其实我们从现在可以把Unicode看作是一个标准或组织,而UCS就是一个字符集,
+那么UCS在网络中的传输标准就是UTF了。
+前面提到了UCS的编码实现方式为UCS-2和UCS-4,即要么是每个字符为2个字节,要么是4个字节。
+如果一个仅包含基本7位ASCII字符的Unicode文件,每个字符都使用2字节的原Unicode编码传输,其第一字节的8位始终为0,
+这就造成了比较大的浪费。但是,聪明的人们发明了UTF-8,UTF-8采用可变字节编码,这样可以大大节省带宽,并增加网络传输效率。</p>
+
+<p>UTF-8使用1~4个字节表示一个符号,根据不同的符号而变化字节长度。UTF-8的编码规则很简单,只有二条:</p>
+
+<p>1）对于单字节的符号,字节的第一位设为0,后面7位为这个符号的unicode码。因此对于英语字母,UTF-8编码和ASCII码是相同的。 2.
+对于n字节的符号(n>1),第一个字节的前n位都设为1,第n+1位设为0,后面字节的前两位一律设为10。剩下的没有提及的二进制位,
+全部为这个符号的unicode码。</p>
+
+<p>下表总结了编码规则,字母x表示可用编码的位。</p>
+
+<pre><code>Unicode符号范围 | UTF-8编码方式 (十六进制) | (二进制)
+--------------------+---------------------------------------------
+0000 0000-0000 007F | 0xxxxxxx 0000 0080-0000 07FF | 110xxxxx
+10xxxxxx 0000 0800-0000 FFFF | 1110xxxx 10xxxxxx 10xxxxxx 0001
+0000-0010 FFFF | 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+</code></pre>
+
+<p>跟据上表,解读UTF-8编码非常简单。如果一个字节的第一位是0,则这个字节单独就是一个字符；如果第一位是1,则连续有多少个1,
+就表示当前字符占用多少个字节。</p>
+
+<p>下面,还是以汉字&#8221;严&#8221;为例,演示如何实现UTF-8编码。</p>
+
+<p>已知&#8221;严&#8221;的unicode是4E25(100111000100101),根据上表,可以发现4E25处在第三行的范围内(0000
+0800-0000 FFFF),因此&#8221;严&#8221;的UTF-8编码需要三个字节,即格式是&#8221;1110xxxx 10xxxxxx
+10xxxxxx&#8221;。然后,从&#8221;严&#8221;的最后一个二进制位开始,依次从后向前填入格式中的x,多出的位补0。这样就得到了,&ldquo;严&#8221;的UTF-8编码是&rdquo;
+11100100 10111000 10100101&#8221;,转换成十六进制就是E4B8A5。</p>
+
+<p>其他:</p>
+
+<ul>
+<li>128个ASCII字符只需一个字节编码(Unicode范围由U+0000至U+007F) &ndash; 拉丁文、希腊文、西里尔字母、亚美尼亚语、希伯来文、阿拉伯文、叙利亚文及它拿字母需要二个字节编码(Unicode范围由U+0080至U+07FF)</li>
+<li><font color="#bd260d"><strong>大部分国家的常用字(包括中文)使用三个字节编码</strong></font></li>
+<li>其他极少使用的生僻字符使用四字节编码</li>
+</ul>
+
+
+<h1>GB13000</h1>
+
+<p>前面提到了Unicode的迅速发展,至1993年时,包含CJK的Unicode
+1.1已经发布了,天朝的ZF也意识到了需要一个更大的字符集来走向世界,于是在同一年,中国大陆制定了几乎等同于Unicode1.1的GB13000
+.1-93国家编码标准(简称GB13000)。是的,你没听错,中华人民共和国信息产业部把Unicode里的所有东东拿过来,
+然后自己重新修订发布了下,改为了国家标准GB13000。此标准等同于 ISO/IEC 10646.1:1993和Unicode 1.1。</p>
+
+<h1>GBK</h1>
+
+<p>1995年,在GB13000诞生后不久,中国教育科研网(NCFC)与美国NCFnet直接联网,这一天是中国被国际承认为开始有网际网路的时间。
+此后网络正式开始在中国大陆接通,个人计算机开始在中国流行,虽然当时只是高富帅才消费得起的产品。中国是一个十几亿人口的大国,
+微软意识到了中国是一个巨大的市场,当时的微软也将自己的操作系统市场布局进中国,进入中国随之而来要解决的就是系统的编码兼容问题。
+之前的国家编码标准GB
+2312,基本满足了汉字的计算机处理需要,它所收录的汉字已经覆盖中国大陆99.75%的使用频率。但对于人名、古汉语等方面出现的罕用字和繁体字,
+GB 2312不能处理,因此微软利用了GB2312中未使用的编码空间,收录了GB13000中的所有字符制定了汉字内码扩展规范GBK(K为汉语拼音
+Kuo
+Zhan中&#8221;扩&#8221;字的首字母)。所以这一关系其实是大陆把Unicode1.1借鉴过来改名为了GB13000,
+而微软则利用GB2312中未使用的编码空间收录GB13000制定了GBK。所以GBK是向下完全兼容GB2312的。</p>
+
+<p>包含字符:<br> 共收录21886个字符, 其中汉字21003个, 字符883个</p>
+
+<p>编码方式:<br> GBK只不过是把GB2312中未使用的空间,编码了其他字符,所以GBK同样是用两个字节为每个字符进行编码</p>
+
+<h1>GB18030</h1>
+
+<p>微软到了99年前后,说GBK已经落伍了,现在流行UTF-8标准,准备全盘转换成UTF-8,但中国ZF不是吃素的,
+编写并强制推出了GB18030标准。GB18030的诞生还有一个原因是GBK只包含了大部分的汉字和繁体字等,我们的少数民族兄弟根本木有考虑！
+中国有56个民族,其中有12个民族有自己的文字,那怎么办呢？在2000年,电子工业标准化研究所起草了GB18030标准,项目代号&#8221;GB
+18030-2000&#8221;,全称《信息技术-信息交换用汉字编码字符集-基本集的扩充》。此标准推出后,
+在中国大陆之后的所售产品必须强制支持GB18030标准,不然不得卖！</p>
+
+<p>版本:</p>
+
+<ul>
+<li>GB 18030-2000</li>
+<li>GB 18030-2005</li>
+</ul>
+
+
+<p>包含字符:</p>
+
+<p>GB18030收录了GBK中的所有字符,并将Unicode中其他中文字符(少数民族文字、偏僻字)也一并收录进来重新编码。其中GB
+18030-2000共收录27533个汉字,而GB 18030-2005共包含70244个汉字。</p>
+
+<p>编码方式:</p>
+
+<p>采用多字节编码,每个字符由1或2或4个字节进行编码</p>
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2015-07-29 18:01:48 +0800" pubdate>Jul 29<span>th</span>, 2015</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2015 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2015/07/29/character-encoding';
+	var disqus_url = 'http://sbxfc.github.io/blog/2015/07/29/character-encoding';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

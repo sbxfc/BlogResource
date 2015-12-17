@@ -1,0 +1,263 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>STL - map容器 - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="STL - map容器 map是一种关联容器。容器中每个元素含有key/value两项。map将其中一项key值映射到另一个项value中,key值在map容器中是唯一的。 map被修改时会对所有key值进行排序。 成员函数 Interator: map.begin() &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="//ajax.useso.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<link href='http://fonts.useso.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2015/03/13/cpp-stl-map">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">STL - map容器</h2>
+    
+  </header>
+
+  <div class="entry_content"><p>map是一种关联容器。容器中每个元素含有key/value两项。map将其中一项key值映射到另一个项value中,key值在map容器中是唯一的。</p>
+
+<p>map被修改时会对所有key值进行排序。</p>
+
+<hr />
+
+<p>成员函数</p>
+
+<p>Interator:</p>
+
+<ul>
+<li>map.begin() 指向第一个元素的Interator。</li>
+<li>map.end() 指向末尾元素的Interator。</li>
+<li>map.rbegin() 指向第末尾元素的反向Interator。</li>
+<li>map.rend() 指向第一个元素的反向Interator。</li>
+</ul>
+
+
+<p>Size:</p>
+
+<ul>
+<li>map.empty() 如果 map 内部为空，则传回 true 值。</li>
+<li>map.size() 获取 map 目前持有的元素个数。</li>
+</ul>
+
+
+<p>Element Access:</p>
+
+<ul>
+<li>map.at(i) 访问key值为 i 的元素引用。</li>
+<li>map[i] 访问key值为 i 的元素引用。</li>
+</ul>
+
+
+<p>Modify Methods:</p>
+
+<ul>
+<li>map.insert 按照key/value值插入元素</li>
+<li>map.erase() 删除 map 中一个或多个元素。</li>
+<li>map.clear() 清空所有元素。</li>
+</ul>
+
+
+<hr />
+
+<p>代码示例:</p>
+
+<pre><code>int main() {
+    typedef std::map&lt;char, int&gt; MapType;
+    MapType myMap;
+    myMap.insert(std::pair&lt;char, int&gt;('f', 6));
+    myMap.insert(std::map&lt;char, int&gt;::value_type('d', 4));
+    myMap.insert(MapType::value_type('c', 3)); 
+    myMap.insert(std::make_pair('b', 2));      
+    myMap.insert({'a', 1});                    // using C++11 initializer list
+
+     /*
+     * map被修改时会对所有key值自动由低往高排列
+     * 所以,map.begin()会指向key值最小的元素
+     */
+    MapType::iterator iter = myMap.begin();
+
+    //清除第一个元素
+    myMap.erase(iter);
+
+    //map中元素数量
+    std::cout &lt;&lt; "Size of myMap: " &lt;&lt; myMap.size() &lt;&lt; '\n';
+
+    //查找key值为'c'的元素
+    char c = 'c';
+    iter = myMap.find(c);
+    if (iter != myMap.end() )
+        std::cout &lt;&lt; "Value is: " &lt;&lt; iter-&gt;second &lt;&lt; '\n';
+    else
+        std::cout &lt;&lt; "Key is not in myMap" &lt;&lt; '\n';
+
+    //删除key值为'd'的元素,成功会返回1，否则返回0
+    unsigned long n = myMap.erase('d');
+    if(n == 1){
+        std::cout &lt;&lt; "delete key 'd'" &lt;&lt; '\n';
+    }
+
+    //清空map
+    myMap.clear();
+
+    return 0;
+}
+</code></pre>
+
+<hr />
+
+<p>完整代码:<a href="https://github.com/sbxfc/STLContainers/tree/master/STL-Map">https://github.com/sbxfc/STLContainers/tree/master/STL-Map</a></p>
+
+<hr />
+
+<p>参考:</p>
+
+<p>Effective.STL</p>
+
+<p>标准模板库:<br><a href="http://zh.wikipedia.org/zh-cn/%E6%A0%87%E5%87%86%E6%A8%A1%E6%9D%BF%E5%BA%93">http://zh.wikipedia.org/zh-cn/%E6%A0%87%E5%87%86%E6%A8%A1%E6%9D%BF%E5%BA%93</a></p>
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2015-03-13 17:57:00 +0800" pubdate>Mar 13<span>th</span>, 2015</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2015 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2015/03/13/cpp-stl-map';
+	var disqus_url = 'http://sbxfc.github.io/blog/2015/03/13/cpp-stl-map';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

@@ -1,0 +1,260 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>iOS - JSON解析 & KVC - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="iOS - JSON解析 & KVC NSJSONSerialization NSJSONSerialization 是objc里用于JSON解析的类 解析JSON字符串: NSString* jsonString = @"[{\"name\":\"Paul McCartney\",\"age &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="//ajax.useso.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<link href='http://fonts.useso.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2014/02/27/ios-nsjsonserialization-kvc-new">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">iOS - JSON解析 & KVC</h2>
+    
+  </header>
+
+  <div class="entry_content"><h1>NSJSONSerialization</h1>
+
+<p>NSJSONSerialization 是objc里用于JSON解析的类</p>
+
+<p>解析JSON字符串:</p>
+
+<pre><code>    NSString* jsonString = @"[{\"name\":\"Paul McCartney\",\"age\":73,\"sex\":\"male\"},{\"name\":\"Mark\",\"age\":53,\"sex\":\"male\"}]";
+    NSData* jsonData = [jsonString dataUsingEncoding:NSUTF8StringEncoding];
+
+    //解析
+    NSError* error;
+    NSArray * jsonArray = [NSJSONSerialization JSONObjectWithData: jsonData options: NSJSONReadingMutableContainers error: &amp;error]; 
+</code></pre>
+
+<p>选项:</p>
+
+<ul>
+<li>NSJSONReadingMutableContainer：指定创建的可变对象为NSArray或NSDictionary。</li>
+<li>NSJSONReadingMutableLeaves：指定JSON树上的子数据为NSMutableString类型的对象</li>
+<li>NSJSONReadingAllowFragments：指定JSON顶层的对象可以不是NSArray或NSDictionary类型的对象</li>
+</ul>
+
+
+<p>二,将Foundation Objects对象转化为JSON</p>
+
+<pre><code>    if([NSJSONSerialization isValidJSONObject:jsonArray])
+    {
+        jsonData = [NSJSONSerialization dataWithJSONObject:jsonArray options:NSJSONWritingPrettyPrinted error:&amp;error];
+        jsonString =[[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding]; 
+
+        NSLog(@"json data:%@",jsonString);
+    }
+</code></pre>
+
+<p>1,isValidJSONObject方法首先检测jsonArray是否可转化为JSON对象。</p>
+
+<p>2,转化JSON时用参数NSJSONWritingPrettyPrinted的作用是在输出时增加空格，增加输出内容的可读性。</p>
+
+<p>对象转化为JSON必须符合以下条件:</p>
+
+<ul>
+<li>1,顶层对象必须是NSArray或NSDictionary</li>
+<li>2,所有对象必须是NSString, NSNumber, NSArray, NSDictionary, 或 NSNull.</li>
+<li>3，所有dictionary的key必须是NSString。</li>
+<li>4, Numbers不能是NaN或infinity。
+
+<h1>KVC</h1></li>
+</ul>
+
+
+<p>KVC 即 Key-value coding,允许我们通过属性的字符串名称来访问属性。</p>
+
+<p>假如,我们声明一个属性 name:</p>
+
+<pre><code>    @property(nonatomic,copy) NSString *name;
+</code></pre>
+
+<p>我们可以通过一下函数访问属性:</p>
+
+<pre><code>    //取值
+    NSString *name = [obj valueForKey:@"name"]
+    //赋值
+    [obj setValue:@"goodman" forKey:@"name"]
+</code></pre>
+
+<p>还可以通过 KVC 将 NSDictionary 的键值映射到类中相同名称的属性上。 使用 setValuesForKeysWithDictionary 函数进行映射:</p>
+
+<p>Person.h</p>
+
+<pre><code>@interface Person : NSObject
+@property (nonatomic, copy) NSString *name;
+@property (nonatomic) NSUInteger age;
+@end
+</code></pre>
+
+<p>Player.m</p>
+
+<pre><code>-(id)initWith:(NSDictionary*)data       
+{
+    if(self=[super init]){
+        [self setValuesForKeysWithDictionary:data];
+    }
+    return self;
+}
+</code></pre>
+
+<p>如果 NSDictionary 里的键值没有对应到类中的属性上,运行时会出现下面这样的错误提示：</p>
+
+<p>&lsquo;<strong>NSUnknownKeyException</strong>&#8216;……this class is not key value coding-compliant for the key sex.&rsquo;</p>
+
+<p>此时,需要重写setUndefinedKey方法来忽略错误:</p>
+
+<pre><code>-(void)setValue:(id)valueforUndefinedKey:(NSString*)key
+{
+    //NSLog(@"undefinedkey:%@",key);
+}
+</code></pre>
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2014-02-27 10:24:06 +0800" pubdate>Feb 27<span>th</span>, 2014</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2015 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2014/02/27/ios-nsjsonserialization-kvc-new';
+	var disqus_url = 'http://sbxfc.github.io/blog/2014/02/27/ios-nsjsonserialization-kvc-new';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

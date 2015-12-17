@@ -1,0 +1,222 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>冯氏反射模型 （二） - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="冯氏反射模型 （二） Shader "custom/Phong" { Properties { _MainTint ("Diffuse Tint", Color) = (1,1,1,1) _MainTex ("Base (RGB)", 2D) = "white" {} &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="//ajax.useso.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<link href='http://fonts.useso.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2014/04/23/u3d-phong-2">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">冯氏反射模型 （二）</h2>
+    
+  </header>
+
+  <div class="entry_content"><pre><code>Shader "custom/Phong" 
+{
+    Properties 
+    {
+        _MainTint ("Diffuse Tint", Color) = (1,1,1,1)
+        _MainTex ("Base (RGB)", 2D) = "white" {}
+        _SpecularColor ("Specular Color", Color) = (1,1,1,1)
+        _SpecPower ("Specular Power", Range(0.1,30)) = 1
+        _SpecHardness ("Specular Hardness", Range(0.1, 10)) = 2
+    }
+
+    SubShader 
+    {
+        Tags { "RenderType"="Opaque" }
+        LOD 200
+
+        CGPROGRAM
+        #pragma surface surf Phong
+
+        float4 _SpecularColor;
+        sampler2D _MainTex;
+        float4 _MainTint;
+        float _SpecPower;
+        float _SpecHardness;
+
+        inline fixed4 LightingPhong (SurfaceOutput s, fixed3 lightDir, half3 viewDir, fixed atten)
+        {
+            //计算漫反射光照强度
+            float diff = dot(s.Normal, lightDir);
+
+            //计算反射光线的反向向量，因为要与观察角度进行计算
+            //反射光线R = L - 2*(L*N)*N（前面有该公式推导）
+            //normalize 计算向量的单位向量
+            float3 reflectionVector = normalize((2.0 * s.Normal * diff) - lightDir);
+
+            float spec = pow(max(0,dot(reflectionVector, viewDir)), _SpecPower);
+            //计算最终的反射光强
+            float3 finalSpec = _SpecularColor.rgb * spec;
+
+            //
+            fixed4 c;
+            //漫反射光照 和 镜面反射光照
+            c.rgb = (s.Albedo * _LightColor0.rgb * diff) + (_LightColor0.rgb * finalSpec);
+            c.a = 1.0;
+            return c;
+        }
+
+        struct Input 
+        {
+            float2 uv_MainTex;
+        };
+
+        void surf (Input IN, inout SurfaceOutput o) 
+        {
+            half4 c = tex2D (_MainTex, IN.uv_MainTex) * _MainTint;
+            o.Albedo = c.rgb;
+            o.Alpha = c.a;
+        }
+</code></pre>
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2014-04-23 19:17:46 +0800" pubdate>Apr 23<span>rd</span>, 2014</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2015 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2014/04/23/u3d-phong-2';
+	var disqus_url = 'http://sbxfc.github.io/blog/2014/04/23/u3d-phong-2';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

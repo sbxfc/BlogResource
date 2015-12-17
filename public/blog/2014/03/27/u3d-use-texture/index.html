@@ -1,0 +1,316 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>Unity3D - 使用贴图 - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="Unity3D - 使用贴图 使用贴图 修改UV值来移动贴图,实现瀑布、河流、熔岩等效果。 设置Propertis Properties { _MainTint("Diffuse Tint",Color)= (1,1,1,1) _MainTex ("Ramp Texture", 2D) = " &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="//ajax.useso.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<link href='http://fonts.useso.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2014/03/27/u3d-use-texture">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">Unity3D - 使用贴图</h2>
+    
+  </header>
+
+  <div class="entry_content"><h1>使用贴图</h1>
+
+<p>修改UV值来移动贴图,实现瀑布、河流、熔岩等效果。</p>
+
+<p>设置Propertis</p>
+
+<pre><code>Properties 
+{
+    _MainTint("Diffuse Tint",Color)= (1,1,1,1)
+    _MainTex ("Ramp Texture", 2D) = "white"{}
+    _ScrollXSpeed("X Scroll Speed",Range(0,10)) = 2
+    _ScrollYSpeed("Y Scroll Speed",Range(0,10)) = 2
+}
+</code></pre>
+
+<p><code>_MainTex</code> 在这里是我们水流的贴图。  </br><code>_ScrollXSpeed</code>和<code>_ScrollYSpeed</code>分别代表x、y轴的水流速度。</p>
+
+<p>同样在CG代码里声明这些属性</p>
+
+<pre><code>fixed4 _MainTint;
+fixed _ScrollXSpeed;
+fixed _ScrollYSpeed;
+sampler2D _MainTex;
+</code></pre>
+
+<p>修改surf函数</p>
+
+<pre><code>struct Input 
+{
+    float2 uv_MainTex;
+};
+
+void surf (Input IN, inout SurfaceOutput o) 
+{
+
+        fixed2 scrolledUV = IN.uv_MainTex;
+
+        fixed xScrollValue = _ScrollXSpeed * _Time;
+        fixed yScrollValue = _ScrollYSpeed * _Time;
+
+        scrolledUV += fixed2(xScrollValue,yScrollValue);
+
+        half4 c = tex2D (_MainTex, scrolledUV);
+        o.Albedo = c.rgb * _MainTint;
+        o.Alpha = c.a;
+
+}
+</code></pre>
+
+<p><code>uv_MainTex</code> 在一个贴图变量上加上uv两个字母，就代表取它的uv值。  </br>
+<code>_Time</code> 是一个内部变量,它与游戏运行时间有关,我们利用它来改变我们的x、y轴方向上的uv值。</p>
+
+<p>随着时间的推移，源UVs会一点点偏移。然后利用tex2D函数转化为贴图的新UVs。通过这种方式，我们可以得到模型表面的移动效果。</p>
+
+<hr />
+
+<h1>sprite sheets 动画</h1>
+
+<pre><code>Shader "/customShader/animatingSpriteSheets" 
+{
+    Properties 
+    {
+        _MainTex ("Ramp Texture", 2D) = "white"{}
+        _TexWidth("Sheet Width",float) = 0.0
+        _CellAmount("Cell Amount",float) = 0.0
+        _Speed("Speed",Range(0.01,32)) = 12
+    }
+
+    SubShader 
+    {
+        Tags { "RenderType"="Opaque" }
+        LOD 200
+
+        CGPROGRAM
+        #pragma surface surf Lambert
+
+        sampler2D _MainTex; //贴图    
+        fixed _TexWidth;
+        fixed _CellAmount;
+        fixed _Speed;
+
+        struct Input 
+        {
+            float2 uv_MainTex;
+        };
+
+        void surf (Input IN, inout SurfaceOutput o) 
+        {
+            float2 spriteUV = IN.uv_MainTex;
+
+            float cellPixelWidth = _TexWidth / _CellAmount;
+            float cellUVPercentage = cellPixelWidth / _TexWidth;
+
+            float timeVal = fmod(_Time.y * _Speed,_CellAmount);
+            timeVal = ceil(timeVal);
+
+            float xValue = spriteUV.x;
+            xValue += cellUVPercentage * timeVal * _CellAmount;
+            xValue *= cellUVPercentage;
+
+            spriteUV = float2(xValue,spriteUV.y);
+
+            half4 c = tex2D (_MainTex, spriteUV);
+            o.Albedo = c.rgb;
+            o.Alpha = c.a;
+
+        }
+
+        ENDCG
+    } 
+
+    FallBack "Diffuse"
+}
+</code></pre>
+
+<p><img src="/images/2014/4/spritesheet1.png" alt="spritesheet1.png" /></p>
+
+<p>如图，由14个不同动作的卡通人物卡片(sheet)拼成了一个图片(sprite)。  </br>我们知道，动画实际上就是一个基于时间轴的不断变换影片的影像。类似于我们熟知的翻书映画，我们在每页书纸上画上一个固定形象，随着页码的变化，这些图片基于一个有序的行为不断的改变。当我们用拇指快速翻动书页时，这些图像就会以不停变换的的形式展示出来，这就是动画。</p>
+
+<p>其中,<code>_TexWidth</code>是贴图(sprite)的宽度。<code>_CellAmount</code>是片(sheet)的数量。<code>_Speed</code>代表翻阅速度。</p>
+
+<p>我们将UV值存储在贴图spriteUV中,变量cellPixelWith是计算出的贴图像素宽度。cellUVPercentage是每个sheet所所占的比例。</p>
+
+<pre><code>fmod(x,y)   //返回x/y的余数
+</code></pre>
+
+<p>利用CGFX的内置函数fmod()，让卡片(sheet)以0、1、2、3、4顺序的形式运动起来，直到最后一个卡片，依次反复:</p>
+
+<pre><code>float timeVal = fmod(_Time.y * _Speed,_CellAmount);
+timeVal = ceil(timeVal);//向上取整
+</code></pre>
+
+<p>我们设置y的值为_CellAmount，所以fmod会返回一个以sheet长度为最大值不断重复的变量。</p>
+
+<p>剩余部分类似于上一部分的水流，只不过这次移动的距离是以每个sheet为宽度的值。这样，我们就会看到图片一个接一个的变化，达到动画的效果。</p>
+
+<pre><code>xValue += cellUVPercentage * timeVal * _CellAmount;
+xValue *= cellUVPercentage;
+</code></pre>
+
+<p>timeVal是介于0-14之间的数值，为了保证每次移动只增加一个sheet，我们再乘以 <code>cellUVPercentage</code>。</p>
+
+<hr />
+
+<h1>给Shader设值</h1>
+
+<p>通过CPU来控制时间，驱动动画。</p>
+
+<pre><code>void FixedUpdate(){
+    timeValue = Mathf.Ceil(Time.time%14);
+    transform.renderer.material.SetFloat(_TimeValue,timeValue);
+}
+</code></pre>
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2014-03-27 16:58:27 +0800" pubdate>Mar 27<span>th</span>, 2014</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2015 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2014/03/27/u3d-use-texture';
+	var disqus_url = 'http://sbxfc.github.io/blog/2014/03/27/u3d-use-texture';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

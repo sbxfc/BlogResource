@@ -1,0 +1,226 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>网络字节序(二)* - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="网络字节序(二)* BSD Socket API提供了16和32bit整数转化字节序的方法。但是,包括string 、double、float、long 在内的格式都是常用于网络通信的数据格式。 这时,我们需要自己去将这些数据转化为网络字节流。实现字节流转化的思路有两种: &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="//ajax.useso.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<link href='http://fonts.useso.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2015/01/29/network-byte-array">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">网络字节序(二)*</h2>
+    
+  </header>
+
+  <div class="entry_content"><p>BSD Socket API提供了16和32bit整数转化字节序的方法。但是,包括string 、double、float、long 在内的格式都是常用于网络通信的数据格式。</p>
+
+<p>这时,我们需要自己去将这些数据转化为网络字节流。实现字节流转化的思路有两种:</p>
+
+<h1>第一种方式是使用反转函数修改字节顺序</h1>
+
+<p>首先,判断当前设备是大端序还是小端序。如果是大端序,我们可将字节流直接放进字节数组里用于传输。如果是小端序,因为大端和小端的字节排列顺序正好相反。所以，我们可以通过一个反转函数将数据里的字节进行反转,最终得到我们需要的字节流。</p>
+
+<p>这种方式的核心是一个反转函数:</p>
+
+<pre><code> /**
+ * 将字节源 bytes 里的字节顺序反转
+ * @param bytes 源字节
+ * @param size 字节长度
+ */
+void SFByteArray::reversalArray(char *bytes, size_t size)
+{
+    for(size_t i = 0; i &lt; size / 2; i++)
+    {
+        char tb;
+        tb = *(bytes + i);
+        *(bytes + i) = *(bytes + size - i - 1);
+        *(bytes + size - i - 1) = tb;
+    }
+}
+</code></pre>
+
+<h1>另一种方式是使用移位运算符</h1>
+
+<p>除了使用逆转函数以外,还可以通过位移运算符来实现网络字节流的读写。使用移位运算符,直接读取高位或地位字节,无需进行大小端转换。（我们对一个数值进行移位运算的时候，不需要去考虑内存的排列顺序,移位运算符是在寄存器中进行的运算。永远左侧是高位，右侧是地位。)</p>
+
+<pre><code>bytesBuf[writePos++] = (value &gt;&gt; 8) &amp; 0xff;
+bytesBuf[writePos++] = value &amp; 0xff;
+</code></pre>
+
+<p>如果我们想获取一个高位字节，我们只需要右移相应的字节,移除低位即可。为了确保移位之后的数值是8位字节,我们使用了按位“与”运算。</p>
+
+<pre><code>short value = 0;
+value  = (bytes[0] &amp; 0xff) &lt;&lt; 8;
+value |= (bytes[1] &amp; 0xff);
+</code></pre>
+
+<p>从网络字节流里去读数值,首先把高位字节左移,获取高位对应的数值。然后与低位数值进行按位“或”运算,将低位和高位拼接在一起。</p>
+
+<h1>按位“与” &amp;</h1>
+
+<p>参加按位“与”运算的两个数据,按照二进制进行“与”运算。</p>
+
+<p>运算规则：<br>0&amp;0=0;<br>0&amp;1=0;<br>1&amp;0=0;<br>1&amp;1=1;</p>
+
+<p>即：两位同时为“1”，结果才为“1”，否则为0 <br></p>
+
+<p>例如：3&amp;5  即 0000 0011 &amp; 0000 0101 = 0000 0001   因此，3&amp;5的值得1。在大小端转化时,进行按位与运算,相当于对数值进行byte类型强转。</p>
+
+<h1>按位“或” |</h1>
+
+<p>按位“或”的运算规则和按位“与”相反</p>
+
+<p>1|1=1<br>1|0=1<br>0|1=1<br>0|0=0</p>
+
+<h1>完整代码</h1>
+
+<p>完整代码:<a href="https://github.com/CPPSF/ByteArrayDemo">https://github.com/CPPSF/ByteArrayDemo</a></p>
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2015-01-29 11:57:27 +0800" pubdate>Jan 29<span>th</span>, 2015</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2015 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2015/01/29/network-byte-array';
+	var disqus_url = 'http://sbxfc.github.io/blog/2015/01/29/network-byte-array';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

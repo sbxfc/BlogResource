@@ -1,0 +1,223 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>优化Shader - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="优化Shader 选择变量 首先是变量的选择,cg语言内置的有关数值的变量类型有以下几种: float，32位浮点数据；
+half，16为浮点数据；
+int，32位整形数据；
+fixed，12位定点数； 在处理数据时,根据实际情况尽可能选择内存占用更少的数据类型，提高处理速度。 例如: &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="//ajax.useso.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<link href='http://fonts.useso.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2014/06/27/u3d-optimized-shader">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">优化Shader</h2>
+    
+  </header>
+
+  <div class="entry_content"><blockquote><p>选择变量</p></blockquote>
+
+<p>首先是变量的选择,cg语言内置的有关数值的变量类型有以下几种:</p>
+
+<pre><code>float，32位浮点数据；
+half，16为浮点数据；
+int，32位整形数据；
+fixed，12位定点数；
+</code></pre>
+
+<p>在处理数据时,根据实际情况尽可能选择内存占用更少的数据类型，提高处理速度。
+</br>
+例如:使用half2存储UV值,或者把颜色值(介于[0,1]之间)设置为fixed类型。</p>
+
+<!--more-->
+
+
+<blockquote><p>在<code>#pragma</code>声明中设置<code>noforwardadd</code></p></blockquote>
+
+<p>通过设置设置参数<code>noforwardadd</code>参数,告诉unity渲染该Shader模型的像素时只接受单一方向的光，其他光线以球面调和光来计算。(球面调和光计算的是顶点，只花费很少的CPU计算时间。)</p>
+
+<pre><code>#pragma surface surf SimpleLambert noforwardadd
+</code></pre>
+
+<blockquote><p>设置<code>exclude_path:prepass</code></p></blockquote>
+
+<p>通过设置<code>exclude_path:prepass</code>,只接收正向渲染，通过<code>Player Settings</code>选择来设置该渲染路径，也可以在具体相机上重置该值。</p>
+
+<pre><code>#pragma surface surf SimpleLambert exclude_path:prepass noforwardadd
+</code></pre>
+
+<blockquote><p>用贴图的UV值去索引法线贴图</p></blockquote>
+
+<p>对于一个模型上同时存在表面贴图和发现贴图，我们一般做法是将两张贴图的UV值传入，并取得像素点上的UV值:</p>
+
+<pre><code>struct Input 
+{
+    half2 uv_MainTex;
+    half2 uv_Normal;
+};
+</code></pre>
+
+<p>我们可以简化一下，利用贴图的UV值来索引法线贴图的UV值:</p>
+
+<pre><code>struct Input 
+{
+    half2 uv_MainTex;
+};
+
+void surf (Input IN, inout SurfaceOutput o) 
+{
+    …
+    o.Normal = UnpackNormal(tex2D(_NormalMap, IN.uv_MainTex));
+}
+</code></pre>
+
+<p><a href="https://github.com/rungameme/optimizedShaderInUnity">https://github.com/rungameme/optimizedShaderInUnity</a></p>
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2014-06-27 14:26:01 +0800" pubdate>Jun 27<span>th</span>, 2014</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2015 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2014/06/27/u3d-optimized-shader';
+	var disqus_url = 'http://sbxfc.github.io/blog/2014/06/27/u3d-optimized-shader';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

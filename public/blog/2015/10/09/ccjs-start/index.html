@@ -1,0 +1,224 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>CocosJS 初探 - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="CocosJS 初探 锚点和坐标 Cocos引擎使用的是右手笛卡尔坐标系,相对于我们熟悉的标准屏幕坐标系,其坐标原点在屏幕的左下角。 在Cocos里,显示对象以锚点(anchor)对齐。即一个sprite如果坐标设置为【0,0】并且锚点也是【0,0】的话,它的左下角就与屏幕的左下角对齐。 &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="//ajax.useso.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<link href='http://fonts.useso.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2015/10/09/ccjs-start">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">CocosJS 初探</h2>
+    
+  </header>
+
+  <div class="entry_content"><h1>锚点和坐标</h1>
+
+<p>Cocos引擎使用的是右手<a href="https://zh.wikipedia.org/wiki/%E7%AC%9B%E5%8D%A1%E5%84%BF%E5%9D%90%E6%A0%87%E7%B3%BB">笛卡尔坐标系</a>,相对于我们熟悉的标准屏幕坐标系,其坐标原点在屏幕的左下角。</p>
+
+<p>在Cocos里,显示对象以锚点(anchor)对齐。即一个sprite如果坐标设置为【0,0】并且锚点也是【0,0】的话,它的左下角就与屏幕的左下角对齐。但是默认情况下,非Layer对象的默认节点都是【0.5,0.5】。所以,如果没注意直接将坐标设置为【0,0】时,就会导致图片上半边和下半边出现在屏幕外。</p>
+
+<pre><code>var sprite  = cc.Sprite.create(res.bkg_image);
+sprite.anchorX = 0;
+sprite.anchorY = 0; 
+sprite.x = 0;
+sprite.y = 0;
+this.addChild(sprite);
+</code></pre>
+
+<h1>定位</h1>
+
+<p>cc.winSize表示游戏窗口大小,而cc.visibleRect表示游戏的可视区域。在有些情况下,游戏窗口大小并不等于显示区域大小。如果在屏幕上方显示一个文本或精灵推荐使用cc.visibleRect</p>
+
+<pre><code>var visibleRect = cc.visibleRect;
+var topLeft = visibleRect.topLeft;
+</code></pre>
+
+<h1>自定义事件</h1>
+
+<p>自定义事件的使用和JS、AS3类似,首先是建立一个事件监听器,并且设置相应的处理函数:</p>
+
+<pre><code>var listener = cc.EventListener.create({
+    event: cc.EventListener.CUSTOM,
+    eventName: "game_custom_event",
+    callback: function(event){
+        // 可以通过getUserData来设置需要传输的用户自定义数据
+        console.log("Custom event received : " + event.getUserData().toString());
+    }
+});
+cc.eventManager.addListener(listener, 1);
+</code></pre>
+
+<p>在触发事件的地方使用dispatchEvent抛出事件:</p>
+
+<pre><code>var event = new cc.EventCustom("game_custom_event");
+event.setUserData("Hello World");
+cc.eventManager.dispatchEvent(event);
+</code></pre>
+
+<p>其中,addListener函数的第二个参数可以填一个显示对象,也可以填一个数字。如果以显示对象为参数时,当该对象被回收则监听器也被移除。如果以数值为参数,该数值的大小决定了事件的优先级,数值越大则优先级越低。显示对象为参数的事件优先级为0 (ps.若一个以非显示对象为参数的addListener函数的第二个参数填0时,在一些情况下会出现问题)</p>
+
+<p>这些可以在官方文档里的<a href="http://www.cocos.com/doc/article/index?type=cocos2d-x&amp;url=/doc/cocos-docs-master/manual/framework/html5/v3/eventManager/zh.md">事件分发机制</a>中找到:</p>
+
+<ul>
+<li><a href="http://www.cocos.com/doc/article/index?type=cocos2d-x&amp;url=/doc/cocos-docs-master/manual/framework/html5/v3/eventManager/zh.md">http://www.cocos.com/doc/article/index?type=cocos2d-x&amp;url=/doc/cocos-docs-master/manual/framework/html5/v3/eventManager/zh.md</a></li>
+</ul>
+
+
+<h1>调度器(schedule)</h1>
+
+<p>调度器是通过Note的每帧刷新方法update来计算时间的,但是帧可能会阻塞,所以时间并不准确,但对于一些界面刷新是非常有用的。</p>
+
+<pre><code>note.schedule(func,1,cc.REPEAT_FOREVER);
+</code></pre>
+
+<h1>好记性不如烂笔头,待续&hellip;</h1>
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2015-10-09 18:21:41 +0800" pubdate>Oct 9<span>th</span>, 2015</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2015 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2015/10/09/ccjs-start';
+	var disqus_url = 'http://sbxfc.github.io/blog/2015/10/09/ccjs-start';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

@@ -1,0 +1,306 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>OpenGL - 绘制三角形 - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="OpenGL - 绘制三角形 OpenGL是一个跨平台的图形绘制接口。通过它,开发者可以使用GPU的高速处理能力来绘制图像。 在OpenGL里,三角形是最基本的图形单元。我们将通过绘制三角形来了解OpenGL的工作流程,并利用GLFW库的跨平台环境将三角形显示在窗口上。 VBO &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="//ajax.useso.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<link href='http://fonts.useso.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2014/09/01/opengl-draw-thriangle">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">OpenGL - 绘制三角形</h2>
+    
+  </header>
+
+  <div class="entry_content"><p>OpenGL是一个跨平台的图形绘制接口。通过它,开发者可以使用GPU的高速处理能力来绘制图像。</p>
+
+<p>在OpenGL里,三角形是最基本的图形单元。我们将通过绘制三角形来了解OpenGL的工作流程,并利用<a href="http://rungame.me/blog/2014/08/22/opengl-first-window/">GLFW库</a>的跨平台环境将三角形显示在窗口上。</p>
+
+<h1>VBO</h1>
+
+<p>CPU和GPU处在两个不同的内存单元。在通过GPU绘制之前,我们首先在本地创建一份顶点数据:</p>
+
+<pre><code>//三角形的顶点坐标
+GLfloat vertexPosition[] = {
+    -1.0f,-1.0f,0.0f, //第一个顶点坐标
+    1.0f,-1.0f,0.0f,  //第二个顶点坐标
+    0.0f,1.0f,0.0f,   //第三个顶点坐标
+};
+
+//三角形的顶点颜色
+GLfloat vertexColor[] = {
+    1.0, 0.0, 0.0,  //第一个顶点颜色的RGB值
+    0.0, 1.0, 0.0,  //第二个顶点颜色的RGB值
+    0.0, 0.0, 1.0,  //第三个顶点颜色的RGB值
+};
+</code></pre>
+
+<p>在这两条数据里,我们设置了三角形的顶点坐标和颜色。这两份数据最终会通过OpenGL接口传递到显卡上,并在显卡上生成一份成为VBO(顶点缓冲对象)的副本,实际上就是一块二进制内存。着色器在渲染时才需要为GPU指定VBO的具体格式,所以我们只是简单地创建相应的VBO对象并上传顶点数据到VBO对象上:</p>
+
+<pre><code>glGenBuffers(2, vbo);
+glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
+glBufferData(GL_ARRAY_BUFFER, sizeof(vertexPosition), vertexPosition, GL_STATIC_DRAW); 
+</code></pre>
+
+<p>OpenGL和其他语言的习惯不同,OpenGL使用一个无符号的整数作为对象的唯一标识,每个对象都对应一个唯一标识。该标识可以通过<a href="https://www.khronos.org/opengles/sdk/docs/man32/html/glGenBuffers.xhtml/">glGenBuffers</a>函数由系统自动生成,也可以自己手动随便指定一个无符号的整数值,这两者的区别是前者能保证唯一性。</p>
+
+<p>通过glBindBuffer函数,我们为缓冲对象标识初始化一个GL_ARRAY_BUFFER类型的缓冲对象,即顶点缓冲对象VBO。如果该唯一标识对应的顶点缓冲对象已经存在,glBindBuffer还有选择或激活该缓冲区的意思,即在绑定之后未来的操作将会影响该缓冲区。</p>
+
+<p>最后,使用glBufferData将本地的顶点数据提交至顶点缓冲区。</p>
+
+<p>glBufferData的结构:</p>
+
+<pre><code>void glBufferData(  GLenum target,
+                    GLsizeiptr size,
+                    const GLvoid * data,
+                    GLenum usage);
+</code></pre>
+
+<ul>
+<li>target : 对象类型</li>
+<li>size : 对象的字节长度</li>
+<li>data : 数据 (<font color="#bd260d"><strong>这里设置的是本地顶点数据的指针,并且上传到显卡内存的是该数据的副本(copy的形式)</strong></font>)</li>
+<li>usage : 使用方式。在我们的程序中顶点数组数据都是常量,不需要改变,因此我们给glBufferData一个GL_STATIC_DRAW的参数。其中STATIC部分表明我们不会想去改变数据,也可以设置为DYNAMIC,表明我们频繁地写到这个缓冲里,或者STREAM,表明我们将周期性地替换掉缓冲的内容。DRAW部分表明我们希望缓冲只会被GPU读取。与DRAW相对的是READ,表明一个缓冲还要被CPU读回去。还有COPY,表明这个缓冲是CPU和GPU之间的一个管道,不应该偏重于任一方。顶点数组几乎总是使用GL<em>*</em>DRAW表示。</li>
+</ul>
+
+
+<p>调用glBufferData函数为VBO指定数据时,你可以为该对象指明相应的数据格式、大小和使用方式。如果你设置的使用方式和你在之后的处理方式不同也不会出错,但会造成效率低下。glBufferData处理数据的方式很类似memcpy,仅仅是一串没有特别意义的字节流。直到我们渲染它之前，我们不会告诉OpenGL我们数组的结构。这允许缓冲以几乎任何格式存储顶点属性以及其它数据，或者同一份数据给不同的渲染任务以不同的方式去处理。</p>
+
+<p>在glBufferData函数调用之后，数据会上传到显卡缓存里。如果你不再需要对顶点做修改、重新上传的话，在这里可以将本地内存里的该顶点数据释放掉。</p>
+
+<h1>VAO</h1>
+
+<p>从本质说,VBO相当于显卡上一块记录顶点数据的Buffer,要想绘制一个三角形除了顶点数据以外,在渲染时我们还要告诉GPU顶点的格式和使用情况以及vertex-shader里的属性对应的顶点数据位置。以上的这些就是VAO包含的内容,VAO记录了一次绘制所需的所有顶点信息。</p>
+
+<p>使用VAO的好处是,我们可以在初始化时一次性讲GPU所需要的绘制信息(包括顶点数据和使用情况)上传至显卡,在每帧绘制时不必重复传递顶点数据和设置顶点的数据结构等,减少了CPU和GPU之间的交互。</p>
+
+<p>创建一个VAO对象和VBO是一样的:</p>
+
+<pre><code>glGenVertexArrays(1,&amp;vao);
+glBindVertexArray(vao);
+</code></pre>
+
+<p>在绑定完VAO之后,接下来的一系列设置都会被记录到VAO中。首先,我们要为着色器设置渲染时着色器属性对应的顶点数据格式以及位置:</p>
+
+<pre><code>glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
+glVertexAttribPointer(ATTRIB_LOCATION_VERTEX,3,GL_FLOAT,GL_FALSE,0,0);
+</code></pre>
+
+<p>在渲染时,一个VBO的值被解释为一个位置,着色器通过 layout (location = 0) 来关联顶点属性,然后使用glVertexAttribPointer将缓存中的VBO的位置与顶点着色器里的顶点的位置绑定在一起。</p>
+
+<p>默认情况下,着色器里的属性访问都是关闭的,我们需要根据该属性对应的(location)通过glEnableVertexAttribArray将其设置为可访问。</p>
+
+<pre><code>glEnableVertexAttribArray(ATTRIB_LOCATION_VERTEX);
+</code></pre>
+
+<p>最后,在绑定结束时需要显示地调用glBindVertexArray(0)来关闭VAO</p>
+
+<p>在介绍VBO时,我们提到过,向VBO设置数据时我们没有告诉GPU缓存里VBO的具体格式。但在设置VAO时,我们通过glVertexAttribPointer函数将VBO和shader里的对应顶点渲染属性关联在一起,并在此时指定了VBO的格式。</p>
+
+<p><em>另外,我们也可以在 shader 里简单地声明顶点属性,比如:</em></p>
+
+<pre><code>in vec3 position;
+</code></pre>
+
+<p><em>在程序中glGetAttribLocation函数在运行时查找该属性位置信息,通过该函数返回的位置将其与VBO绑定在一起。这样就省去了硬编码的烦恼。</em></p>
+
+<p>ps. <a href="https://www.khronos.org/opengles/sdk/docs/man/xhtml/glVertexAttribPointer.xml">glVertexAttribPointer要在绑定VBO后设置</a></p>
+
+<h1>绘制三角形</h1>
+
+<p>调用glDrawArrays函数将当前缓冲区里的顶点数据逐一进行绘制,因为GPU采用并行设计所以其绘制速度是很快的</p>
+
+<pre><code>glDrawArrays(GL_TRIANGLES, 0, 3);
+</code></pre>
+
+<p>函数结构:</p>
+
+<pre><code>void glDrawArrays(GLenum mode,
+                   GLint first,
+                   GLsizei count);
+</code></pre>
+
+<p><strong>参数</strong></p>
+
+<p>一,mode:</p>
+
+<p>指定绘制图元的类型</p>
+
+<ul>
+<li>GL_POINTS : 绘制一个个点。</li>
+<li>GL_LINE_STRIP : 绘制两点之间的连线,第一个点和最后一个点不连接在一起。</li>
+<li>GL_LINE_LOOP : 绘制两点之间的连线,第一个点和最后一个点连接。</li>
+<li>GL_LINES : 以两点为一个组合连线。任意组合与其他的组合无联系,即绘制一条条线段。</li>
+<li>GL_TRIANGLE_STRIP : 以V0V1V2,V1V2V3,V2V3V4,&hellip;..</li>
+<li>GL_TRIANGLE_FAN : 以V0V1V2,V0V2V3,V0V3V4,&hellip;.的顺序绘制三角形,类似于扇子的形状。</li>
+<li>GL_TRIANGLES : 每三个顶点之间绘制三角形,与其他三角形不连接。</li>
+</ul>
+
+
+<p>二,first</p>
+
+<p>在顶点数组里,第一个绘制的顶点索引。</p>
+
+<p>三,count</p>
+
+<p>指定绘制的顶点数量。</p>
+
+<h1>完整代码:</h1>
+
+<p>完整工程:<br>
+<a href="https://github.com/sbxfc/OpenGLDrawTriangle">https://github.com/sbxfc/OpenGLDrawTriangle</a></p>
+
+<h1>参考:</h1>
+
+<p><a href="http://stackoverflow.com/questions/18368914/gldrawarrays-behaving-weirdly-on-mac-os-x">http://stackoverflow.com/questions/18368914/gldrawarrays-behaving-weirdly-on-mac-os-x</a></p>
+
+<p><a href="http://www.cnblogs.com/mikewolf2002/archive/2012/10/27/2742137.html">http://www.cnblogs.com/mikewolf2002/archive/2012/10/27/2742137.html</a></p>
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2014-09-01 09:45:58 +0800" pubdate>Sep 1<span>st</span>, 2014</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2015 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2014/09/01/opengl-draw-thriangle';
+	var disqus_url = 'http://sbxfc.github.io/blog/2014/09/01/opengl-draw-thriangle';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

@@ -1,0 +1,203 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>iOS - iOS9 键盘系统 - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="iOS - iOS9 键盘系统 我们知道,访问UIApplication的windows属性可以获取当前显示的所有非系统window。其中,在iOS9之前类型为UITextEffectWindow的window就是键盘窗口,结构大致如下: windows = { UIWindow, &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="//ajax.useso.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<link href='http://fonts.useso.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2015/09/28/ios9kb">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">iOS - iOS9 键盘系统</h2>
+    
+  </header>
+
+  <div class="entry_content"><p>我们知道,访问UIApplication的windows属性可以获取当前显示的所有非系统window。其中,在iOS9之前类型为UITextEffectWindow的window就是键盘窗口,结构大致如下:</p>
+
+<pre><code>windows = { UIWindow,UITextEffectWindow }
+</code></pre>
+
+<p>但在iOS9之后,新增了一个类型为 UIRemoteKeyboardWindow 的窗口用来显示键盘按钮,所以想获取键盘上的按钮,就需要得到UIRemoteKeyboardWindow</p>
+
+<pre><code>windows = { UIWindow,UITextEffectWindow,UIRemoteKeyboardWindow }
+</code></pre>
+
+<p>获取一个键盘窗口代码(swift):</p>
+
+<pre><code>internal var keyboardWindow: UIWindow? {
+    let windows = UIApplication.sharedApplication().windows
+    for window in windows {
+        let views = window.subviews
+        for subview in views{
+            let className = NSStringFromClass(subview.dynamicType)
+            if className == "UIKeyboard" {
+                return window
+            }
+        }
+    }
+
+    for window in windows.reverse() {
+        let className = NSStringFromClass(window.dynamicType)
+        if className == "UIRemoteKeyboardWindow" {
+            return window
+        }
+    }
+
+    //获取UITextEffectWindow
+    if windows.count &gt; 1 {
+        return windows.last!
+    }
+
+    //fail
+    return nil
+}
+</code></pre>
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2015-09-28 18:29:52 +0800" pubdate>Sep 28<span>th</span>, 2015</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2015 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2015/09/28/ios9kb';
+	var disqus_url = 'http://sbxfc.github.io/blog/2015/09/28/ios9kb';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

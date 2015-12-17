@@ -1,0 +1,207 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>Unity3D - 混合贴图的地形Shader - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="Unity3D - 混合贴图的地形Shader 贴图上每个像素都由四个通道构成，包括三个原色R、G、B 和一个alpha值A。因此，每个像素点都可以携带四个值。 利用贴图的这种结构,我们将分别存放R、G、B、A四个通道值的灰图合成一张新贴图，如图所示： 灰图上的颜色值介于[0,1]之间, &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="//ajax.useso.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<link href='http://fonts.useso.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2014/04/09/u3d-blending-textures">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">Unity3D - 混合贴图的地形Shader</h2>
+    
+  </header>
+
+  <div class="entry_content"><p>贴图上每个像素都由四个通道构成，包括三个原色R、G、B 和一个alpha值A。因此，每个像素点都可以携带四个值。<br></p>
+
+<p>利用贴图的这种结构,我们将分别存放R、G、B、A四个通道值的灰图合成一张新贴图，如图所示：<br>
+<img src="/images/2014/4/texture_data.png" alt="" /></p>
+
+<p>灰图上的颜色值介于[0,1]之间,越亮的部分颜色越接近白色,色值也越接近1。越暗的部分,颜色越接近黑色,色值接近于0。<br>
+第一张灰图的左上角存放的是R通道(red)值,且颜色值是白色，色值接近1，在组合后形成的示意图中呈红色。其他三块区域类同。<br>
+(PS.这里讲到的四张图合成一张图，并非实际将四张图混合在一起，而是示意灰图的合成变化。)</p>
+
+<br><br>
+
+
+<!-- more -->
+
+
+<h1>地表贴图</h1>
+
+<p><img src="/images/2014/4/terrain_texs.png" alt="" /></p>
+
+<p>大多数地表都是由不同层级的贴图复合而成，如草地、泥土、小石子、石头贴图。我们将这几种不同贴图分布规律的灰图合成一张地表贴图。如下图:</p>
+
+<p><img src="/images/2014/4/terrain_texture.png" alt="" /></p>
+
+<p>计算最终颜色代码:</p>
+
+<pre><code>float4 finalColor;
+finalColor = lerp(rTexData, gTexData, blendData.g);
+finalColor = lerp(finalColor, bTexData, blendData.b);
+finalColor = lerp(finalColor, aTexData, blendData.a);
+finalColor.a = 1.0;
+
+float4 terrainLayers = lerp(_ColorA, _ColorB, blendData.r);
+finalColor *= terrainLayers;
+finalColor = saturate(finalColor);
+</code></pre>
+
+<p>下图演示了利用插值取得地表颜色的过程:</p>
+
+<p><img src="/images/2014/4/lerp.png" alt="" /></p>
+
+<p>上面的代码中，首先以<code>R贴图为基础</code>绘制G贴图在R贴图上的分布,利用地形贴图中G通道上的G贴图分布值。(有点拗口) 在计算出的最终颜色之后,又依次与B、A贴图进行插值计算。<br>其中地形贴图中的R通道值并非记录R贴图的颜色分布,而是记录了地表基色<code>_ColorA</code>和<code>_ColorB</code>的值。同样R的值越接近1，颜色就越接近<code>_ColorB</code>。(PS.这段话是我自己的理解。)</p>
+
+<p>实例地址:<br>
+<a href="https://github.com/rungameme/terrain_blending_textures">https://github.com/rungameme/terrain_blending_textures</a></p>
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2014-04-09 10:20:38 +0800" pubdate>Apr 9<span>th</span>, 2014</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2015 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2014/04/09/u3d-blending-textures';
+	var disqus_url = 'http://sbxfc.github.io/blog/2014/04/09/u3d-blending-textures';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

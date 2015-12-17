@@ -1,0 +1,230 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>插入排序 - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="插入排序 运行时间 1，若排序集合正好是顺序的,插入排序的工作量近似为0。如果是逆序的，工作量最大。
+2，若排序集合长度为n,集合里元素是顺序的，使用插入排序进行(n-1)次操作即可。若集合里元素是逆序的,那么此时需要进行的比较有n(n-1)/2次: 1+2+3+4+...+(n-1) = n &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="//ajax.useso.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<link href='http://fonts.useso.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2014/12/03/insertion-sort">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">插入排序</h2>
+    
+  </header>
+
+  <div class="entry_content"><h2>运行时间</h2>
+
+<hr />
+
+<p>1，若排序集合正好是顺序的,插入排序的工作量近似为0。如果是逆序的，工作量最大。<br>
+2，若排序集合长度为n,集合里元素是顺序的，使用插入排序进行(n-1)次操作即可。若集合里元素是逆序的,那么此时需要进行的比较有n(n-1)/2次:</p>
+
+<pre><code>1+2+3+4+...+(n-1) = n*(n-1)/2
+</code></pre>
+
+<p>插入排序的赋值操作是比较操作的次数加上 (n-1）次,即:</p>
+
+<pre><code>T0 =  n*(n-1)/2 + (n-1);
+</code></pre>
+
+<p>平均来说插入排序算法的时间复杂度为Θ(n<sup>2</sup>）:</p>
+
+<pre><code>T = n*(n-1)/2 + T0 
+T = n*(n-1)/2 + n*(n-1)/2 + (n-1) 
+T = (n+1)*(n-1)
+T = Θ(n^2)
+</code></pre>
+
+<p>如果需要排序的数据量很小，例如，量级小于千，那么插入排序还是一个不错的选择。</p>
+
+<!--more-->
+
+
+<h2>实例</h2>
+
+<hr />
+
+<p>对集合{4,2,1,5,9}进行插入排序。<br></p>
+
+<ol>
+<li>首先将集合的第一个元素4，作为已排序集合的第一个值{4}</li>
+<li>用第二个元素2，与已排序的集合{4}进行比较，若2&lt;4,交换位置，得到集合 {2、4}。</li>
+<li>取集合第三个元素1与已排序集合{2、4}进行比较。<br>元素1首先与已排序集合的最后一个元素4比较,若1&lt;4，将元素1、4交换位置,然后再与元素2进行比较，如元素1&lt;2，将元素1、2的位置交换，最后得到排序集合{1,2,4}。</li>
+<li>以此类推。</li>
+</ol>
+
+
+<h2>代码实现</h2>
+
+<hr />
+
+<pre><code>#define LEN 5
+int a[LEN] = {4,2,1,5,9};
+
+void insert()
+{
+    int i, j, key;
+    for (j = 1; j &lt; LEN; j++)
+    {
+        key = a[j];
+        i = j - 1;
+        while (i &gt;= 0 &amp;&amp; a[i] &gt; key)
+        {
+            a[i+1] = a[i];
+            i--;
+        }
+        a[i+1] = key;
+    }
+    printf("%d, %d, %d, %d, %d \n",a[0], a[1], a[2], a[3], a[4]);
+}
+</code></pre>
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2014-12-03 09:39:12 +0800" pubdate>Dec 3<span>rd</span>, 2014</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2015 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2014/12/03/insertion-sort';
+	var disqus_url = 'http://sbxfc.github.io/blog/2014/12/03/insertion-sort';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

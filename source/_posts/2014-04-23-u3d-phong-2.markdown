@@ -1,0 +1,66 @@
+---
+layout: post
+title: "冯氏反射模型 （二）"
+date: 2014-04-23 19:17:46 +0800
+comments: true
+categories: 
+---
+	
+	Shader "custom/Phong" 
+	{
+		Properties 
+		{
+			_MainTint ("Diffuse Tint", Color) = (1,1,1,1)
+			_MainTex ("Base (RGB)", 2D) = "white" {}
+			_SpecularColor ("Specular Color", Color) = (1,1,1,1)
+			_SpecPower ("Specular Power", Range(0.1,30)) = 1
+			_SpecHardness ("Specular Hardness", Range(0.1, 10)) = 2
+		}
+		
+		SubShader 
+		{
+			Tags { "RenderType"="Opaque" }
+			LOD 200
+			
+			CGPROGRAM
+			#pragma surface surf Phong
+			
+			float4 _SpecularColor;
+			sampler2D _MainTex;
+			float4 _MainTint;
+			float _SpecPower;
+			float _SpecHardness;
+			
+			inline fixed4 LightingPhong (SurfaceOutput s, fixed3 lightDir, half3 viewDir, fixed atten)
+			{
+				//计算漫反射光照强度
+				float diff = dot(s.Normal, lightDir);
+				
+				//计算反射光线的反向向量，因为要与观察角度进行计算
+				//反射光线R = L - 2*(L*N)*N（前面有该公式推导）
+				//normalize 计算向量的单位向量
+				float3 reflectionVector = normalize((2.0 * s.Normal * diff) - lightDir);
+				
+				float spec = pow(max(0,dot(reflectionVector, viewDir)), _SpecPower);
+				//计算最终的反射光强
+				float3 finalSpec = _SpecularColor.rgb * spec;
+				
+				//
+				fixed4 c;
+				//漫反射光照 和 镜面反射光照
+				c.rgb = (s.Albedo * _LightColor0.rgb * diff) + (_LightColor0.rgb * finalSpec);
+				c.a = 1.0;
+				return c;
+			}
+	
+			struct Input 
+			{
+				float2 uv_MainTex;
+			};
+	
+			void surf (Input IN, inout SurfaceOutput o) 
+			{
+				half4 c = tex2D (_MainTex, IN.uv_MainTex) * _MainTint;
+				o.Albedo = c.rgb;
+				o.Alpha = c.a;
+			}

@@ -1,0 +1,220 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>C/C++ 类型转化 - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="C/C++ 类型转化 const_cast const_cast,移除对象的常量性,一般用于移除指针或引用的常量性,不适用于对象。const_cast去除常量性不是为了修改常量所指向的内容,而是为了使函数能接受实参 const_cast作用于指针,转化后的指针pval和常量val的地址相同。 &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="//ajax.useso.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<link href='http://fonts.useso.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2015/04/16/cpp-convert">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">C/C++ 类型转化</h2>
+    
+  </header>
+
+  <div class="entry_content"><h1><font color='#bd260d'>const_cast</font></h1>
+
+<p>const_cast,移除对象的常量性,一般用于移除指针或引用的常量性,不适用于对象。const_cast去除常量性不是为了修改常量所指向的内容,而是为了使函数能接受实参</p>
+
+<p><strong>const_cast</strong>作用于指针,转化后的指针pval和常量val的地址相同。但是操作*pval不会影响常量val。<font color='#bd260d'><strong>*pval修改的是一个临时对象</strong></font></p>
+
+<pre><code>const int val = 17;
+int* pval = const_cast&lt;int*&gt;(&amp;val);
+*pval = 200;    
+std::cout &lt;&lt; "*pval="&lt;&lt;*pval&lt;&lt;std::endl;//*pval = 200
+std::cout &lt;&lt; "pval 地址="&lt;&lt;pval&lt;&lt;std::endl;    
+std::cout &lt;&lt; "&amp;val 地址="&lt;&lt;&amp;val&lt;&lt;std::endl;
+std::cout &lt;&lt; "val="&lt;&lt;val&lt;&lt;std::endl;//常量val值不变
+</code></pre>
+
+<p>const_cast作用于引用,转化后的引用refval并未指向常量val,而是指向一个临时对象。此时,修改引用refval不会对val造成影响</p>
+
+<pre><code>const int val = 17;
+int refval = const_cast&lt;int&amp;&gt;(val);
+refval = 100;
+std::cout &lt;&lt; "refval="&lt;&lt;refval&lt;&lt;std::endl;  //refval = 100
+std::cout &lt;&lt; "val="&lt;&lt;val&lt;&lt;std::endl;        //val = 17
+</code></pre>
+
+<p>const_cast不能用于对象</p>
+
+<pre><code>const int val = 17;
+int num = const_cast&lt;int&gt;(val);//错误,不能通过编译
+</code></pre>
+
+<!-- more -->
+
+
+<h1><font color='#bd260d'>static_cast</font></h1>
+
+<p>static_cast 运算符可用于将指向基类的指针转换为指向派生类的指针等操作。此类转换并非始终安全。</p>
+
+<p>通常使用static_cast转换数值数据类型，例如将枚举型转换为整型或将整型转换为浮点型，而且你能确定参与转换的数据类型。static_cast 转换安全性不如 dynamic_cast 转换，因为 static_cast 不执行运行时类型检查，而 dynamic_cast 执行该检查。 对不明确的指针的 dynamic_cast 将失败，而 static_cast 的返回结果看似没有问题，这是危险的。 尽管 dynamic_cast 转换更加安全，但是 dynamic_cast 只适用于指针或引用，而且运行时类型检查也是一项开销。</p>
+
+<pre><code>//转换数值数据类型
+int val = static_cast&lt;int&gt;(3.141592654);
+
+//将无类型指针转化为某一类型指针
+void* p = &amp;val;
+int* pval = static_cast&lt;int*&gt;(p);
+</code></pre>
+
+<h1><font color='#bd260d'>reinterpret_cast</font></h1>
+
+<p>“通常为操作数的位模式提供较低层的重新解释”也就是说将数据以二进制存在形式的重新解释。</p>
+
+<pre><code>int *ip;
+char *pc = reinterpret_cast&lt;char*&gt;(ip);
+// 需要记得pc所指向的真实对象是int型,并⾮字符串。
+// 如果将pc当作字符指针进⾏行操作,可能会造成运⾏行时错误
+// 如int len = strlen(pc);
+</code></pre>
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2015-04-16 20:05:03 +0800" pubdate>Apr 16<span>th</span>, 2015</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2015 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2015/04/16/cpp-convert';
+	var disqus_url = 'http://sbxfc.github.io/blog/2015/04/16/cpp-convert';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

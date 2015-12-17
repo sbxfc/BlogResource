@@ -1,0 +1,2022 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[sbxfc]]></title>
+  <link href="http://sbxfc.github.io/atom.xml" rel="self"/>
+  <link href="http://sbxfc.github.io/"/>
+  <updated>2015-12-17T15:30:03+08:00</updated>
+  <id>http://sbxfc.github.io/</id>
+  <author>
+    <name><![CDATA[sbxfc]]></name>
+    <email><![CDATA[sbxfc17@gmail.com]]></email>
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Cocos - 纹理素材的选择 ]]></title>
+    <link href="http://sbxfc.github.io/blog/2015/12/04/cocos2d-texture/"/>
+    <updated>2015-12-04T12:15:05+08:00</updated>
+    <id>http://sbxfc.github.io/blog/2015/12/04/cocos2d-texture</id>
+    <content type="html"><![CDATA[<p>在cocos2d里,纹理的使用主要分为两步:</p>
+
+<ul>
+<li>第一步是从本地加载并读取纹理数据到内存。</li>
+<li>第二步是将内存里的纹理数据通过OpenGL接口以copy的方式上传到GPU内存。</li>
+</ul>
+
+
+<p>前者,主要涉及到图片尺寸以及加载后纹理的内存占用问题。例如,我们加载了一张1024*1024的png图片(rgba8888格式),其大小约为1024*1024*4 = 4MB。这意味着,如果这张纹理图片放进安装包就会使整个包增加4MB,如果在运行时加载到游戏里就相当于多了至少4MB内存。</p>
+
+<p>对于一个有责任心(小肚鸡肠)的开发者来说,程序无缘无故增加了4MB内存,总是会让人耿耿于怀的。能不能把尺寸或者运行时内存减少一点呢?答案是可以的。</p>
+
+<p>想要解决纹理的内存问题,我们先看一下纹理为何会占用了这么多内存。首先是我们常见的格式,无论是png还是jpg,这些图片都是非压缩格式纹理。非压缩纹理的意思是,这些图片里的rgba四个通道值在文件里都是按照顺序排列的。非压缩格式图片的却别在于,有一些只使用了rgb三个通道值,有一些则使用的少于8位精度值的通道。</p>
+
+<p>cocos2d支持十余种像素格式的非压缩纹理,上面提到的rgba8888就是其中一种,也是常用的格式。一般来说,图片的扩展名和它的像素格式没什么关系,一个png图片可能是rgba8888也可能是rgba4444或者其他的像素格式。</p>
+
+<p>在这里,rgba8888表示该图片上的每个像素点支持R、G、B三通道以及Alpha通道,这四个通道值是精度为8位的二进制数。即这种像素格式上的每个通道值有2<sup>8</sup> = 256种精度选择,而2<sup>8</sup>的值等于1byte,所以rgba8888上每个像素的大小是4*1byte = 4byte。以此推之,RGBA4444就是通道值精度为16(2<sup>4</sup> = 16)包含RGBA四通道的纹理,大小为4*0.5byte = 2byte。可以看出RGBA4444的大小是RGBA8888的一半,但是精度却只有16。</p>
+
+<p>因此,一张RGBA8888的纹理转化为RGBA4444之后,其尺寸会减少为原图的一半,但是精度会损失。一般来说,这种精度的损失对一些渐变色的纹理影响比较明显。但是无论是精度16还是精度256,这些色值都会映射到OpenGL支持的[0,1]颜色区间。我们应当根据实际情况选取合适的像素格式来减少图片尺寸和运行时的内存。</p>
+
+<p>通常来说,对于非压缩纹理图片 rgb565 和 rgba5551(RGB5A1) 的效果和内存占用情况相对会好一些。</p>
+
+<p>Cocos支持的非压缩纹理像素格式:</p>
+
+<pre><code>    enum class PixelFormat
+    {
+        //! auto detect the type
+        AUTO,
+        //! 32-bit texture: BGRA8888
+        BGRA8888,
+        //! 32-bit texture: RGBA8888
+        RGBA8888,
+        //! 24-bit texture: RGBA888
+        RGB888,
+        //! 16-bit texture without Alpha channel
+        RGB565,
+        //! 8-bit textures used as masks
+        A8,
+        //! 8-bit intensity texture
+        I8,
+        //! 16-bit textures used as masks
+        AI88,
+        //! 16-bit textures: RGBA4444
+        RGBA4444,
+        //! 16-bit textures: RGB5A1
+        RGB5A1,
+
+        //省略了压缩纹理
+        //...
+     }
+</code></pre>
+
+<h1>加载时的设置</h1>
+
+<p>不同的像素格式,在加载时也需要注意格式问题。</p>
+
+<p>cocos2d对纹理的默认处理方式是PixelFormat::NONE,这个设置在游戏运行时会被转化为默认值为&#8221;RGBA8888&#8221;。但是,如果要加载的纹理图片的格式RGBA4444,这时引擎就会通过转换函数将RGBA4444转为RGBA8888。</p>
+
+<p>这种转换不是我们想要的,我们想直接将RGBA4444这种格式的纹理数据放到GPU上绘制,因为RGBA4444是OpenGL可以直接读取并渲染的格式,我们不需要将其转化为RGBA8888,转换不但会增加内存(rgba4444->rgba888内存增加一倍)还会耗费一定的CPU。</p>
+
+<pre><code>//在这里,我们高呼,我们加载的格式是RGBA5551,不用帮我们转换
+[Texture2D setDefaultAlphaPixelFormat:kTexture2DPixelFormat_RGB5A1];
+Sprite *s1 = [Sprite spriteWithFile:@"rgba5551.png"];
+[self addChild:s1];
+
+//在RGBA5551加载完后,我们告诉引擎你可以去按照你默认的格式(RGBA8888)去处理其他纹理了
+[Texture2D setDefaultAlphaPixelFormat:kTexture2DPixelFormat_RGBA8888];
+Sprite *s2 = [Sprite spriteWithFile:@"rgba8888.png"];
+[self addChild:s2];
+</code></pre>
+
+<p>主要注意的是,在Sprite里,除了initWithTexture以外,其他全部创建方法会将纹理自动加载到内存并向GPU内存上传纹理数据。所以,实际开发中如果图像资源中同时包含多种格式,一定要小心处理。</p>
+
+<p>OpenGL通过glTexImage2D上传非压缩纹理,虽然GPU拥有高效的图像处理速度,但是从本地内存向显卡内存传递图片数据仍然是CPU和GPU共同处理的过程,资源的绘制效率也会受资源数据的大小限制(传输中的宽带问题,数据越大传输时间越长),所以预先上传纹理数据会对纹理的绘制效率有很大的提高,可以参见Texture2DCache对纹理缓存的管理。</p>
+
+<p>下面的代码是Cocos里向 GPU 内存上传非压缩纹理数据的源码:</p>
+
+<pre><code>glTexImage2D(GL_TEXTURE_2D, i, info.internalFormat, 
+             (GLsizei)width, (GLsizei)height, 0, info.format, info.type, data);
+</code></pre>
+
+<p>其中,第三个参数的可选值为:</p>
+
+<pre><code>GL_RGB,GL_RGBA,GL_ALPHA,GL_LUMINANCE,GL_LUMINANCE_ALPHA 
+</code></pre>
+
+<p>倒数第二个参数的格式可选值为:</p>
+
+<pre><code>GL_UNSIGNED_BYTE,GL_UNSIGNED_SHORT_5_6_5,GL_UNSIGNED_SHORT_4_4_4_4,GL_UNSIGNED_SHORT_5_5_5_1
+</code></pre>
+
+<p>是不是有点熟悉,这两个参数的组合其实就是我们上面提到的某一个像素格式,比如RGBA4444对应的就是GL_RGBA和GL_UNSIGNED_SHORT_4_4_4_4。</p>
+
+<h1>压缩纹理</h1>
+
+<p>除了非压缩纹理外,Cocos也支持压缩纹理,压缩纹理是通过一些优化算法将像素数据进行压缩,这些压缩纹理可以在相应的GPU直接解析(比如PVR格式的文件就可以直接 PowerVR图形芯片 解析)。</p>
+
+<p>在OpenGL里,压缩纹理通过 glCompressedTexImage2D 接口将纹理数据从本地上传到GPU内存:</p>
+
+<pre><code>glCompressedTexImage2D(GL_TEXTURE_2D,   i,  info.internalFormat,
+                       (GLsizei)width,  (GLsizei)height,    0,  datalen, data);
+</code></pre>
+
+<p>Cocos里支持的压缩纹理格式:</p>
+
+<pre><code>enum class PixelFormat
+{
+    ...
+
+    //! 4-bit PVRTC-compressed texture: PVRTC4
+    PVRTC4,
+    //! 4-bit PVRTC-compressed texture: PVRTC4 (has alpha channel)
+    PVRTC4A,
+    //! 2-bit PVRTC-compressed texture: PVRTC2
+    PVRTC2,
+    //! 2-bit PVRTC-compressed texture: PVRTC2 (has alpha channel)
+    PVRTC2A,
+    //! ETC-compressed texture: ETC
+    ETC,
+    //! S3TC-compressed texture: S3TC_Dxt1
+    S3TC_DXT1,
+    //! S3TC-compressed texture: S3TC_Dxt3
+    S3TC_DXT3,
+    //! S3TC-compressed texture: S3TC_Dxt5
+    S3TC_DXT5,
+    //! ATITC-compressed texture: ATC_RGB
+    ATC_RGB,
+    //! ATITC-compressed texture: ATC_EXPLICIT_ALPHA
+    ATC_EXPLICIT_ALPHA,
+    //! ATITC-compresed texture: ATC_INTERPOLATED_ALPHA
+    ATC_INTERPOLATED_ALPHA,
+    //! Default texture format: AUTO
+    DEFAULT = AUTO,
+
+    NONE = -1
+};
+</code></pre>
+
+<h1>纹理选择</h1>
+
+<ul>
+<li><p>在 iOS 设备上最好使用PVR格式的压缩格式,因为iOS设备采用的是 PowerVR 图形芯片,PVR格式图片在PowerVR图形芯片中效率极高，占用显存也小。<a href="http://blog.chukong-inc.com/index.php/2013/02/04/%E5%A6%82%E4%BD%95%E4%BC%98%E5%8C%96cocos2d-x%E6%B8%B8%E6%88%8F%E7%9A%84%E5%86%85%E5%AD%98/">其中PVRTC4格式的PVR有损压缩包pvr.ccz,尺寸是原来的1/8</a></p></li>
+<li><p>在 Android 设备上使用双层 ETC1 的压缩纹理(极少数的GPU对ETC格式支持有问题。)。</p></li>
+</ul>
+
+
+<h1>TexturePacker</h1>
+
+<p>TexturePacker是一款很多的纹理压缩工具,上述的纹理格式都可以通过TexturePacker工具导出,下图是以导出一个PVRTC4格式的pvr.ccz文件的截图:</p>
+
+<p><img src="http://sbxfc.github.io/images/2015/12/texture_packer.png" alt="" /></p>
+
+<h1>参见</h1>
+
+<ul>
+<li><a href="https://www.khronos.org/opengles/sdk/docs/man/xhtml/glTexImage2D.xml">https://www.khronos.org/opengles/sdk/docs/man/xhtml/glTexImage2D.xml</a></li>
+<li><a href="http://www.learn-cocos2d.com/2011/11/depth-ios-cocos2d-performance-analysis-test-project/#image-formats">http://www.learn-cocos2d.com/2011/11/depth-ios-cocos2d-performance-analysis-test-project/#image-formats</a></li>
+<li><a href="http://matrixcn.tumblr.com/post/75239316805/%E6%89%B9%E9%87%8F%E8%BD%AC%E6%8D%A2png%E5%9B%BE%E7%89%87%E5%88%B0rgba4444">http://matrixcn.tumblr.com/post/75239316805/%E6%89%B9%E9%87%8F%E8%BD%AC%E6%8D%A2png%E5%9B%BE%E7%89%87%E5%88%B0rgba4444</a></li>
+<li><a href="http://blog.chukong-inc.com/index.php/2013/02/04/%E5%A6%82%E4%BD%95%E4%BC%98%E5%8C%96cocos2d-x%E6%B8%B8%E6%88%8F%E7%9A%84%E5%86%85%E5%AD%98/">如何优化Cocos2d-X游戏的内存</a></li>
+<li><a href="http://pngmini.com/">ImageAlpha Mac</a></li>
+<li><a href="http://blog.csdn.net/kaitiren/article/details/8054856">pvr与png的内存占用</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Javascript - 基于Prototype的对象结构]]></title>
+    <link href="http://sbxfc.github.io/blog/2015/12/03/js-prototype/"/>
+    <updated>2015-12-03T18:11:18+08:00</updated>
+    <id>http://sbxfc.github.io/blog/2015/12/03/js-prototype</id>
+    <content type="html"><![CDATA[<p>Javascript是基于Prototype的编程语言,而非我们熟悉的基于Class的编程语言。</p>
+
+<p>在Javascript里,当我们new一个对象实例时,该对象的Prototype属性会被实例继承,但是Prototype和实例之间是引用关系。</p>
+
+<p>当我们为实例对象的一个属性赋值时实际上并不是对Prototype里的属性进行修改,而是在实例上设置一个新属性。当程序访问该实例上的属性时,编译器会首先搜索实例自身的属性(即新添加的属性),如果没找到才会去搜索其继承的Prototype上的值:</p>
+
+<pre><code>function Person{}
+Person.prototype.name = "ss";
+
+var p = new Person();
+//p身上没有name属性,转而去Person身上找
+console.log(p.name);
+
+//该name属性非Person上的name属性
+p.name = "p";
+console.log(p.name);
+</code></pre>
+
+<h1>参见:</h1>
+
+<ul>
+<li><a href="http://www.ruanyifeng.com/blog/2010/05/object-oriented_javascript_encapsulation.html">http://www.ruanyifeng.com/blog/2010/05/object-oriented_javascript_encapsulation.html</a></li>
+<li><a href="http://www.cnblogs.com/mindsbook/archive/2009/09/19/javascriptYouMustKnowPrototype.html">http://www.cnblogs.com/mindsbook/archive/2009/09/19/javascriptYouMustKnowPrototype.html</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Cocos - Scheduler]]></title>
+    <link href="http://sbxfc.github.io/blog/2015/12/01/cocos-scheduler/"/>
+    <updated>2015-12-01T12:12:18+08:00</updated>
+    <id>http://sbxfc.github.io/blog/2015/12/01/cocos-scheduler</id>
+    <content type="html"><![CDATA[<p>在cocos程序里,场景的每帧刷新是由一个与屏幕刷新频率相同的定时器来驱动的。在iOS环境里,这个定时器称为CADisplayLink。</p>
+
+<p>每当屏幕当前帧刷新结束时,主线程里维持程序生命周期的NSRunLoop就会向CADisplayLink发送通知。接着,CADisplayLink会触发一个名为doCaller的回调函数,在该回调函数里会进行一系列的每帧刷新操作,除了执行由系统控制的场景刷新部分以外,Cocos还构造了一个名为Scheduler(调度器)的东西,让开发者可以参与并自定义与每帧刷新息息相关的操作</p>
+
+<pre><code>//在Cocos引擎里,当Director初始化时会启动该CADisplayLink定时器
+//doCaller函数会执行每帧的刷新操作
+-(void) startMainLoop
+{
+    // Director::setAnimationInterval() is called, we should invalidate it first
+    [self stopMainLoop];
+
+    displayLink = [NSClassFromString(@"CADisplayLink") 
+                    displayLinkWithTarget:self selector:@selector(doCaller:)];
+    [displayLink setFrameInterval: self.interval];
+    [displayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
+}
+</code></pre>
+
+<p>Scheduler里的回调函数先于场景刷新函数被执行,这意味着,如果我们在scheduler回调函数里做一些UI刷新操作,这些操作会在下一帧被及时更新:</p>
+
+<pre><code>_scheduler-&gt;update(_deltaTime);
+...
+_runningScene-&gt;render(_renderer);//render the scene
+</code></pre>
+
+<h1>基础用法</h1>
+
+<p>任何Node以Node为基类的对象都可以直接调用scheduleUpdate方法,然后通过重载update函数来执行回调操作:</p>
+
+<pre><code>this-&gt;scheduleUpdate();
+
+//*.h
+void update(float dt) override;
+//*.cpp
+void HelloWorld::update(float delta){
+    printf("--update--\n");
+}
+</code></pre>
+
+<h1>自定义调度器</h1>
+
+<p>除基础用法以外,还可以通过指定执行频率和回调函数来创建自定义调度器:</p>
+
+<pre><code>this-&gt;schedule(schedule_selector(HelloWorld::updateCustom), 1.0f, kRepeatForever, 0);
+
+//*.h
+void updateCustom(float dt);
+//*.cpp
+void HelloWorld::updateCustom(float dt)
+{
+    printf("--Custom--\n");
+}
+</code></pre>
+
+<p>自定义的Scheduler在回调时需要使用一个Timer来计时,会花费更多的内存和计算时间。并且由于其内部实现机制，其间隔时间至少大于0.1秒,这种scheduler更适合作为定时器来使用。</p>
+
+<h1>调度器优先级</h1>
+
+<p>我们可以为调度器指定优先级，来处理回调方法执行的先后顺序逻辑。</p>
+
+<pre><code>void Node::scheduleUpdate()
+{
+    scheduleUpdateWithPriority(0);
+}
+
+void Node::scheduleUpdateWithPriority(int priority)
+{
+    _scheduler-&gt;scheduleUpdate(this, priority, !_running);
+}
+</code></pre>
+
+<h1>移除</h1>
+
+<p>Scheduler会随Node对象移除而停止,你也可以显示地调用移除函数</p>
+
+<pre><code>node-&gt;unschedulerUpdate();
+node-&gt;unschedule(SEL_SCHEDULE selector, float delay);
+</code></pre>
+
+<h1>参考</h1>
+
+<ul>
+<li><a href="http://www.cocos.com/doc/article/index?type=cocos2d-x&amp;url=/doc/cocos-docs-master/manual/framework/native/v3/scheduler/zh.md">http://www.cocos.com/doc/article/index?type=cocos2d-x&amp;url=/doc/cocos-docs-master/manual/framework/native/v3/scheduler/zh.md</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Cocos - Spine骨骼动画]]></title>
+    <link href="http://sbxfc.github.io/blog/2015/11/25/cocos-spine/"/>
+    <updated>2015-11-25T14:14:58+08:00</updated>
+    <id>http://sbxfc.github.io/blog/2015/11/25/cocos-spine</id>
+    <content type="html"><![CDATA[<p>Spine是一款出众的2D的骨骼动画编辑器。</p>
+
+<h1>使用步骤</h1>
+
+<p>1.首先,在SETUP模型下选中右侧的Images标签页,然后点击Browse将包含图片资源的文件夹添加进来。</p>
+
+<p>2.将Images下的图片拖入场景,并按照角色的样子将各个部位拼接起来。可通过右侧Draw Order调整图片的绘制顺序;</p>
+
+<p>3.创建骨骼,并绑定图片到骨骼上,注意各骨骼的父子关系。</p>
+
+<p>4.切换到ANIMATE模式,选中要“动”的骨骼,对其进行旋转、移动、缩放等操作,每次改动后要记得打关键帧。</p>
+
+<p>5.选择菜单中的Texture Packer选项,导出Cocos2d-x工程需要的json文件和atlas以及png合图。</p>
+
+<h1>在Cocos2d-x里使用</h1>
+
+<p>首先,包含Spine动画需要的相关头文件:</p>
+
+<pre><code>#include &lt;spine/spine-cocos2dx.h&gt;
+#include "spine/spine.h"
+using namespace spine;
+</code></pre>
+
+<p>然后,使用SkeletonAnimation创建Spine动画</p>
+
+<pre><code>auto skeletonNode = new SkeletonAnimation("player.json", "player.atlas");
+skeletonNode-&gt;setAnimation(0, "walk", true);
+skeletonNode-&gt;debugBones = false;
+skeletonNode-&gt;setPosition(CCRANDOM_0_1() * windowSize.width, 0 + CCRANDOM_0_1() * windowSize.height);
+addChild(skeletonNode);
+</code></pre>
+
+<h1>参见:</h1>
+
+<ul>
+<li><a href="http://zh.esotericsoftware.com/spine-in-depth">http://zh.esotericsoftware.com/spine-in-depth</a></li>
+<li><a href="http://www.cocos.com/doc/article/index?type=cocos2d-x&amp;url=/doc/cocos-docs-master/manual/framework/native/v3/spine/zh.md">http://www.cocos.com/doc/article/index?type=cocos2d-x&amp;url=/doc/cocos-docs-master/manual/framework/native/v3/spine/zh.md</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[在Xcode上运行Cocos2dx-JS项目]]></title>
+    <link href="http://sbxfc.github.io/blog/2015/11/23/run-cocos2d-js-on-xcode/"/>
+    <updated>2015-11-23T17:21:14+08:00</updated>
+    <id>http://sbxfc.github.io/blog/2015/11/23/run-cocos2d-js-on-xcode</id>
+    <content type="html"><![CDATA[<p>在Mac下通过命令生成Cocos2d-JS项目时,编译命令也会生成相应的Xcode集成环境,用Xcode打开下面目录下的工程就可以直接在真机或模拟器下运行调试:</p>
+
+<pre><code>project
+    /frameworks
+        /runtime-src
+            /proj.ios_mac
+                /project.xcodeproj
+</code></pre>
+
+<p>使用Xcode 7.0以上版本会出现如下错误:</p>
+
+<pre><code>error:-fembed-bitcode is not supported on versions of iOS prior to 6.0
+</code></pre>
+
+<p>修改方法,选择General->Deployment Target 6.0以上<br>
+或者设置Build Settings->Build Options->Enabled Bitcode为NO。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Cocos - 使用自动批绘制]]></title>
+    <link href="http://sbxfc.github.io/blog/2015/11/19/cocos-auto-batching/"/>
+    <updated>2015-11-19T16:52:57+08:00</updated>
+    <id>http://sbxfc.github.io/blog/2015/11/19/cocos-auto-batching</id>
+    <content type="html"><![CDATA[<h1>自动批绘制</h1>
+
+<p>在3.0版本以后,Cocos2d-x里的图形渲染实现了自动批绘制(Auto-batching)的优化。引擎的渲染部分对相同材质的连续渲染指令(QuadCommand)进行过滤,如果当前的渲染对象的材质和上一次渲染的材质一样,就不渲染了,保存一下所需的信息,继续遍历下一个,直到发现当前材质和上一个材质不一样，才重新开始渲染。</p>
+
+<p>这样一来,渲染指令里相邻的且材质ID相同的多个draw call就能减少为一个,过程如下图:</p>
+
+<p><img src="http://sbxfc.github.io/images/2015/10/auto-batching.png" alt="" /></p>
+
+<p>最简单的满足条件就是我们用同一张图片连续创建精灵,这些精灵在绘制时只需要一个draw call:</p>
+
+<pre><code>for (int i = 0; i &lt; 10000; i++)
+{
+    Sprite* sprite = Sprite::create("HelloWorld.png");
+    sprite-&gt;setPosition(Point(CCRANDOM_0_1() * winSize.width, CCRANDOM_0_1() * winSize.height));
+    this-&gt;addChild(sprite);
+}
+</code></pre>
+
+<p>需要注意的是,在渲染开始前引擎会对渲染指令根据zOrder进行一次排序。所以,连续添加的相同Sprite需要保证期zOrder是一样的。当然,我们也可以利用zOrder排序的这个机制,对非连续添加的相同纹理精灵设置相同zOrder来满足自动批绘制的条件:</p>
+
+<pre><code>for(int i = 0; i &lt; 10000; i++)
+{
+    Sprite* sprite1 = Sprite::create("CloseNormal.png");
+    sprite1-&gt;setPosition(Point(CCRANDOM_0_1() * winSize.width, 0 + CCRANDOM_0_1() * winSize.height));
+    this-&gt;addChild(sprite1);
+
+    Sprite* sprite2 = Sprite::create("CloseSelected.png");
+    sprite2-&gt;setPosition(Point(CCRANDOM_0_1() * winSize.width, 0 + CCRANDOM_0_1() * winSize.height));
+    this-&gt;addChild(sprite2);
+    sprite2-&gt;setZOrder(1);
+}
+</code></pre>
+
+<p>由于,Auto-batching的使用条件是使用QuadCommands渲染命令的连续的相同材质ID的Sprite或ParticleSystem objects。所以,我们也可以使用精灵帧表单来实现Auto-batching。</p>
+
+<pre><code>SpriteFrameCache::getInstance()-&gt;addSpriteFramesWithFile("TankMovePlist.plist");
+for(int i = 0; i &lt; 10000; i++)
+{
+    char buf[64];
+    sprintf(buf,"image/M26_b_%d.png", i%8 + 4);
+    SpriteFrame *frame= SpriteFrameCache::getInstance()-&gt;getSpriteFrameByName(buf);
+    Sprite *sprite = Sprite::createWithSpriteFrame(frame);
+    sprite-&gt;setPosition(Point(CCRANDOM_0_1() * winSize.width, 0 + CCRANDOM_0_1() * winSize.height));
+    this-&gt;addChild(sprite);
+}
+</code></pre>
+
+<p>进而将Auto-Batching用在动画上:</p>
+
+<pre><code>SpriteFrameCache::getInstance()-&gt;addSpriteFramesWithFile("TankMovePlist.plist");
+for(int i = 0; i &lt; 700; i++)
+{
+    auto s_tank = Sprite::createWithSpriteFrameName("image/M26_b_4.png");
+
+    auto tankMoveAnimation = Animation::create();
+    tankMoveAnimation-&gt;setDelayPerUnit(0.1);
+    tankMoveAnimation-&gt;addSpriteFrame(SpriteFrameCache::getInstance()-&gt;getSpriteFrameByName("image/M26_b_4.png"));
+    tankMoveAnimation-&gt;addSpriteFrame(SpriteFrameCache::getInstance()-&gt;getSpriteFrameByName("image/M26_b_5.png"));
+    tankMoveAnimation-&gt;addSpriteFrame(SpriteFrameCache::getInstance()-&gt;getSpriteFrameByName("image/M26_b_6.png"));
+    tankMoveAnimation-&gt;addSpriteFrame(SpriteFrameCache::getInstance()-&gt;getSpriteFrameByName("image/M26_b_7.png"));
+    tankMoveAnimation-&gt;addSpriteFrame(SpriteFrameCache::getInstance()-&gt;getSpriteFrameByName("image/M26_b_8.png"));
+    tankMoveAnimation-&gt;addSpriteFrame(SpriteFrameCache::getInstance()-&gt;getSpriteFrameByName("image/M26_b_9.png"));
+    tankMoveAnimation-&gt;addSpriteFrame(SpriteFrameCache::getInstance()-&gt;getSpriteFrameByName("image/M26_b_10.png"));
+    tankMoveAnimation-&gt;addSpriteFrame(SpriteFrameCache::getInstance()-&gt;getSpriteFrameByName("image/M26_b_11.png"));
+    s_tank-&gt;runAction(RepeatForever::create(Animate::create(tankMoveAnimation)));
+    s_tank-&gt;setPosition(CCRANDOM_0_1() * winSize.width, 0 + CCRANDOM_0_1() * winSize.height);
+    addChild(s_tank);
+}
+</code></pre>
+
+<p>运行效果:</p>
+
+<p><img src="http://sbxfc.github.io/images/2015/10/tank_move.png" alt="" /></p>
+
+<h1>使用SpriteBatchNode绘制精灵</h1>
+
+<p>和Auto-batching的对绘制优化的策略一样,SpriteBatchNode将多个精灵放到一个纹理上,绘制的时候直接统一绘制该texture，不需要单独绘制子节点。</p>
+
+<pre><code>SpriteBatchNode* batchNode = SpriteBatchNode::create("HelloWorld.png", 10000);
+addChild( batchNode);
+
+for ( int i = 0; i &lt; 10000; ++i)
+{
+    Sprite* sprite = Sprite::createWithTexture( batchNode-&gt;getTexture());
+    sprite-&gt;setPosition(Point(CCRANDOM_0_1() * winSize.width, 0 + CCRANDOM_0_1() * winSize.height));
+    batchNode-&gt;addChild( sprite);
+}
+</code></pre>
+
+<p>再添一个官网文档上提供的例子:</p>
+
+<pre><code>auto batch = SpriteBatchNode::create("Images/grossini_dance_atlas.png", 1);
+addChild(batch, 0, kTagSpriteBatchNode);        
+
+auto sprite1 = Sprite::createWithTexture(batch-&gt;getTexture(), Rect(85*0, 121*1, 85, 121));
+auto sprite2 = Sprite::createWithTexture(batch-&gt;getTexture(), Rect(85*1, 121*1, 85, 121));
+
+auto s = Director::getInstance()-&gt;getWinSize();
+sprite1-&gt;setPosition( Point( (s.width/5)*1, (s.height/3)*1) );
+sprite2-&gt;setPosition( Point( (s.width/5)*2, (s.height/3)*1) );
+
+batch-&gt;addChild(sprite1, 0, kTagSprite1);
+batch-&gt;addChild(sprite2, 0, kTagSprite2);
+</code></pre>
+
+<h1>参见:</h1>
+
+<ul>
+<li><a href="https://github.com/chukong/cocos-docs/blob/master/manual/framework/native/v3/auto-batching/zh.md">https://github.com/chukong/cocos-docs/blob/master/manual/framework/native/v3/auto-batching/zh.md</a></li>
+<li><a href="http://blog.csdn.net/chenqiai0/article/details/46820669">http://blog.csdn.net/chenqiai0/article/details/46820669</a></li>
+<li><a href="http://www.cocos2d-x.org/docs/tutorial/framework/html5/parkour-game-with-javascript-v3.0/chapter5/zh">在cocos2d-js上运行动画</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Cocos - 屏幕适配]]></title>
+    <link href="http://sbxfc.github.io/blog/2015/11/09/cocos-resolution/"/>
+    <updated>2015-11-09T17:50:41+08:00</updated>
+    <id>http://sbxfc.github.io/blog/2015/11/09/cocos-resolution</id>
+    <content type="html"><![CDATA[<p>现在,几乎人手都有一台移动设备。无论是手机还是iPad,这些设备的尺寸千差万别。因此,想开要发一款能在不同设备上友好显示的游戏,就要综合这些设备的特点,设计合理的适配方案。</p>
+
+<p>从2.0.4开始,Cocos2d-x就提出了自己的多分辨率适配方案,经过这几年的发展已趋于成熟。对于开发者来说,如果能掌握这些技巧,就能够很好地解决适配问题。</p>
+
+<h1>资源到设计尺寸</h1>
+
+<p>在Cocos里,官方把适配方案分为了两步,第一步是资源到设计尺寸的适配。</p>
+
+<p>因为设备是多种多样的,当我们在开发游戏时并不会假定界面是基于某台设备来设计界面。通常,我们会选择一个较为通用的尺寸来设计界面(比如1027*768),这个尺寸就是设计尺寸。</p>
+
+<p>从资源到设计尺寸的映射,其实就是图片到设计尺寸的映射。例如,我们为iPhone3G和iPhone 4设计一款游戏。iPhone 3G的分辨率是320*480,而iPhone 4的分辨率是640*960。尽管这两种设备分辨率不同,但是尺寸一样大。所以,这两种设备可以使用同一个设计尺寸,只需要将iPhone4的图片资源换成高清图即可。</p>
+
+<p>通过Cocos的setContentScaleFactor接口可以设置所有资源的缩放因子:</p>
+
+<pre><code>director-&gt;setContentScaleFactor(2);
+</code></pre>
+
+<p>设置完之后,一张640*960的背景图在一个sprite显示时,高宽变为为320*480,而分辨率变为了原本的4倍。这样一来,iPhone 3G和iPhone 4的屏幕适配做好了。</p>
+
+<p>当然,因为改变了缩放因子,这两种设备设置加载的资源就不同,为了方便管理,我们为其设置了不同的资源目录:</p>
+
+<pre><code>/Resource
+    /iphone
+    /iphonehd
+</code></pre>
+
+<p>同时,根据具体设备为其指定Resource下的默认资源路径:</p>
+
+<pre><code>vector&lt;string&gt; searchPath;
+if (iPadHD){    
+    searchPath.push_back("iphonehd");
+}else if(iPhone){
+    searchPath.push_back("iphone");
+}
+searchPath.push_back("common");
+FileUtils::getInstance()-&gt;setSearchPaths(searchPath);
+</code></pre>
+
+<p>现在iPhone 3G近乎绝迹,大部分iOS设备都是高清设备。所以,不必考虑为iPhone设备设置普清图。但是普清的iPad2用的还是比较多的(最后会介绍一点iOS原生语言的适配方法)。</p>
+
+<h1>适配屏幕分辨率</h1>
+
+<p>一开始时,我们在一个预设的尺寸上进行界面布局,当程序运行在实际设备上时,我们需要为其选择一个合适的适配方案。比如设计尺寸是320*480,而实际分辨率是320*500,这样一样,如果不做适配上下就会空出一条黑色缝隙。设计尺寸到屏幕分辨率的适配就是设计窗口如何缩放来适应实际屏幕的分辨率的过程。</p>
+
+<p>Cocos提供了五种设计尺寸到屏幕分辨率的适配方案,通过setDesignResolutionSize函数来设置。DW、DH指设计尺寸的宽、高,后面的参数是适配方案的枚举值:</p>
+
+<pre><code>setDesignResolutionSize(DW,/*分辨率宽*/
+                         DH,/*分辨率高*/
+                         resolutionPolicy) 
+</code></pre>
+
+<p>适配方案resolutionPolicy有五种选择:</p>
+
+<ul>
+<li>ResolutionPolicy::SHOW_ALL 屏幕宽、高分别和设计分辨率宽、高计算缩放因子，取较小者作为宽、高的缩放因子。保证了设计区域全部显示到屏幕上，但可能会有黑边。</li>
+<li>ResolutionPolicy::EXACT_FIT 屏幕宽与设计宽的比例作为X方向的缩放因子，屏幕高与设计高的比例作为Y方向的缩放因子。保证了设计区域完全铺满屏幕，但是可能会出现图像拉伸。</li>
+<li>ResolutionPolicy::NO_BORDER 屏幕宽、高分别和设计分辨率宽、高计算缩放因子，取较(大)者作为宽、高的缩放因子。保证了设计区域总能一个方向上铺满屏幕，而另一个方向一般会超出屏幕区域。</li>
+<li>ResolutionPolicy::FIXED_HEIGHT 保持传入的设计分辨率高度不变,根据屏幕分辨率修正设计分辨率的宽度。(按照适配尺寸的宽度将屏幕撑满,宽度可根据屏幕的分辨率拉伸或者是裁剪)</li>
+<li>ResolutionPolicy::FIXED_WIDTH 保持传入的设计分辨率宽度不变,根据屏幕分辨率修正设计分辨率的高度。</li>
+</ul>
+
+
+<p>最后两种适配方案,是我们常用的适配方式。以ResolutionPolicy::FIXED_HEIGHT为例,假如我们的设计尺寸是320*480,在640*1000的设备上运行时,原先一个点为(100,100)的sprite,其实际位置就出现在屏幕上(200,208)这个像素点的位置。实际界面上的图片如果没有设置根据分辨率和设计尺寸的变化而改变,将不会变化。</p>
+
+<p>在Cocos2d-x里的cpp-empty-test项目里有一个AppMacros.h的文件,是官方针对iphone、ipad和ipadhd所做的适配方案。另外,还有一些重要的接口:</p>
+
+<pre><code>Director::getInstance()-&gt;getOpenGLView()-&gt;setDesignResolutionSize() //设计分辨率大小及模式 
+Director::getInstance()-&gt;setContentScaleFactor() //内容缩放因子 
+FileUtils::getInstance()-&gt;setSearchPaths() //资源搜索路径 
+Director::getInstance()-&gt;getOpenGLView()-&gt;getFrameSize() //屏幕分辨率 
+Director::getInstance()-&gt;getWinSize()       //设计分辨率 
+Director::getInstance()-&gt;getVisibleSize() //设计分辨率可视区域大小 
+Director::getInstance()-&gt;getVisibleOrigin()//可视区域起点
+</code></pre>
+
+<h1>iOS原生语言的适配方式</h1>
+
+<p>从iPad3、iPad mini2和iPhone4开始,苹果的设备都采用了&#8221;Retina&#8221;显示技术,即将多个像素点压缩至一块屏幕里。比如,一台iPhone4设备,GPU在工作时渲染出960*640个像素点,其中每四个像素一组,输出到原来屏幕上一个像素的显示区域里。这样一来，用户所看到的图标与文字的大小与原来的480x320分辨率显示屏相同，但精细度是原来的4倍。</p>
+
+<p>在iOS原生开发中,iPad3、iPad mini2和iPhone4等等这些设备在读取图片时会优先选择文件名后缀是@2x的图片。比如,我们要为iPhone4上的应用添加一张背景图,我们会做一张640*960大小的图并命名为bkg@2x.png。如果是iPhone 3G设备,我们做一张320*480的图片即可。运行时不同设备优先去加载相应分辨率的图片。(iPad3、iPad mini2和iPhone4等这些Retina设备图片资源与屏幕尺寸的比值为2,到了iPhone6 PLUS这个比值达到了2.46左右,加载的图片格式也变为了@3x)</p>
+
+<h1>参见:</h1>
+
+<ul>
+<li><a href="http://www.cocos.com/doc/article/index?type=cocos2d-x&amp;url=/doc/cocos-docs-master/manual/framework/native/v3/multi-resolution/zh.md">Cocos2d-x 多分辨率适配完全解析</a></li>
+<li><a href="http://www.cocos.com/doc/article/index?type=cocos2d-x&amp;url=/doc/cocos-docs-master/manual/framework/cocos2d-js/4-essential-concepts/4-4-resolution-policies/zh.md+">Cocos2d-JS的屏幕适配方案</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[glm数学库]]></title>
+    <link href="http://sbxfc.github.io/blog/2015/10/29/glm/"/>
+    <updated>2015-10-29T11:56:31+08:00</updated>
+    <id>http://sbxfc.github.io/blog/2015/10/29/glm</id>
+    <content type="html"><![CDATA[<p>glm库是一个C++头文件形式的几何数学库,用于GLSL规范下的图形绘制。(OpenGL Mathematics (GLM) is a header only C++ mathematics library for graphics software based on the OpenGL Shading Language (GLSL) specifications.)</p>
+
+<p>下载glm库:<br>
+<a href="http://glm.g-truc.net/">http://glm.g-truc.net/</a><br>
+<a href="https://github.com/g-truc/glm/releases">https://github.com/g-truc/glm/releases</a></p>
+
+<p>如果使用Xcode,下载之后将解压后的glm文件夹路径(根目录)包含在Build Settings/Header Search Path里即可,使用时include相应的文件。</p>
+
+<p>示例如下:</p>
+
+<pre><code>#include &lt;glm/vec3.hpp&gt; // glm::vec3
+#include &lt;glm/vec4.hpp&gt; // glm::vec4
+#include &lt;glm/mat4x4.hpp&gt; // glm::mat4
+#include &lt;glm/gtc/matrix_transform.hpp&gt; // glm::translate, glm::rotate, glm::scale, glm::perspective
+glm::mat4 camera(float Translate, glm::vec2 const &amp; Rotate)
+{   
+    glm::mat4 Projection = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.f);
+    glm::mat4 View = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -Translate));
+    View = glm::rotate(View, Rotate.y, glm::vec3(-1.0f, 0.0f, 0.0f));
+    View = glm::rotate(View, Rotate.x, glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 Model = glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
+    return Projection * View * Model;
+}
+</code></pre>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[WebSocket数据帧]]></title>
+    <link href="http://sbxfc.github.io/blog/2015/10/15/ccjs-websocket/"/>
+    <updated>2015-10-15T17:35:06+08:00</updated>
+    <id>http://sbxfc.github.io/blog/2015/10/15/ccjs-websocket</id>
+    <content type="html"><![CDATA[<p>WebSocket通过onmessage函数接收服务器返回的数据,其中evt.data的数据格式可能为String、ArrayBuffer或Blob三者之一。这个数据格式是由服务器返回数据里的数据帧的opcode决定的。</p>
+
+<p>所以,即便服务器返回的数据是byte或者char,如果opcode的值仍是文本类型,客户端还是会收到一个字符串。</p>
+
+<ul>
+<li><a href="https://w3c.github.io/websockets/#websocket">https://w3c.github.io/websockets/#websocket</a></li>
+<li><a href="http://www.cnblogs.com/fengyunlishi/archive/2013/05/10/3071893.html">http://www.cnblogs.com/fengyunlishi/archive/2013/05/10/3071893.html</a></li>
+</ul>
+
+
+<h1>代码:</h1>
+
+<p><a href="https://github.com/sbxfc/CocosJSWebSocket">https://github.com/sbxfc/CocosJSWebSocket</a></p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[CocosJS 初探]]></title>
+    <link href="http://sbxfc.github.io/blog/2015/10/09/ccjs-start/"/>
+    <updated>2015-10-09T18:21:41+08:00</updated>
+    <id>http://sbxfc.github.io/blog/2015/10/09/ccjs-start</id>
+    <content type="html"><![CDATA[<h1>锚点和坐标</h1>
+
+<p>Cocos引擎使用的是右手<a href="https://zh.wikipedia.org/wiki/%E7%AC%9B%E5%8D%A1%E5%84%BF%E5%9D%90%E6%A0%87%E7%B3%BB">笛卡尔坐标系</a>,相对于我们熟悉的标准屏幕坐标系,其坐标原点在屏幕的左下角。</p>
+
+<p>在Cocos里,显示对象以锚点(anchor)对齐。即一个sprite如果坐标设置为【0,0】并且锚点也是【0,0】的话,它的左下角就与屏幕的左下角对齐。但是默认情况下,非Layer对象的默认节点都是【0.5,0.5】。所以,如果没注意直接将坐标设置为【0,0】时,就会导致图片上半边和下半边出现在屏幕外。</p>
+
+<pre><code>var sprite  = cc.Sprite.create(res.bkg_image);
+sprite.anchorX = 0;
+sprite.anchorY = 0; 
+sprite.x = 0;
+sprite.y = 0;
+this.addChild(sprite);
+</code></pre>
+
+<h1>定位</h1>
+
+<p>cc.winSize表示游戏窗口大小,而cc.visibleRect表示游戏的可视区域。在有些情况下,游戏窗口大小并不等于显示区域大小。如果在屏幕上方显示一个文本或精灵推荐使用cc.visibleRect</p>
+
+<pre><code>var visibleRect = cc.visibleRect;
+var topLeft = visibleRect.topLeft;
+</code></pre>
+
+<h1>自定义事件</h1>
+
+<p>自定义事件的使用和JS、AS3类似,首先是建立一个事件监听器,并且设置相应的处理函数:</p>
+
+<pre><code>var listener = cc.EventListener.create({
+    event: cc.EventListener.CUSTOM,
+    eventName: "game_custom_event",
+    callback: function(event){
+        // 可以通过getUserData来设置需要传输的用户自定义数据
+        console.log("Custom event received : " + event.getUserData().toString());
+    }
+});
+cc.eventManager.addListener(listener, 1);
+</code></pre>
+
+<p>在触发事件的地方使用dispatchEvent抛出事件:</p>
+
+<pre><code>var event = new cc.EventCustom("game_custom_event");
+event.setUserData("Hello World");
+cc.eventManager.dispatchEvent(event);
+</code></pre>
+
+<p>其中,addListener函数的第二个参数可以填一个显示对象,也可以填一个数字。如果以显示对象为参数时,当该对象被回收则监听器也被移除。如果以数值为参数,该数值的大小决定了事件的优先级,数值越大则优先级越低。显示对象为参数的事件优先级为0 (ps.若一个以非显示对象为参数的addListener函数的第二个参数填0时,在一些情况下会出现问题)</p>
+
+<p>这些可以在官方文档里的<a href="http://www.cocos.com/doc/article/index?type=cocos2d-x&amp;url=/doc/cocos-docs-master/manual/framework/html5/v3/eventManager/zh.md">事件分发机制</a>中找到:</p>
+
+<ul>
+<li><a href="http://www.cocos.com/doc/article/index?type=cocos2d-x&amp;url=/doc/cocos-docs-master/manual/framework/html5/v3/eventManager/zh.md">http://www.cocos.com/doc/article/index?type=cocos2d-x&amp;url=/doc/cocos-docs-master/manual/framework/html5/v3/eventManager/zh.md</a></li>
+</ul>
+
+
+<h1>调度器(schedule)</h1>
+
+<p>调度器是通过Note的每帧刷新方法update来计算时间的,但是帧可能会阻塞,所以时间并不准确,但对于一些界面刷新是非常有用的。</p>
+
+<pre><code>note.schedule(func,1,cc.REPEAT_FOREVER);
+</code></pre>
+
+<h1>好记性不如烂笔头,待续&hellip;</h1>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[iOS - iOS9 键盘系统]]></title>
+    <link href="http://sbxfc.github.io/blog/2015/09/28/ios9kb/"/>
+    <updated>2015-09-28T18:29:52+08:00</updated>
+    <id>http://sbxfc.github.io/blog/2015/09/28/ios9kb</id>
+    <content type="html"><![CDATA[<p>我们知道,访问UIApplication的windows属性可以获取当前显示的所有非系统window。其中,在iOS9之前类型为UITextEffectWindow的window就是键盘窗口,结构大致如下:</p>
+
+<pre><code>windows = { UIWindow,UITextEffectWindow }
+</code></pre>
+
+<p>但在iOS9之后,新增了一个类型为 UIRemoteKeyboardWindow 的窗口用来显示键盘按钮,所以想获取键盘上的按钮,就需要得到UIRemoteKeyboardWindow</p>
+
+<pre><code>windows = { UIWindow,UITextEffectWindow,UIRemoteKeyboardWindow }
+</code></pre>
+
+<p>获取一个键盘窗口代码(swift):</p>
+
+<pre><code>internal var keyboardWindow: UIWindow? {
+    let windows = UIApplication.sharedApplication().windows
+    for window in windows {
+        let views = window.subviews
+        for subview in views{
+            let className = NSStringFromClass(subview.dynamicType)
+            if className == "UIKeyboard" {
+                return window
+            }
+        }
+    }
+
+    for window in windows.reverse() {
+        let className = NSStringFromClass(window.dynamicType)
+        if className == "UIRemoteKeyboardWindow" {
+            return window
+        }
+    }
+
+    //获取UITextEffectWindow
+    if windows.count &gt; 1 {
+        return windows.last!
+    }
+
+    //fail
+    return nil
+}
+</code></pre>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[字符集及编码]]></title>
+    <link href="http://sbxfc.github.io/blog/2015/07/29/character-encoding/"/>
+    <updated>2015-07-29T18:01:48+08:00</updated>
+    <id>http://sbxfc.github.io/blog/2015/07/29/character-encoding</id>
+    <content type="html"><![CDATA[<p>计算机是二进制设备,并且识别的数据也是二进制格式。我们常用的字符、数字或者标点最终都要被转化成二进制的形式。一个char类型的数字1在内存里的存储:</p>
+
+<pre><code>—————————————————
+|0|0|0|0|0|0|0|1|
+—————————————————
+</code></pre>
+
+<p>计算机处理二进制的形式的数据,但是我们使用计算机去工作或娱乐的时候很难追踪到二进制的影子。我们看到的是大量的文字、图片、甚至是影像等。这中间发生了什么呢？</p>
+
+<h1>前人的智慧</h1>
+
+<p>最初人们发明了无线电电报,并通过点(.)、划(&ndash;)和中间停顿将每个字符和标点符号彼此的发送出去。&#8221;滴&#8221; 和 &ldquo;嗒&rdquo; 分别代指点和划。比如字母‘X’对应的组合就是:</p>
+
+<pre><code>- . . -
+</code></pre>
+
+<p>单词之间使用小停顿,一个句子之间使用大停顿。这种把字符用可变长度的信号表示的编码方式称为莫尔斯电码。</p>
+
+<h1>ASCII</h1>
+
+<p>到了计算机时代,因为计算只识别&#8221;0&#8221;或&#8221;1&#8221;这两种数据,这很类似于莫尔斯电码里的点和划。于是,人们借鉴莫尔斯电码用8位的&#8221;0&#8221;和&#8221;1&#8221;的不同组合来表示英文中出现的26个小写字母、26个大些字母、英式符号、0-9的阿拉伯数字以及计算机终端的特殊动作,这就是ASCII码。</p>
+
+<p>大写的‘X’对应的ASCII码:</p>
+
+<pre><code>—————————————————
+|0|1|0|1|1|0|0|0|  = ‘X’
+—————————————————
+</code></pre>
+
+<p>字母&#8217;X&#8217;就是一个字符,而54个大小写字母、英式符号以及10个阿拉伯数字就是ASCII的字符集,&lsquo;0101 1000&#8217;这种八个字节的数据就是ASCII的编码。除此之外,还有几个概念。比如,还有一些概念:</p>
+
+<ul>
+<li>比特(bit) : 也可称为&#8221;位&#8221;,是计算机信息中的最小单位,是 binary digit(二进制数位)的缩写,指二进制中的一位。</li>
+<li>字节(byte): 计算机中信息计量的一种单位,一个位就代表&#8221;0&#8221;或&#8221;1&#8221;,每8个位(bit)组成一个字节(byte)</li>
+<li>字符(Character):文字与符号的总称,可以是各个国家的文字、标点符号、图形符号、数字等。</li>
+<li>字符集(Character
+Set):是多个字符的集合</li>
+<li>编码(Encoding):信息从一种形式或格式转换为另一种形式的过程</li>
+<li>字符编码(Character Encoding): 按照何种规则存储字符</li>
+</ul>
+
+
+<p>8位(bit)总共有2的8次方,256种不同的组合。而ASCII码只用到了128种,刚好占了后7位。</p>
+
+<h1>EASCII &amp; ANSI编码</h1>
+
+<p>最初计算机只在美国使用,这些字符显然足够用了。但是后来,计算机传到了欧洲各国,为了支持本国语言他们将后面128种没有使用到的字节编入本国的文字和符号。比如法国的 é 对应的编码为130(1000 0010)</p>
+
+<p>但是,这里又出现了新的问题。不同的国家有不同的字母,因此,哪怕它们都使用256个符号的编码方式,代表的字母却不一样。比如,
+130在法语编码中代表了é,在希伯来语编码中却代表了字母Gimel
+但是不管怎样,所有这些编码方式中,0&mdash;127表示的符号是一样的,不一样的只是128&mdash;255的这一段。
+EASCII由此应运而生,EASCII码比ASCII码扩充出来的符号包括表格符号、计算符号、希腊字母和特殊的拉丁符号。</p>
+
+<p>再后来,计算机传入了亚洲国家。对于像中国这样动辄几万个汉字字符的语言。使用ASCII码显示不行。于是中国国家标准总局在1981年,
+正式制订了中华人民共和国国家标准简体中文字符集,项目代号 <font color="#bd260d">GB2312</font> 或 <font color="#bd260d">GB2312-80</font>。</p>
+
+<p><img src="http://sbxfc.github.io/images/2015/8/th.jpeg" alt="" /></p>
+
+<p>其他国家和地区也制定了不同的标准,比如日本的<font color="#bd260d">JIS</font> 、香港和台湾的繁体中文 <font color="#bd260d">BIG5</font></p>
+
+<h1>Unicode</h1>
+
+<p>由于每个国家都各自定义自己的标准,但带来的结果就是谁也不懂对方的编码体系。于是,世界相关组织意识到了这个问题,并开始尝试制定统一的编码标准。最初尝试做这件事情的两个组织是<font color="#bd260d">国际标准化组织(ISO)</font>和<font color="#bd260d">统一码联盟</font>。国际标准化组织(ISO)及国际电工委员会(IEC)于1984年联合成立了<font
+color="#bd260d">ISO/IEC小组</font>(GB为国标汉语拼音的首字母),主要用于开发统一编码项目；
+而Xerox、Apple等软件制造商则于1988年组成了统一码联盟,用于开发统一码项目。两个组织都在编写统一字符集,但后来他们发现各自在做相同的工作,同时世界上也不需要两个不兼容的字符集,于是两个组织就此合并了双方的工作成果,
+并为创立一个单一编码表而协同工作。</p>
+
+<p>1991年,两个组织共同的工作成果Unicode 1.0正式发布。(最新的一个版本 是2014年6月15日发布的Unicode 7.0。)</p>
+
+<h1>ISO/IEC 8859</h1>
+
+<p>ISO/IEC小组在1984年成立后的第三年(即1987年)开始启动ISO 8859标准的编写,ISO
+8859是一系列8位字符集的标准,主要为世界各地的不同语言(除CJK)而单独编写的字符集,一共定义了15个字符集:</p>
+
+<ul>
+<li>ISO/IEC 8859-1:西欧语言</li>
+<li>ISO/IEC 8859-2:中欧语言</li>
+<li>ISO/IEC 8859-3:南欧语言</li>
+<li>ISO/IEC 8859-4:北欧语言</li>
+<li>ISO/IEC 8859-5:斯拉夫语</li>
+<li>ISO/IEC 8859-6:阿拉伯语</li>
+<li>ISO/IEC 8859-7:希腊语</li>
+<li>ISO/IEC 8859-8:希伯来语</li>
+<li>ISO/IEC 8859-9:土耳其语</li>
+<li>ISO/IEC 8859-10:北日耳曼语</li>
+<li>ISO/IEC 8859-11:泰语</li>
+<li>ISO/IEC 8859-13:波罗的语族</li>
+<li>ISO/IEC
+8859-14: 凯尔特语族</li>
+<li>ISO/IEC 8859-15:西欧语言,收录芬兰语字母和大写法语重音字母,以及欧元(€)符号</li>
+<li>ISO/IEC 8859-16 :东南欧语言,主要供罗马尼亚语使用,并加入欧元(€)符号</li>
+</ul>
+
+
+<p>其中ISO/IEC 8859-1至ISO/IEC
+8859-4四个项目早在1982年就已经编写出来,只不过是由ANSI与ECMA合作完成,并于1985年正式公布,ISO/IEC小组成立后,
+这一成果被其收录,并改名为ISO/IEC 8859 前四个项目。 大家其实发现以上15个字符集中并没有代号为&#8221;ISO/IEC 8859
+-12&#8221;的字符集,据说-12号本来是预留给印度天城体梵文的,但后来却搁置了(阿三有了自己的编码－ISCII)。由于英语没有任何重音字母,
+故可使用以上十五个字符集中的任何一个来表示。</p>
+
+<h1>ISO/IEC 10646 / UCS</h1>
+
+<p>1993年,ISO/IEC 10646标准第一次发表,ISO/IEC 10646是ISO 646的扩展,定义了1个31位的字符集。ISO
+10646标准中定义的字符集为UCS,<font color="#bd260d">UCS是Universal Character
+Set的缩写,中文译作通用字符集。</font></p>
+
+<p>版本:</p>
+
+<ul>
+<li>ISO/IEC 10646-1:第一次发表于1993年,现在的公开版本是2000年发表的ISO/IEC 10646-1:2000。</li>
+<li>ISO/IEC 10646-2:在2001年发表。</li>
+</ul>
+
+
+<p>包含字符:</p>
+
+<p>最初的ISO 10646-1:1993的编码标准,即Unicode
+1.1,收录中国大陆、台湾、日本及韩国通用字符集的汉字共计20,902个,当然每个版本的Unicode标准的字符集所包含的字符数不尽相同,
+UCS包含了已知语言的所有字符,除了拉丁语、希腊语、斯拉夫语、希伯来语、阿拉伯语、亚美尼亚语、格鲁吉亚语,还包括中文、日文、韩文这样的方块文字,
+此外还包括了大量的图形、印刷、数学、科学符号。
+UCS给每个字符分配一个唯一的代码,并且赋予了一个正式的名字,通常在表示一个Unicode值的十六进制数的前面加上&#8221;U+&ldquo;,例如&#8221;U+0041&rdquo;
+代表字符&#8221;A&#8221;。</p>
+
+<p>编码方案:</p>
+
+<p>UCS仅仅是一个超大的字符集,关于UCS制定的编码方案有两种:UCS-2和UCS-4,<font color="#bd260d">Unicode默认以UCS-2编码。</font>
+顾名思义,UCS-2就是用两个字节编码,UCS-4就是用4个字节(实际上只用了31位,最高位必须为0)编码。那么UCS-
+2其实可以容纳的字符数为65536(2的16次方),而UCS-4可以容纳的字符数为2147483648(2的31次方)。其实对于UCS-
+2已经是完全够用了,基本可以包含世界所有国家的常用文字,如果需要考虑一些偏僻字,那么UCS-4则绝对可以满足了,
+21亿个字符哪怕是整个宇宙也够用了吧！</p>
+
+<h1>UTF-8</h1>
+
+<p>Unicode 诞生,随之而来的计算机网络也发展了起来,Unicode
+如何在网络上传输也是一个必须考虑的问题,于是在1992年,面向网络传输的UTF标准出现了。 UTF是Unicode Transformation
+Format的缩写,中文译作Unicode转换格式。其实我们从现在可以把Unicode看作是一个标准或组织,而UCS就是一个字符集,
+那么UCS在网络中的传输标准就是UTF了。
+前面提到了UCS的编码实现方式为UCS-2和UCS-4,即要么是每个字符为2个字节,要么是4个字节。
+如果一个仅包含基本7位ASCII字符的Unicode文件,每个字符都使用2字节的原Unicode编码传输,其第一字节的8位始终为0,
+这就造成了比较大的浪费。但是,聪明的人们发明了UTF-8,UTF-8采用可变字节编码,这样可以大大节省带宽,并增加网络传输效率。</p>
+
+<p>UTF-8使用1~4个字节表示一个符号,根据不同的符号而变化字节长度。UTF-8的编码规则很简单,只有二条:</p>
+
+<p>1）对于单字节的符号,字节的第一位设为0,后面7位为这个符号的unicode码。因此对于英语字母,UTF-8编码和ASCII码是相同的。 2.
+对于n字节的符号(n>1),第一个字节的前n位都设为1,第n+1位设为0,后面字节的前两位一律设为10。剩下的没有提及的二进制位,
+全部为这个符号的unicode码。</p>
+
+<p>下表总结了编码规则,字母x表示可用编码的位。</p>
+
+<pre><code>Unicode符号范围 | UTF-8编码方式 (十六进制) | (二进制)
+--------------------+---------------------------------------------
+0000 0000-0000 007F | 0xxxxxxx 0000 0080-0000 07FF | 110xxxxx
+10xxxxxx 0000 0800-0000 FFFF | 1110xxxx 10xxxxxx 10xxxxxx 0001
+0000-0010 FFFF | 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+</code></pre>
+
+<p>跟据上表,解读UTF-8编码非常简单。如果一个字节的第一位是0,则这个字节单独就是一个字符；如果第一位是1,则连续有多少个1,
+就表示当前字符占用多少个字节。</p>
+
+<p>下面,还是以汉字&#8221;严&#8221;为例,演示如何实现UTF-8编码。</p>
+
+<p>已知&#8221;严&#8221;的unicode是4E25(100111000100101),根据上表,可以发现4E25处在第三行的范围内(0000
+0800-0000 FFFF),因此&#8221;严&#8221;的UTF-8编码需要三个字节,即格式是&#8221;1110xxxx 10xxxxxx
+10xxxxxx&#8221;。然后,从&#8221;严&#8221;的最后一个二进制位开始,依次从后向前填入格式中的x,多出的位补0。这样就得到了,&ldquo;严&#8221;的UTF-8编码是&rdquo;
+11100100 10111000 10100101&#8221;,转换成十六进制就是E4B8A5。</p>
+
+<p>其他:</p>
+
+<ul>
+<li>128个ASCII字符只需一个字节编码(Unicode范围由U+0000至U+007F) &ndash; 拉丁文、希腊文、西里尔字母、亚美尼亚语、希伯来文、阿拉伯文、叙利亚文及它拿字母需要二个字节编码(Unicode范围由U+0080至U+07FF)</li>
+<li><font color="#bd260d"><strong>大部分国家的常用字(包括中文)使用三个字节编码</strong></font></li>
+<li>其他极少使用的生僻字符使用四字节编码</li>
+</ul>
+
+
+<h1>GB13000</h1>
+
+<p>前面提到了Unicode的迅速发展,至1993年时,包含CJK的Unicode
+1.1已经发布了,天朝的ZF也意识到了需要一个更大的字符集来走向世界,于是在同一年,中国大陆制定了几乎等同于Unicode1.1的GB13000
+.1-93国家编码标准(简称GB13000)。是的,你没听错,中华人民共和国信息产业部把Unicode里的所有东东拿过来,
+然后自己重新修订发布了下,改为了国家标准GB13000。此标准等同于 ISO/IEC 10646.1:1993和Unicode 1.1。</p>
+
+<h1>GBK</h1>
+
+<p>1995年,在GB13000诞生后不久,中国教育科研网(NCFC)与美国NCFnet直接联网,这一天是中国被国际承认为开始有网际网路的时间。
+此后网络正式开始在中国大陆接通,个人计算机开始在中国流行,虽然当时只是高富帅才消费得起的产品。中国是一个十几亿人口的大国,
+微软意识到了中国是一个巨大的市场,当时的微软也将自己的操作系统市场布局进中国,进入中国随之而来要解决的就是系统的编码兼容问题。
+之前的国家编码标准GB
+2312,基本满足了汉字的计算机处理需要,它所收录的汉字已经覆盖中国大陆99.75%的使用频率。但对于人名、古汉语等方面出现的罕用字和繁体字,
+GB 2312不能处理,因此微软利用了GB2312中未使用的编码空间,收录了GB13000中的所有字符制定了汉字内码扩展规范GBK(K为汉语拼音
+Kuo
+Zhan中&#8221;扩&#8221;字的首字母)。所以这一关系其实是大陆把Unicode1.1借鉴过来改名为了GB13000,
+而微软则利用GB2312中未使用的编码空间收录GB13000制定了GBK。所以GBK是向下完全兼容GB2312的。</p>
+
+<p>包含字符:<br> 共收录21886个字符, 其中汉字21003个, 字符883个</p>
+
+<p>编码方式:<br> GBK只不过是把GB2312中未使用的空间,编码了其他字符,所以GBK同样是用两个字节为每个字符进行编码</p>
+
+<h1>GB18030</h1>
+
+<p>微软到了99年前后,说GBK已经落伍了,现在流行UTF-8标准,准备全盘转换成UTF-8,但中国ZF不是吃素的,
+编写并强制推出了GB18030标准。GB18030的诞生还有一个原因是GBK只包含了大部分的汉字和繁体字等,我们的少数民族兄弟根本木有考虑！
+中国有56个民族,其中有12个民族有自己的文字,那怎么办呢？在2000年,电子工业标准化研究所起草了GB18030标准,项目代号&#8221;GB
+18030-2000&#8221;,全称《信息技术-信息交换用汉字编码字符集-基本集的扩充》。此标准推出后,
+在中国大陆之后的所售产品必须强制支持GB18030标准,不然不得卖！</p>
+
+<p>版本:</p>
+
+<ul>
+<li>GB 18030-2000</li>
+<li>GB 18030-2005</li>
+</ul>
+
+
+<p>包含字符:</p>
+
+<p>GB18030收录了GBK中的所有字符,并将Unicode中其他中文字符(少数民族文字、偏僻字)也一并收录进来重新编码。其中GB
+18030-2000共收录27533个汉字,而GB 18030-2005共包含70244个汉字。</p>
+
+<p>编码方式:</p>
+
+<p>采用多字节编码,每个字符由1或2或4个字节进行编码</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[pthread]]></title>
+    <link href="http://sbxfc.github.io/blog/2015/07/14/pthread/"/>
+    <updated>2015-07-14T10:28:45+08:00</updated>
+    <id>http://sbxfc.github.io/blog/2015/07/14/pthread</id>
+    <content type="html"><![CDATA[<h1>POSIX线程</h1>
+
+<p>pthread即POSIX thread,是POSIX标准的线程API。(POSIX是包括Unix、Linux、OS系统等绝大多数操作系统支持的API标准。)</p>
+
+<p>使用pthread创建一个线程非常简单,调用pthread_create函数,传入pthread_t类型的线程ID指针和回调的函数指针。</p>
+
+<pre><code>pthread_create(&amp;tid,NULL,func,NULL);
+</code></pre>
+
+<p>线程终止:</p>
+
+<ul>
+<li><p>线程函数返回(return)时线程终止。</p></li>
+<li><p>被同一进程的另外线程cancel掉。</p></li>
+<li><p>调用pthread_exit函数退出线程。</p></li>
+</ul>
+
+
+<p><a href="https://zh.wikipedia.org/wiki/POSIX%E7%BA%BF%E7%A8%8B">查看POSIX线程支持的操作系统</a></p>
+
+<!-- more -->
+
+
+<h1>互斥锁</h1>
+
+<p>线程之间可以共享内存空间,这意味着不同线程可以读取内存中的同一个变量。但是不同线程在同一时间修改一个内存对象会造成一些不可预知的结果。</p>
+
+<p>为了避免意外发生,我们需要用到pthread里一个非常重要的数据结构 —— 互斥对象(mutex)。互斥对象在使用时结合互斥锁 pthread_mutex_lock() 和 pthread_mutex_unlock()使用。</p>
+
+<p>它的工作是这样的:线程B锁定了一个互斥对象(mutex),如果线程A也试图锁定该互斥对象时,线程A就进入睡眠状态。一旦线程B释放了互斥对象（通过 pthread_mutex_unlock(),线程A 就能够锁定这个互斥对象（换句话说，线程A就将从 pthread_mutex_lock() 函数调用中返回,同时互斥对象被重新锁定）。同样地,当线程A正锁定互斥对象时,如果线程C试图锁定互斥对象的话,线程C也将临时进入睡眠状态。</p>
+
+<pre><code>pthread_mutex_lock(&amp;mymutex);
+
+ //在这里进行多线程环境下的数据修改工作,
+ //因为mymutex被锁定,凡是此时试图锁定mymutex的线程都会进入睡眠,
+ //直到函数unlock执行之后才被重新唤醒。
+
+pthread_mutex_unlock(&amp;mymutex);
+</code></pre>
+
+<p>对已锁定的互斥对象上调用 pthread_mutex_lock() 的所有线程都将进入睡眠状态,这些睡眠的线程将“排队”访问这个互斥对象。</p>
+
+<p>1）互斥对象使用时需要初始化:</p>
+
+<p>静态初始化:</p>
+
+<pre><code>pthread_mutex_t myLock = PTHREAD_MUTEX_INITIALIZER;
+</code></pre>
+
+<p>动态初始化:</p>
+
+<pre><code>pthread_mutex_t myLock;
+pthread_mutex_init(&amp;myLock,NULL);
+</code></pre>
+
+<p>2）销毁互斥对象</p>
+
+<p>一旦初始化完之后,我们就可以根据实际情况对对象实施加锁和解锁,但需要注意的是如果是动态初始化(使用pthread_mutex_init()初始化)的互斥对象,在释放或废弃条件变量之前,需要清理它:</p>
+
+<pre><code>/*
+ * 使用pthread_mutex_init()初始的互斥对象,
+ * 应使用 pthread_mutex_destroy() 清理它。
+ * pthread_mutex_destroy() 接受一个指向 pthread_mutext_t 的指针作为参数
+ * 并释放创建互斥对象时分配给它的任何资源。
+ */
+pthread_mutex_destroy(myLock);   
+</code></pre>
+
+<p>3）尝试锁定</p>
+
+<p>使用 pthread_mutex_trylock() 可以尝试锁定互斥对象。如果互斥对象当前处于解锁状态，那么您将获得该锁并且函数将返回零。然而,如果互斥对象已锁定,这个调用也不会阻塞。</p>
+
+<h1>条件变量</h1>
+
+<p>如果线程在等待某个特定条件发生,按照上面的方式,就需要对数据结构不停地加锁、解锁进行检测,这样不但浪费时间和资源，而且繁忙查询的效率也非常低。这时,我们可以用pthread_cond_wait()方法。</p>
+
+<p>以查询特殊条件为例:<br>
+首先,线程A执行对数据的检测并没有找到满足条件的数据。此时,通过pthread_cond_wait()函数将线程A设置为等待休眠状态:</p>
+
+<pre><code> /*
+ * 线程A操作
+ */
+pthread_mutex_lock(&amp;mymutex);
+//检测数据条件 
+pthread_cond_wait(&amp;mycond, &amp;mymutex);
+</code></pre>
+
+<p>调用pthread_cond_wait()所做的第一件事就是对互斥对象进行解锁（其他线程可以修改数据条件）,并等待条件mycond发生。</p>
+
+<p>此时,pthread_cond_wait() 调用还未返回,对互斥对象的解锁会立即发生。等待条件mycond通常是一个阻塞操作。这意味着线程将睡眠,在它苏醒之前不会消耗 CPU 周期。这正是我们期待发生的情况。线程将一直睡眠，直到特定条件发生,在这期间不会发生任何浪费 CPU 时间的繁忙查询。从线程的角度来看,它只是在等待 pthread_cond_wait() 调用返回。</p>
+
+<p>假如另一个线程B锁定了mymutex并对数据条件做了修改。在对互斥对象解锁之后,线程B会立即调用函数 pthread_cond_broadcast(&amp;mycond)。此操作之后，线程B将使所有等待 mycond 条件变量的线程立即苏醒。这意味着第一个线程（仍处于 pthread_cond_wait() 调用中）现在将苏醒。</p>
+
+<pre><code> /*
+ * 线程B操作
+ */
+pthread_mutex_lock(&amp;mymutex);
+
+//修改数据条件操作 
+
+pthread_mutex_unlock(&amp;mymutex);
+pthread_cond_broadcast(&amp;mycond);
+</code></pre>
+
+<p>您可能会认为在线程B调用 pthread_cond_broadcast(&amp;mymutex) 之后，线程A的 pthread_cond_wait() 会立即返回。不是那样!实际上，pthread_cond_wait() 将执行最后一个操作:重新锁定 mymutex。一旦 pthread_cond_wait() 锁定了互斥对象,那么它将返回并允许线程A继续执行。</p>
+
+<p>1）初始化和清除</p>
+
+<p>和互斥对象一样,条件变量在使用时也需要初始化:</p>
+
+<pre><code>pthread_cond_t mycond;
+pthread_cond_init(&amp;mycond,NULL);
+</code></pre>
+
+<p>在释放或废弃条件变量之前，需要毁坏它,如下所示:</p>
+
+<pre><code>pthread_cond_destroy(&amp;mycond);
+</code></pre>
+
+<p>2）等待</p>
+
+<p>一旦初始化了互斥对象和条件变量，就可以等待某个条件，如下所示:</p>
+
+<pre><code>pthread_cond_wait(&amp;mycond, &amp;mymutex);
+</code></pre>
+
+<p>请注意，代码在逻辑上应该包含 mycond 和 mymutex。一个特定条件只能有一个互斥对象,而且条件变量应该表示互斥数据“内部”的一种特殊的条件更改。一个互斥对象可以用许多条件变量（例如，cond_empty、cond_full、cond_cleanup），但每个条件变量只能有一个互斥对象。</p>
+
+<p>3）发送信号和广播</p>
+
+<p>对于发送信号和广播，需要注意一点。如果线程更改某些共享数据，而且它想要唤醒所有正在等待的线程，则应使用 pthread_cond_broadcast 调用，如下所示：</p>
+
+<pre><code>pthread_cond_broadcast(&amp;mycond);
+</code></pre>
+
+<p>在某些情况下，活动线程只需要唤醒第一个正在睡眠的线程。假设您只对队列添加了一个工作作业。那么只需要唤醒一个工作程序线程（再唤醒其它线程是不礼貌的！）:</p>
+
+<pre><code>pthread_cond_signal(&amp;mycond);
+</code></pre>
+
+<p>此函数只唤醒一个线程。</p>
+
+<h1>参见</h1>
+
+<p>POSIX 线程(WIKI):<a href="https://zh.wikipedia.org/wiki/POSIX%E7%BA%BF%E7%A8%8B">https://zh.wikipedia.org/wiki/POSIX%E7%BA%BF%E7%A8%8B</a></p>
+
+<p>POSIX 线程详解:<a href="http://www.ibm.com/developerworks/cn/linux/thread/posix_thread1/#icomments">http://www.ibm.com/developerworks/cn/linux/thread/posix_thread1/#icomments</a></p>
+
+<p>POSIX 线程详解，第 2部分:<a href="https://www.ibm.com/developerworks/cn/linux/thread/posix_thread2/">https://www.ibm.com/developerworks/cn/linux/thread/posix_thread2/</a></p>
+
+<h1>完整代码</h1>
+
+<p><a href="https://github.com/sbxfc/PThreads">https://github.com/sbxfc/PThreads</a></p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[iOS - 帧时长可控的逐帧动画]]></title>
+    <link href="http://sbxfc.github.io/blog/2015/06/03/ios-frame-by-frame-animation/"/>
+    <updated>2015-06-03T10:12:57+08:00</updated>
+    <id>http://sbxfc.github.io/blog/2015/06/03/ios-frame-by-frame-animation</id>
+    <content type="html"><![CDATA[<p>UIImageView组件可以通过设置 animationImages、anmiamtionDurations 等参数来实现逐帧动画。 但是,如果我们想单独改变某一帧的播放时间,通过UIImageView现有的API却不能实现。那么,我们就会考虑自己定义一个这样的逐帧动画。</p>
+
+<p>当你选择诸如 <font color="#bd260d"><strong>CADisplayLink</strong></font> 、 <font color="#bd260d"><strong>NSTimer</strong></font>等时间驱动来绘制这样的的动画时,很可能会遇到一个问题。当这样的动画在同一个界面被大量使用时,会带来不小的CPU消耗、甚至是帧阻塞问题。通常情况下 UIView动画 或者 CAAnimation 驱动的动画任务几乎不受系统影响。所以,我们可以选择用 UIView 或 CAAnimation 等来封装我们的自定义动画。</p>
+
+<p>实际上,UIImageView动画本身就是一个封装了传统动画API的image view。其实现方式是通过修改image view在layer上的contents属性来完成动画播放的:</p>
+
+<!-- more -->
+
+
+<pre><code>&lt;CAKeyframeAnimation:0x8e5b020; 
+    removedOnCompletion = 0; 
+    delegate = &lt;_UIImageViewExtendedStorage: 0x8e49230&gt;; 
+    duration = 2.5; 
+    repeatCount = 2.14748e+09; 
+    calculationMode = discrete; 
+    values = (
+        "&lt;CGImage 0x8d6ce80&gt;",
+        "&lt;CGImage 0x8d6d2d0&gt;",
+        "&lt;CGImage 0x8d5cd30&gt;"
+    ); 
+    keyPath = contents
+&gt;
+</code></pre>
+
+<p>所以,我们可以通过修改contents来实现自定义动画。创建一个CAKeyframeAnimation动画,设置 keyTimes 来控制每帧时长。keyTimes里的元素表示每帧图片出现在动画总时长duration里的相对位置,其取值为区间[0,1]上的比例值。且 keyTimes 里元素个数要比values值多1个,使循环播放时首尾帧动画可以衔接起来。</p>
+
+<pre><code>CAKeyframeAnimation *animation = [CAKeyframeAnimation animationWithKeyPath:@"contents"];
+animation.calculationMode = kCAAnimationDiscrete;
+animation.keyTimes = keyTimes;
+animation.values = images;
+animation.duration = 7.0f;
+animation.repeatCount = HUGE_VAL;
+[imageView.layer addAnimation:animation forKey:nil];   
+</code></pre>
+
+<h1>代码</h1>
+
+<p><a href="https://github.com/sbxfc/FrameByFrameAnimation">https://github.com/sbxfc/FrameByFrameAnimation</a></p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[iOS - 操作队列]]></title>
+    <link href="http://sbxfc.github.io/blog/2015/06/02/ios-nsoperation/"/>
+    <updated>2015-06-02T11:27:11+08:00</updated>
+    <id>http://sbxfc.github.io/blog/2015/06/02/ios-nsoperation</id>
+    <content type="html"><![CDATA[<p>操作队列(NSOperationQueue)是一个可以方便实现后台操作的工作队列,它是在GCD的基础上使用Cocoa抽象出来的一个队列模型。操作队列和GCD一样既可以在主线程运行,做一些UI刷新操作,也可以在子线程运行。</p>
+
+<p>操作队列里的工作被封装在一个NSOperation对象里,NSOperation本身是抽象对象不能直接使用,需要创建它的子类或者使用系统提供的两个子类 NSBlockOperation 或 NSInvocationOperation。</p>
+
+<h1>NSOperation</h1>
+
+<p>NSOperation 将工作单独封装成一个单元,并提供了一些线程安全的特性,比如状态(state),优先级(priority),依赖(dependencies)以及取消(cancellation)等。</p>
+
+<p>1,状态(state):</p>
+
+<p>状态(state)描述了一个 operation 的执行过程:</p>
+
+<pre><code>isReady -&gt; isExecuting -&gt; isFinished
+</code></pre>
+
+<p>1）isReady：isReady属性与dependencies有关,当operation依赖的工作完成时,会获得一个isReady键值的KVO通知,然后isReady属性修改为YES,标识该工作已经准备好。</p>
+
+<p>2）isExecuting：如果操作队列正在执行该operation,operation的isExecuting返回YES。</p>
+
+<p>3）isFinished: 任务成功的完成了或者中途被Cancel掉,该值返回YES。NSOperationQueue只会把isFinished为YES的operation踢出队列,isFinished为NO的永远不会被移除,所以实现时一定要保证其正确性,避免死锁的情况发生。</p>
+
+<p>2,取消(cancellation):</p>
+
+<p>NSOperation里的工作是可以取消的,取消一个operation可以是显式的调用cancel方法,也可以是operation依赖的其他operation执行失败。</p>
+
+<p>和state类似,当NSOperation被取消,是通过isCancelled键值的KVO来获得。当NSOperation的子类覆写cancel方法时,注意清理掉内部分配的资源。特别注意的是,这时isCancelled和isFinished的值都变为了YES,isExecuting为值变为NO</p>
+
+<p>3，优先级(priority):</p>
+
+<p>所有的operation在NSOperationQueue中未必都是一样的重要,设置queuePriority属性就可以提升和降低operation的优先级，queuePriority属性可选的值如下:</p>
+
+<ul>
+<li>NSOperationQueuePriorityVeryHigh</li>
+<li>NSOperationQueuePriorityHigh</li>
+<li>NSOperationQueuePriorityNormal</li>
+<li>NSOperationQueuePriorityLow</li>
+<li>NSOperationQueuePriorityVeryLow</li>
+</ul>
+
+
+<p>4,依赖(Dependencies):</p>
+
+<p>如果你从服务器上下载一张图片完成后进行压缩,你可能会想把下载图片作为一个operation,压缩作为另外一个。一个图片在从服务器上下载下来之前是没有办法压缩的,于是我们说压缩图片的operation依赖从服务器上下载图片的operation,后者必须先完成,前者才能开始执行。通过代码来说就是:</p>
+
+<pre><code>[resizingOperation addDependency:networkingOperation];
+[operationQueue addOperation:networkingOperation];
+[operationQueue addOperation:resizingOperation];
+</code></pre>
+
+<p>除非一个操作的依赖的isFinished返回YES，不然这个操作不会开始。要记住添加到队列里的所有的operation的依赖关系,并避免循环依赖,比如A依赖B,B依赖A,这样会产生死锁。</p>
+
+<h1>自定义NSOperation子类</h1>
+
+<p>对于非并发的工作,你只需要实现NSOperation子类里的main方法:</p>
+
+<pre><code>@implementation YourOperation
+
+-(void)main
+{
+    if(self.isCancelled == NO)
+    {
+        //执行相应的操作
+    }
+}
+
+@end
+</code></pre>
+
+<p>如果要支持并发工作，那么NSOperation子类需要至少重写这四个方法:</p>
+
+<ul>
+<li>start</li>
+<li>isConcurrent</li>
+<li>isExecuting</li>
+<li>isFinished</li>
+</ul>
+
+
+<p>start方法是工作的入口，通常是你用来设置线程或者其他执行工作任务需要的运行环境的，注意不要调用[super start]；isConcurrent是标识这个Operation是否是并发执行的，这里曾经是个坑，如果你没有实现isConcurrent，默认是返回NO，那么你的NSOperation就不是并发执行而是串行执行的，不过在iOS5.0和OS X10.6之后，已经会默认忽略这个返回值，最终和Queue的maxConcurrentOperationCount最大并发操作值相关；isExecuting和isFinished是用来报告当前的工作执行状态情况的，注意必须是线程访问安全的。</p>
+
+<p>注意你的实现要发出合适的KVO通知，因为如果你的NSOperation实现需要用到工作依赖从属特性，而你的实现里没有发出合适的“isFinished”KVO通知，依赖你的NSOperation就无法正常执行。NSOperation支持KVO的属性有：</p>
+
+<ul>
+<li>isCancelled</li>
+<li>isConcurrent</li>
+<li>isExecuting</li>
+<li>isFinished</li>
+<li>isReady</li>
+<li>dependencies</li>
+<li>queuePriority</li>
+<li>completionBlock</li>
+</ul>
+
+
+<p>当然也不是说所有的KVO通知都需要自己去实现，例如通常你用不到addObserver到你工作的“isCancelled”属性，你只需要直接调用cancel方法就可以取消这个工作任务。</p>
+
+<h1>NSInvocationOperation &amp; NSBlockOperation</h1>
+
+<p>除此之外,对于一些不复杂的工作,可以由官方提供的NSOperation两个子类 NSInvocationOperation 和 NSBlockOperation 来实现。</p>
+
+<p>NSInvocationOperation:</p>
+
+<pre><code>NSInvocationOperation* operation = [[NSInvocationOperation alloc]
+                                        initWithTarget:self
+                                        selector:@selector(doSomeWork:)
+                                        object:nil];
+</code></pre>
+
+<p>NSBlockOperation:</p>
+
+<pre><code>NSBlockOperation *operation = [NSBlockOperation blockOperationWithBlock:^{
+        // Do some work.
+    }];
+</code></pre>
+
+<h1>NSOperationQueue</h1>
+
+<p>创建一个子线程队列,并将operation添加至队列里:</p>
+
+<pre><code>NSOperationQueue* operationQueue = [[NSOperationQueue alloc] init];
+[operationQueue addOperation:operation];
+</code></pre>
+
+<p>或者,直接使用主线程队列:</p>
+
+<pre><code>NSOperationQueue* operationQueue = [NSOperationQueue mainQueue];
+</code></pre>
+
+<p>设置并发工作的数量:</p>
+
+<pre><code>operationQueue.maxConcurrentOperationCount = 1;
+</code></pre>
+
+<p>取消所有队列工作:</p>
+
+<pre><code>[operationQueue cancelAllOperations];
+</code></pre>
+
+<h1>参见</h1>
+
+<ul>
+<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Reference/NSOperation_class/index.html">https://developer.apple.com/library/ios/documentation/Cocoa/Reference/NSOperation_class/index.html</a></li>
+</ul>
+
+
+<!--对于非并发操作,你可以通过重写 main 方法来定义自己的operation。使用main方法非常简单,你不需要管理一些状态属性（例如 isExecuting 和 isFinished）,当 main 方法返回的时候,这个 operation 就结束了。
+
+    @implementation YourOperation
+        - (void)main
+        {
+            // 进行处理 ...
+        }
+    @end
+
+如果要支持并发工作,那么NSOperation子类需要至少重写这四个方法:
+
+- start
+- isConcurrent
+- isExecuting
+- isFinished
+
+..
+
+    @implementation YourOperation
+        - (void)start
+        {
+            self.isExecuting = YES;
+            self.isFinished = NO;
+            // 开始处理,在结束时应该调用 finished ...
+        }
+        
+        - (BOOL)isConcurrent {
+            return YES;
+        }
+        
+        - (BOOL)isExecuting {
+            return self.executing;
+        }
+
+        - (void)finished
+        {
+            self.isExecuting = NO;
+            self.isFinished = YES;
+        }
+    @end-->
+
+
+
+
+<!--操作队列(Operation Queue)是基于GCD实现的用于异步操作任务的队列模型。GCD本身是通过C语言实现的,而Operation Queue在GCD基础上实现了一些方便的功能,并且通过Cocoa进行抽象封装。
+
+通常来说Operation Queue是开发者最安全的选择。
+
+#NSOperation
+
+Operation Queue队列处理的任务是通过NSOperation子类来封装的。你可以自己来写子类实现,也可以使用Foundation框架里提供的两个子类:<font color="#bd260d">**NSInvocationOperation**</font> 或 <font color="#bd260d">**NSBlockOperation**</font>
+
+一,NSInvocationOperation
+
+    NSInvocationOperation* operation = [[NSInvocationOperation alloc] initWithTarget:self selector:@selector(runTask:) object:nil];
+    [operation start];
+
+二,NSBlockOperation
+    
+    NSBlockOperation *operation = [NSBlockOperation blockOperationWithBlock:^{
+        [self runTask:@&#8221;task1&#8221;];
+    }];
+    [operation addExecutionBlock:^{
+        [self runTask:@&#8221;task2&#8221;];
+    }];
+    [operation addExecutionBlock:^{
+        [self runTask:@&#8221;task3&#8221;];
+    }];
+    [operation start];
+    
+[NSBlockOperation](https://developer.apple.com/library/ios/documentation/Cocoa/Reference/NSBlockOperation_class/index.html) 可以并行执行多个 NSOperation ,但只有当所有 block 都执行完成之后,NSBlockOperation的 <font color="#bd260d">**isFinished**</font> 属性才会被标记为已完成。 
+
+三,自定义NSOperation子类
+    
+第一种方式是简单地重写main函数来操作operations,当 main 方法返回的时候,这个 operation 就结束了。
+
+
+
+    -(void)main
+    {
+        NSLog(@&#8221;Do SomeThing&#8221;);
+    }
+    
+
+
+另一种方式是重写start方法。在这种情况下,你必须手动管理操作的状态。 为了让操作队列能够捕获到操作的改变,需要将状态的属性以配合 KVO 的方式进行实现。如果你不使用它们默认的 setter 来进行设置的话,你就需要在合适的时候发送合适的 KVO 消息。
+
+
+    @implementation MyOperation
+        - (void)start
+        {
+            [self willChangeValueForKey:@&#8221;isExecuting&#8221;];
+            _isExecuting = YES;
+            [self didChangeValueForKey:@&#8221;isExecuting&#8221;];
+            
+            // 开始处理,在结束时调用 finished &#8230;
+            [self runTask];         
+        }
+        
+    
+        - (void)finish
+        {
+            [self willChangeValueForKey:@&#8221;isExecuting&#8221;];
+            [self willChangeValueForKey:@&#8221;isFinished&#8221;];
+            
+            _isExecuting = NO;
+            _isFinished = YES;
+            
+            [self didChangeValueForKey:@&#8221;isFinished&#8221;];
+            [self didChangeValueForKey:@&#8221;isExecuting&#8221;];
+        }
+    @end
+
+
+参见:[MyOperation类](https://github.com/sbxIOS/OperationQueuesExample)
+
+#Operation Queue
+
+operation创建好以后很容易加入operation queue中
+
+    queue = [[NSOperationQueue alloc] init];
+    NSInvocationOperation* operation = [[NSInvocationOperation alloc] initWithTarget:self selector:@selector(runTask:) object:nil];
+    [queue  addOperation:operation];
+    
+或者直接使用Block添加:
+    
+    //想queue队列添加任务
+    [queue addOperationWithBlock:^{
+        //向主队列添加任务 
+        [[NSOperationQueue mainQueue] addOperationWithBlock:^{
+                
+        }];
+    }];
+    
+#参考
+
+使用Operation Queue实现批量下载:<br>
+<https://github.com/sbxIOS/asyncDownloadQueque>
+
+使用Operation Queue对ScrollView里的项进行异步绘制:<br>
+<https://github.com/sbxIOS/lazyViewExample>&#8211;>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[跨平台的TCP通信客户端]]></title>
+    <link href="http://sbxfc.github.io/blog/2015/05/12/cross-platform-tcpip-socket/"/>
+    <updated>2015-05-12T14:05:45+08:00</updated>
+    <id>http://sbxfc.github.io/blog/2015/05/12/cross-platform-tcpip-socket</id>
+    <content type="html"><![CDATA[<p>TCP/IP 是 TCP/IP协议族的简称,是互联网的基础通讯架构,事实上也是计算机网络通信的国际标准。TCP/IP的前身是NCP(网络控制协议),是S.克罗克及其小组在加州大学制定的最初的主机间通信协议。NCP协议的缺点是,它没有为每台电脑设置一个唯一地址,导致在越来越庞大的网络中难以准确定位。另一方面,NCP缺乏纠错功能,导致数据传输不稳定。</p>
+
+<p>TCP/IP将网络通信的可靠性改为由主机保证而不是像NCP那样由网络保证。TCP/IP使用一个成为网关（后来改为路由器以免与网关混淆）的计算机为每个网络提供一个接口并且在它们之间来回传输数据包。</p>
+
+<p>在1985年时,因特网架构理事会举行一个三天有250家厂商代表参加的关于计算产业使用TCP/IP的工作会议，帮助推广并且引领它日渐增长的商业应用。</p>
+
+<p>如今,绝大多数商业操作系统都实现了TCP/IP协议,这其中包括所有的商业Unix、Linux发布包，以及Mac OS X和微软的Windows操作系统。</p>
+
+<h1>TCP/IP模型</h1>
+
+<p>两个因特网主机(Host)通过两个路由器（Router）和对象的层连接。</p>
+
+<p><img src="http://sbxfc.github.io/images/2015/5/tcp_ip_stack_connections.png" alt="" /></p>
+
+<!-- more -->
+
+
+<p>在TCP/IP模型是一个抽象的分层模型，这个模型中,所有的TCP/IP系列网络协议都被归类为4个抽象层,应用层、运输层、网络层、链路层。每一层建立在低一层的服务上,并为高一层提供服务。</p>
+
+<ul>
+<li><p>数据链路层:在TCP/IP协议族中,链路层又称为网络接口层。通常包括操作系统中的设备驱动和计算机中的对应网络接口卡。它们一起处理与电缆的物理接口细节。</p></li>
+<li><p><a href="http://zh.wikipedia.org/wiki/%E7%BD%91%E7%BB%9C%E5%B1%82">网络层</a>:网络层提供路由和寻址的功能，使两终端系统能够互连且决定最佳路径，并具有一定的拥塞控制和流量控制的能力。TCP/IP协议体系中的网络层功能由IP协议规定和实现，故又称IP层。</p></li>
+<li><p>运输层:运输层主要为两台计算机上的应用程序提供端到端的通信。在TCP/IP协议族中,有两个不相同的传输协议:TCP和UDP。TCP为两台主机提供高可靠性的数据通信。它所做的工作包括把应用程序交给它的数据分成合适的小块交给下面的网络层,确认接收到的分组,设置发送最后确认分组的超时时钟 等。由于运输层提供了高可靠性的端到端的通信,因此应用层可以忽略所有这些细节。而另一方面,UDP则为应用层提供一种非常简单的服务。它只是把称做数据报的分组从一台主机发送到另一台主机,但并不保证该数据报能到达另一端。任何必须的可靠性由应用层来提供。</p></li>
+<li><p>应用层:应用层是指我们的应用程序。</p></li>
+</ul>
+
+
+<p><img src="http://sbxfc.github.io/images/2015/5/ip_stack_connections.png" alt="" /></p>
+
+<h1>POSIX</h1>
+
+<p>可移植操作系统接口（英语：Portable Operating System Interface of UNIX，缩写为POSIX），是IEEE为要在各种UNIX操作系统上运行软件，而定义API的一系列互相关联的标准的总称。</p>
+
+<p>在OS和Linux在内的所有Unix系统里,我们都可以使用Posix接口来创建socket。在Windows系统里,我们可以使用WinSock来操作socket,WinSock实际上是对POSIX socket的一个封装。</p>
+
+<h1>WinSock和POSIX socket接口的异同</h1>
+
+<p>一,头文件</p>
+
+<p>在windows中需要引入头文件</p>
+
+<pre><code>#include &lt;winsock.h&gt;
+</code></pre>
+
+<p>在其他遵从POSIX规则的系统里需要引入</p>
+
+<pre><code>#include &lt;sys/types.h&gt;
+#include &lt;sys/socket.h&gt;
+#include &lt;netinet/in.h&gt;
+</code></pre>
+
+<p>二,链接库</p>
+
+<p>在windows下面需要主动连接ws2_32.lib库</p>
+
+<pre><code>#ifdef WIN32
+#include "StdAfx.h"
+#pragma comment(lib, "wsock32")
+#endif
+</code></pre>
+
+<p>三,初始化</p>
+
+<p>在windows下面需要初始化,windows下面是通过动态链接的方式调用socket的,所以需要你告诉调用的链接库的版本,操作系统会帮你加载并初始化dll。</p>
+
+<pre><code>WORD wVersionRequested;
+WSADATA wsaData;
+int err;
+wVersionRequested = MAKEWORD(2, 0);
+err = WSAStartup(wVersionRequested, &amp;wsaData);
+if(0 != err) //检查Socket初始化是否成功
+{
+    cout&lt;&lt;"Socket2.0初始化失败，Exit!";
+    return -1;
+}
+</code></pre>
+
+<p>四,函数</p>
+
+<p>在Windows和POSIX里,socket的函数是一致的。只是windows里面宏定义了一个socket描述符。</p>
+
+<h1>创建TCP套接字</h1>
+
+<p>一,创建一个TCP套接字</p>
+
+<p>该函数返回一个整数描述符,以后所有socket调用(如随后的connect和write)就用该描述符来标识这个套接字</p>
+
+<pre><code>int sockfd = socket(AF_INET,     //internetwork: UDP, TCP, etc
+                    SOCK_STREAM, //SOCK_STREAM说明是TCP类型
+                    0);          //protocol
+</code></pre>
+
+<p>二,与TCP服务器建立连接</p>
+
+<pre><code>    /**
+     * 设置发往的地址
+     */
+    struct sockaddr_in addrto;
+    addrto.sin_family = AF_INET;//地址类型为internetwork
+    addrto.sin_addr.s_addr = inet_addr(ip);
+    addrto.sin_port = htons(port);
+
+    int connect(int sockfd,          //sockfd是由socket函数返回的套接字描述符
+    const struct sockaddr* servaddr,//套接字地址
+    socklen_t addrlen);              //套接字地址结构大小
+</code></pre>
+
+<p>三,发送信息:</p>
+
+<p>使用<font color="#bd260d"><strong>send</strong></font>函数向TCP连接的另一端(服务器端)发送数据:</p>
+
+<pre><code>int send(SOCKET s,     //指定接收端的套接字描述符
+          char *buf,   //指定一个存放应用程序要发送数据的缓冲区            int len,     //指明buf的长度
+          int flags);  //这个参数一般置为0
+</code></pre>
+
+<p>四,数据接收</p>
+
+<p>使用<font color="#bd260d"><strong>recv</strong></font>函数从TCP连接的另一端接收数据:</p>
+
+<pre><code>int recv(SOCKET s,  //指定接收端的套接字描述符
+         char *buf, //指明一个缓冲区,该缓冲区用来存放recv接收到的数据
+         int len,    //指明buf的长度
+         int flags); //这个参数一般设置为0
+</code></pre>
+
+<h1>完整代码</h1>
+
+<p><a href="https://github.com/sbxfc/CrossPlatformSocket">https://github.com/sbxfc/CrossPlatformSocket</a></p>
+
+<h1>参考</h1>
+
+<p>网络传输协议(Wiki):<br><a href="http://zh.wikipedia.org/zh-cn/%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE">http://zh.wikipedia.org/zh-cn/%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE</a></p>
+
+<p>TCP/IP协议族(Wiki):<br><a href="http://zh.wikipedia.org/wiki/TCP/IP%E5%8D%8F%E8%AE%AE%E6%97%8F">http://zh.wikipedia.org/wiki/TCP/IP%E5%8D%8F%E8%AE%AE%E6%97%8F</a></p>
+
+<p>TCP/IP 详解</p>
+
+<p>Unix 网络编程</p>
+
+<p>sockimp.pdf:<br><a href="http://www.openss7.org/papers/strsock/sockimp.pdf">http://www.openss7.org/papers/strsock/sockimp.pdf</a></p>
+
+<p>windows/linux socket接口的异同:<br><a href="http://blog.chinaunix.net/uid-28323465-id-3876368.html">http://blog.chinaunix.net/uid-28323465-id-3876368.html</a></p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[iOS - Run Loop]]></title>
+    <link href="http://sbxfc.github.io/blog/2015/05/08/ios-run-loops/"/>
+    <updated>2015-05-08T14:14:25+08:00</updated>
+    <id>http://sbxfc.github.io/blog/2015/05/08/ios-run-loops</id>
+    <content type="html"><![CDATA[<h1>什么是RunLoop</h1>
+
+<p>RunLoop是iOS里线程的一部分,任何线程,包括主线程都包含了一个Run Loop对象。RunLoop的作用相当于在线程上维持一个类似while的死循环,使线程在任何时刻都处于待命状态,并且在不执行任务时 RunLoop 会让线程进入睡眠状态(不占用CPU资源)。</p>
+
+<p>主线程上的RunLoop在App运行时由系统自动启动,子线程里的RunLoop需要手动运行。运行时,RunLoop在需要监听Time Source或者Input Source类型的至少一种事件源,如果RunLoop没有绑定事件源,在运行后会立即退出。当事件源没有触发时,RunLoop会让线程进入睡眠状态,当事件源发生时RunLoop会唤醒线程来处理事件。</p>
+
+<h1>运行RunLoop</h1>
+
+<p>1）RunLoop 在 Foundation 层和 Core Foundation 层都有对应的接口。</p>
+
+<p>Foundation层:</p>
+
+<pre><code>//运行 RunLoop 在NSDefaultRunLoopMode模式下
+- (void)run;
+//运行 RunLoop 在指定模式下,直到指定的时间结束
+- runMode:beforeDate:
+//运行 RunLoop 在NSDefaultRunLoopMode模式下,直到指定的时间结束
+- runUntilDate:
+- acceptInputForMode:beforeDate:
+</code></pre>
+
+<p>Core Foundation层:</p>
+
+<pre><code>//运行 CFRunLoopRef
+void CFRunLoopRun();
+//运行 CFRunLoopRef: 参数为运行模式、时间和是否在处理Input Source后退出标志，返回值是exit原因
+SInt32 CFRunLoopRunInMode (mode, seconds, returnAfterSourceHandled);
+//停止运行 CFRunLoopRef
+void CFRunLoopStop( CFRunLoopRef rl );
+//唤醒 CFRunLoopRef
+void CFRunLoopWakeUp ( CFRunLoopRef rl );
+</code></pre>
+
+<p>2）RunLoop的退出方式:</p>
+
+<ul>
+<li><p>以超时配置RunLoop启动,RunLoop会在指定的时间自动退出。</p></li>
+<li><p>显式的停止RunLoop（调用CFRunLoopStop函数）</p></li>
+<li><p><a href="https://developer.apple.com/library/prerelease/mac/documentation/Cocoa/Reference/Foundation/Classes/NSRunLoop_Class/">https://developer.apple.com/library/prerelease/mac/documentation/Cocoa/Reference/Foundation/Classes/NSRunLoop_Class/</a></p></li>
+<li><a href="https://developer.apple.com/library/mac/documentation/CoreFoundation/Reference/CFRunLoopRef/">https://developer.apple.com/library/mac/documentation/CoreFoundation/Reference/CFRunLoopRef/</a></li>
+</ul>
+
+
+<h1>运行模式</h1>
+
+<p>RunLoop运行时只能以一种固定的模式运行,只会监控这个Mode下添加的Time Source和Input Source。如果这个模式下没有添加事件源,RunLoop会立刻退出。大多数时候，Run Loop都是运行在系统定义的默认模式上。</p>
+
+<p>1）NSDefaultRunLoopMode : 大多数工作默认的运行模式</p>
+
+<p>2) UITrackingRunLoopMode : 用于跟踪触摸事件触发的模式（比如UITableView上下滑动）, 主线程中当触摸事件发生时会设置为这个模式。</p>
+
+<p>3) GSEventReceiveRunLoopMode : 用来接受系统事件,内部的Run Loop模式。</p>
+
+<p>4）NSConnectionReplyMode : 使用这个Mode去监听NSConnection对象的状态，我们很少需要自己使用这个Mode。</p>
+
+<p>5）NSModalPanelRunLoopMode : 使用这个Mode在Model Panel情况下去区分事件(OS X开发中会遇到)。</p>
+
+<p>6) NSRunLoopCommonModes : 是一组常用的模式集合，将一个input source关联到这个模式集合上，等于将input source关联到这个模式集合中的所有模式上。在iOS系统中NSRunLoopCommonMode包含NSDefaultRunLoopMode、NSTaskDeathCheckMode、UITrackingRunLoopMode，我有个timer要关联到这些模式上，一个个注册很麻烦，我可以用</p>
+
+<pre><code>CFRunLoopAddCommonMode([[NSRunLoop currentRunLoop] getCFRunLoop],(__bridge CFStringRef) NSEventTrackingRunLoopMode)
+</code></pre>
+
+<p>将NSEventTrackingRunLoopMode或者其他模式添加到这个NSRunLoopCommonModes模式中，然后只需要将Timer关联到NSRunLoopCommonModes，即可以实现Run Loop运行在这个模式集合中任何一个模式时，这个Timer都可以被触发。默认情况下NSRunLoopCommonModes包含了NSDefaultRunLoopMode和UITrackingRunLoopMode。注意：让Run Loop运行在NSRunLoopCommonModes下是没有意义的，因为一个时刻Run Loop只能运行在一个特定模式下，而不可能是个模式集合。</p>
+
+<h1>事件源</h1>
+
+<p>归根结底，Run Loop就是个处理事件的Loop，可以添加Timer和其他Input Source等各种事件源，如果事件源没有发生时，Run Loop就可能让线程进入asleep状态，而事件源发生时就会唤醒休眠的(asleep)的子线程来处理事件。Run Loop的事件源事件源分两类：Timer Source和Input Source(包括-performSelector:*API调用簇，Port Input Source、自定义Input Source)。</p>
+
+<p>1）Timer Source类型的事件源,就是创建Timer添加到RunLoop中。在Cocoa里,使用NSTimer创建定时器加入Run Loop,在Core Foundation里使用CFRunLoopTimerRef类型,本质上NSTimer是CFRunLoopTimerRef的简单扩展。需要注意的是,使用scheduledTimerWithTimeInterval 创建的定时器会默认以NSDefaultRunLoopMode模式添加到Run Loop里。而使用timerWithTimeInterval或其他接口创建的Timer需要手动使用 -addTimer:forMode 添加到RunLoop中。如果事件源没有被添加到RunLoop中,则NSTimer不会监听到相应的事件。</p>
+
+<pre><code>NSTimer* timer = [NSTimer timerWithTimeInterval:1.0f target:self selector:@selector(doFireTimer:) userInfo:nil repeats:YES];
+[runLoop addTimer:timer forMode:NSDefaultRunLoopMode];
+</code></pre>
+
+<p>2) Input Source中的-performSelector:*API调用簇方法，有以下这些接口：</p>
+
+<pre><code>performSelectorOnMainThread:withObject:waitUntilDone:  
+performSelectorOnMainThread:withObject:waitUntilDone:modes:
+
+performSelector:onThread:withObject:waitUntilDone:  
+performSelector:onThread:withObject:waitUntilDone:modes:
+
+performSelector:withObject:afterDelay:  
+performSelector:withObject:afterDelay:inModes:
+
+cancelPreviousPerformRequestsWithTarget:  
+cancelPreviousPerformRequestsWithTarget:selector:object:
+</code></pre>
+
+<p>这些API最后两个是取消当前线程中调用，其他API是在主线程或者当前线程下的Run Loop中执行指定的@selector。</p>
+
+<p>3）Port Input Source</p>
+
+<p>Cocoa和Core Foundation提供了基于端口的对象用于线程或进程间的通信。</p>
+
+<p>如果要建立和<font color="#bd260d"><strong>NSMachPort</strong></font>对象的本地连接,你需要创建端口对象并加入主线程的Run Loop里。当运行次线程的时候,你传递端口对象到次线程的入口点。次线程通过端口对象将消息传入主线程。</p>
+
+<p>首先在主线程建立端口对象,并在次线程的启动时将端口对象传入:</p>
+
+<pre><code>//设置主线程port，子线程通过此端口发送消息给主线程
+NSPort *myPort = [NSMachPort port];
+if (myPort) {
+    myPort.delegate = self;
+    [[NSRunLoop currentRunLoop] addPort:myPort forMode:NSDefaultRunLoopMode];
+
+    //启动次线程,并传入端口信息
+    [NSThread detachNewThreadSelector:@selector(launchThreadWithPort:) toTarget:[MyWorkerClass class] withObject:myPort];
+}
+</code></pre>
+
+<p>PS:<font color="#bd260d"><strong>NSPortMessage</strong></font>
+是私有 API,官网示例中的线程通实例,客户端实现会有问题。线程间通信完全可以用<font color="#bd260d"><strong>GCD</strong></font>
+或<font color="#bd260d"><strong>performSelector</strong></font>函数等更简便的方式去实现:</p>
+
+<p><a href="http://stackoverflow.com/questions/12384210/is-nsportmessage-in-the-ios-api">http://stackoverflow.com/questions/12384210/is-nsportmessage-in-the-ios-api</a></p>
+
+<h1>观察者</h1>
+
+<p>为了方便理解,贴一下代码:</p>
+
+<ul>
+<li><a href="https://github.com/sbxfc/RunLoops/">https://github.com/sbxfc/RunLoops/</a></li>
+</ul>
+
+
+<p>Run Loop里有一组用于监听事件源的Observers,observers可以通过Core Foundation层的接口定义,并监听指定模式下的事件源触发。</p>
+
+<pre><code>CFRunLoopAddObserver(cfRunLoop, observer, kCFRunLoopDefaultMode);
+</code></pre>
+
+<p>程序里,大多数情况都是运行在 kCFRunLoopDefaultMode 模式下的,假如我们此时拖动示例中的TableView发现NSTimer事件源不再触发,并且收到RunLoop推出信号。因为此时,RunLoop</p>
+
+<p>加入我们监听主线程运行的RunLoop UITrackingRunLoopMode 模式下,而NSTimer默认是运行在 kCFRunLoopDefaultMode 模式下的。有一种解决方式是将Timer添加到forMode:NSRunLoopCommonModes模式下,这也就意味着timer要跟触摸事件同时分享主线程,为了使程序拖动时流畅,在一些很繁重的计算情况下不建议这样去做,因为这样在一定程序上妨碍了流畅度。</p>
+
+<pre><code>    [[NSRunLoop mainRunLoop] addTimer:timer forMode:NSRunLoopCommonModes];
+</code></pre>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[IF YOU LOVE SOMETHING,SET IT FREE]]></title>
+    <link href="http://sbxfc.github.io/blog/2015/04/17/ue4-begin/"/>
+    <updated>2015-04-17T18:06:30+08:00</updated>
+    <id>http://sbxfc.github.io/blog/2015/04/17/ue4-begin</id>
+    <content type="html"><![CDATA[<p><img src="http://sbxfc.github.io/images/2015/4/ue4-begin.jpg" alt="" /></p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[C/C++ 类型转化]]></title>
+    <link href="http://sbxfc.github.io/blog/2015/04/16/cpp-convert/"/>
+    <updated>2015-04-16T20:05:03+08:00</updated>
+    <id>http://sbxfc.github.io/blog/2015/04/16/cpp-convert</id>
+    <content type="html"><![CDATA[<h1><font color='#bd260d'>const_cast</font></h1>
+
+<p>const_cast,移除对象的常量性,一般用于移除指针或引用的常量性,不适用于对象。const_cast去除常量性不是为了修改常量所指向的内容,而是为了使函数能接受实参</p>
+
+<p><strong>const_cast</strong>作用于指针,转化后的指针pval和常量val的地址相同。但是操作*pval不会影响常量val。<font color='#bd260d'><strong>*pval修改的是一个临时对象</strong></font></p>
+
+<pre><code>const int val = 17;
+int* pval = const_cast&lt;int*&gt;(&amp;val);
+*pval = 200;    
+std::cout &lt;&lt; "*pval="&lt;&lt;*pval&lt;&lt;std::endl;//*pval = 200
+std::cout &lt;&lt; "pval 地址="&lt;&lt;pval&lt;&lt;std::endl;    
+std::cout &lt;&lt; "&amp;val 地址="&lt;&lt;&amp;val&lt;&lt;std::endl;
+std::cout &lt;&lt; "val="&lt;&lt;val&lt;&lt;std::endl;//常量val值不变
+</code></pre>
+
+<p>const_cast作用于引用,转化后的引用refval并未指向常量val,而是指向一个临时对象。此时,修改引用refval不会对val造成影响</p>
+
+<pre><code>const int val = 17;
+int refval = const_cast&lt;int&amp;&gt;(val);
+refval = 100;
+std::cout &lt;&lt; "refval="&lt;&lt;refval&lt;&lt;std::endl;  //refval = 100
+std::cout &lt;&lt; "val="&lt;&lt;val&lt;&lt;std::endl;        //val = 17
+</code></pre>
+
+<p>const_cast不能用于对象</p>
+
+<pre><code>const int val = 17;
+int num = const_cast&lt;int&gt;(val);//错误,不能通过编译
+</code></pre>
+
+<!-- more -->
+
+
+<h1><font color='#bd260d'>static_cast</font></h1>
+
+<p>static_cast 运算符可用于将指向基类的指针转换为指向派生类的指针等操作。此类转换并非始终安全。</p>
+
+<p>通常使用static_cast转换数值数据类型，例如将枚举型转换为整型或将整型转换为浮点型，而且你能确定参与转换的数据类型。static_cast 转换安全性不如 dynamic_cast 转换，因为 static_cast 不执行运行时类型检查，而 dynamic_cast 执行该检查。 对不明确的指针的 dynamic_cast 将失败，而 static_cast 的返回结果看似没有问题，这是危险的。 尽管 dynamic_cast 转换更加安全，但是 dynamic_cast 只适用于指针或引用，而且运行时类型检查也是一项开销。</p>
+
+<pre><code>//转换数值数据类型
+int val = static_cast&lt;int&gt;(3.141592654);
+
+//将无类型指针转化为某一类型指针
+void* p = &amp;val;
+int* pval = static_cast&lt;int*&gt;(p);
+</code></pre>
+
+<h1><font color='#bd260d'>reinterpret_cast</font></h1>
+
+<p>“通常为操作数的位模式提供较低层的重新解释”也就是说将数据以二进制存在形式的重新解释。</p>
+
+<pre><code>int *ip;
+char *pc = reinterpret_cast&lt;char*&gt;(ip);
+// 需要记得pc所指向的真实对象是int型,并⾮字符串。
+// 如果将pc当作字符指针进⾏行操作,可能会造成运⾏行时错误
+// 如int len = strlen(pc);
+</code></pre>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[C/C++ 结构体]]></title>
+    <link href="http://sbxfc.github.io/blog/2015/04/14/cpp-struct/"/>
+    <updated>2015-04-14T17:35:22+08:00</updated>
+    <id>http://sbxfc.github.io/blog/2015/04/14/cpp-struct</id>
+    <content type="html"><![CDATA[<p>结构体的声明规则,struct为结构体关键字,tag为结构体标志,member-list为结构体成员列表,variable-list为此结构体声明的变量:</p>
+
+<pre><code>struct tag { 
+    member-list 
+} variable-list 
+</code></pre>
+
+<p>在一般情况下，tag、member-list、variable-list这3部分至少要出现2个。以下为示例：</p>
+
+<pre><code>//此声明声明了拥有3个成员的结构体，分别为整型的a，字符型的b和双精度的c
+//同时又声明了结构体变量s1
+//这个结构体并没有标明其标签
+struct 
+{
+    int a;
+    char b;
+    double c;
+} s1;
+
+//此声明声明了拥有3个成员的结构体，分别为整型的a，字符型的b和双精度的c
+//结构体的标签被命名为SIMPLE,没有声明变量
+struct SIMPLE
+{
+    int a;
+    char b;
+    double c;
+};
+//用SIMPLE标签的结构体，另外声明了变量t1、t2、t3
+struct SIMPLE t1, t2[20], *t3;
+
+//也可以用typedef创建新类型
+typedef struct
+{
+    int a;
+    char b;
+    double c; 
+} Simple2;
+//现在可以用Simple2作为类型声明新的结构体变量
+Simple2 u1, u2[20], *u3;
+</code></pre>
+
+<p>结构体的成员可以包含其他结构体，也可以包含指向自己结构体类型的指针，而通常这种指针的应用是为了实现一些更高级的数据结构如链表和树等。</p>
+
+<pre><code>//此结构体的声明包含了其他的结构体
+struct COMPLEX
+{
+    char string[100];
+    struct SIMPLE a;
+};
+
+//此结构体的声明包含了指向自己类型的指针
+struct NODE
+{
+    char string[100];
+    struct NODE *next_node;
+};
+</code></pre>
+
+<p>如果两个结构体互相包含，则需要对其中一个结构体进行不完整声明，如下所示：</p>
+
+<pre><code>struct B;    //对结构体B进行不完整声明
+
+//结构体A中包含指向结构体B的指针
+struct A
+{
+    struct B *partner;
+    //other members;
+};
+
+//结构体B中包含指向结构体A的指针，在A声明完后，B也随之进行声明
+struct B
+{
+    struct A *partner;
+    //other members;
+};
+</code></pre>
+
+<h1>结构体成员访问</h1>
+
+<p>结构体成员依据结构体变量类型的不同，一般有2种访问方式，一种为直接访问，一种为间接访问。直接访问应用于普通的结构体变量，间接访问应用于指向结构体变量的指针。直接访问使用结构体变量名.成员名，间接访问使用(*结构体指针名).成员名或者使用结构体指针名->成员名。相同的成员名称依靠不同的变量前缀区分。</p>
+
+<pre><code>    struct SIMPLE
+    {
+        int a;
+        char b;
+    };
+
+    //声明结构体变量s1和指向结构体变量的指针s2
+    struct SIMPLE s1, *s2;
+
+    //给变量s1和s2的成员赋值,注意s1.a和s2-&gt;a并不是同一成员
+    s1.a = 5;
+    s1.b = 6;
+    s2-&gt;a = 3;
+    s2-&gt;b = 4;
+</code></pre>
+
+<h1>结构体变量存储</h1>
+
+<p>在内存里,编译器根据成员变量在结构体里的排列顺序为其分配内存。第一个成员变量的内存地址相对结构体内存地址的偏移量为0,若单个成员变量所占内存小于对齐参数时,会空出额外内存单元。</p>
+
+<p>在下图中,第一个成员变量a占一个内存单元（1字节）,由于最小对齐参数为8,a后面有7个内存单元被空出:</p>
+
+<p><img src="http://sbxfc.github.io/images/2015/4/struct.png" alt="" /></p>
+
+<p>在结构体里,对齐数取结构体里最大的内存变量和预设对齐数之间的最小值,结构体的总大小为最大对齐数的整数倍。</p>
+
+<p>使用关键字sizeof可以获取结构体所占内存,使用offsetof宏可以查看结构体的某个特定成员在结构体的位置:</p>
+
+<pre><code>struct SIMPLE
+{
+    char a;
+    double b;
+};
+
+//获得SIMPLE类型结构体所占内存大小
+int size_simple = sizeof( struct SIMPLE );
+
+//获得成员b相对于SIMPLE储存地址的偏移量
+int offset_b = offsetof( struct SIMPLE, b );
+</code></pre>
+
+<p>使用代码修改结构体的预设对齐数:</p>
+
+<pre><code>#pragma pack(8)
+struct SIMPLE
+{
+    int a;
+    char b;
+};
+#pragma pack()
+</code></pre>
+
+<hr />
+
+<p><font color='#bd260d'><em>VS可以在设置里修改预设对齐数,Xcode不能,而且Xcode下使用宏修改预设对齐数无效。<br>ps. Xcode里的可以按照预设对齐数为1来计算<br>难道是由于编译器用的是apple家的LLVM 6.0的关系？ 0.0</em></font></p>
+
+<hr />
+
+<h1>参见</h1>
+
+<p>结构体 (C语言):<br><a href="http://zh.wikipedia.org/zh-cn/%E7%BB%93%E6%9E%84%E4%BD%93_(C%E8%AF%AD%E8%A8%80)">http://zh.wikipedia.org/zh-cn/%E7%BB%93%E6%9E%84%E4%BD%93_(C%E8%AF%AD%E8%A8%80)</a></p>
+]]></content>
+  </entry>
+  
+</feed>

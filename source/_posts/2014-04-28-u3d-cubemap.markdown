@@ -1,0 +1,242 @@
+---
+layout: post
+title: "Unity - 环境反射"
+date: 2014-04-28 10:52:16 +0800
+comments: true
+categories: Shader                                      
+categories: 
+---
+创建Cubemap（立方体纹理）
+---
+----
+
+立方体纹理是以原点为中心,沿6个方向上的六张视野截图生成的立方体纹理。<br> 
+在Unity里可以使用RenderToCubemap函数生成一张CubeMap.
+<br>
+
+一,新建一个Editor文件夹，并在文件夹内创建一个C#类取名GenerateStaticCubemap，继承自 ScriptableWizard 
+
+	//告诉Unity3D这是一个弹出窗口类型的用户编辑器。
+	public class GenerateStaticCubemap : ScriptableWizard {
+	
+	}
+
+
+二,新建渲染点renderPosition 和 保存渲染结果的cubemap 
+
+	public Transform renderPosition;
+	public Cubemap cubemap;
+
+三,创建Unity内置的OnWizardUpdate()函数。
+
+	//它在向导第一次弹出或者当GUI被用户改变时（如拖进去某些对象，输入某些字符等）时被调用。
+	void OnWizardUpdate () 
+	{
+		helpString = "select transform to renderer from and cubemap to render into";
+
+		if(renderPosition != null && cubemap != null){
+			isValid = true;
+		}else{
+			isValid = false;
+		}
+	}
+	
+四,如果选择了渲染点（取GameObject的位置）和制定的cubemap后，isValid满足条件调用内置函数OnWizardCreate函数.
+
+	//如果isValid为true 调用该方法
+	void OnWizardCreate () 
+	{
+		GameObject go = new GameObject("CubeCam",typeof(Camera));
+
+		go.transform.position = renderPosition.position;  
+		go.transform.rotation = Quaternion.identity;  
+		
+		//我们设置默认方向，则相机会找到场景中GameObject蓝色箭头指向的景物渲染到cubemap中
+		go.camera.RenderToCubemap(cubemap);  
+
+		//销毁临时相机
+		DestroyImmediate(go);  
+	}
+	
+最后，设置MenuItem，方面我们可以在编辑器顶部菜单打开该窗口。
+	
+	//在Unity的菜单栏打开这个想到
+	[MenuItem("RenderCubemap/Render")]
+	static void RenderCubemap() 
+	{
+		ScriptableWizard.DisplayWizard("Render CubeMap", typeof(GenerateStaticCubemap), "Render!");
+	}
+
+
+代码:
+
+---
+
+<https://github.com/truthbeauty/u3dCubeMap>
+
+<br>
+环境反射
+---
+---
+利用Cubemap实现环境反射的原理很简单,在Shader里，我们利用模型表面上每个顶点的法线在Cubemap贴图上找到对应的点，并返回该点的色值。如下图:
+
+![](/images/2014/4/reflection.png)
+
+我们利用Input获取过贴图的UV值,同样我们也可以用它自动获取内置的反射向量worldRefl。
+
+首先设置一下基本属性，来存储我们的Cubemap信息，_ReflAmount控制反射程度:
+
+	Properties 
+	{
+		_MainTint ("Diffuse Tint", Color) = (1,1,1,1)
+		_MainTex ("Base (RGB)", 2D) = "white" {}
+		_Cubemap ("CubeMap", CUBE) = ""{}
+		_ReflAmount ("Reflection Amount", Range(0.01, 1)) = 0.5
+	}
+
+在SubShader里做桥连:
+
+		sampler2D _MainTex;
+		samplerCUBE _Cubemap;
+		float4 _MainTint;
+		float _ReflAmount;
+		
+设置Input结构:
+
+		struct Input 
+		{
+			float2 uv_MainTex;
+			float3 worldRefl;
+		};
+
+在surf函数里，通过texCUBE函数取得该点的反射值，类似tex2D函数。
+
+		void surf (Input IN, inout SurfaceOutput o) 
+		{
+			half4 c = tex2D (_MainTex, IN.uv_MainTex) * _MainTint;
+			//texCUBE(samplerCUBE tex , float3 s ) 
+			o.Emission = texCUBE(_Cubemap, IN.worldRefl).rgb * _ReflAmount;
+			o.Albedo = c.rgb;
+			o.Alpha = c.a;
+		}
+
+完整代码:
+
+	Shader "Custom/SimpleReflection" 
+	{
+		Properties 
+		{
+			_MainTint ("Diffuse Tint", Color) = (1,1,1,1)
+			_MainTex ("Base (RGB)", 2D) = "white" {}
+			_Cubemap ("CubeMap", CUBE) = ""{}
+			_ReflAmount ("Reflection Amount", Range(0.01, 1)) = 0.5
+		}
+		
+		SubShader 
+		{
+			Tags { "RenderType"="Opaque" }
+			LOD 200
+			
+			CGPROGRAM
+			#pragma surface surf Lambert
+	
+			sampler2D _MainTex;
+			samplerCUBE _Cubemap;
+			float4 _MainTint;
+			float _ReflAmount;
+	
+			struct Input 
+			{
+				float2 uv_MainTex;
+				float3 worldRefl;
+			};
+	
+			void surf (Input IN, inout SurfaceOutput o) 
+			{
+				half4 c = tex2D (_MainTex, IN.uv_MainTex) * _MainTint;
+				o.Emission = texCUBE(_Cubemap, IN.worldRefl).rgb * _ReflAmount;
+				o.Albedo = c.rgb;
+				o.Alpha = c.a;
+			}
+			ENDCG
+		} 
+		FallBack "Diffuse"
+	}
+
+
+>#### 遮掩反射
+> 有时候，我们不想让整个模型都实现反射效果，我们使用一张灰度贴图遮掩反射，在灰度图对应的模型上面颜色值为灰的部分不实现反射。
+
+![](/images/2014/4/reflection_mask.png)
+
+在上面的代码基础上增加`_ReflMask`属性
+	
+	_ReflMask ("Reflection Mask", 2D) = ""{}
+
+和 CG里
+
+	sampler2D _ReflMask;
+
+最后修改surf函数
+
+	void surf (Input IN, inout SurfaceOutput o) 
+	{
+		half4 c = tex2D (_MainTex, IN.uv_MainTex);
+		float3 reflection = texCUBE(_Cubemap, IN.worldRefl).rgb;
+		float4 reflMask = tex2D(_ReflMask, IN.uv_MainTex);
+	
+		o.Albedo = c.rgb * _MainTint;
+		o.Emission = (reflection * reflMask.r) * _ReflAmount;
+		o.Alpha = c.a;
+	}
+
+完整代码：
+
+	Shader "Custom/SimpleReflection" 
+	{
+		Properties 
+		{
+			_MainTint ("Diffuse Tint", Color) = (1,1,1,1)
+			_MainTex ("Base (RGB)", 2D) = "white" {}
+			_ReflAmount ("Reflection Amount", Range(0, 1)) = 1
+			_Cubemap ("Cubemap", CUBE) = ""{}
+			_ReflMask ("Reflection Mask", 2D) = ""{}
+		}
+		
+		SubShader 
+		{
+			Tags { "RenderType"="Opaque" }
+			LOD 200
+			
+			CGPROGRAM
+			#pragma surface surf Lambert
+	
+			sampler2D _MainTex;
+			sampler2D _ReflMask;
+			samplerCUBE _Cubemap;
+			float4 _MainTint;
+			float _ReflAmount;
+	
+			struct Input 
+			{
+				float2 uv_MainTex;
+				float3 worldRefl;
+			};
+	
+			void surf (Input IN, inout SurfaceOutput o) 
+			{
+				half4 c = tex2D (_MainTex, IN.uv_MainTex);
+				float3 reflection = texCUBE(_Cubemap, IN.worldRefl).rgb;
+				float4 reflMask = tex2D(_ReflMask, IN.uv_MainTex);
+		
+				o.Albedo = c.rgb * _MainTint;
+				o.Emission = (reflection * reflMask.r) * _ReflAmount;
+				o.Alpha = c.a;
+			}
+			ENDCG
+		} 
+		FallBack "Diffuse"
+	}
+
+
+

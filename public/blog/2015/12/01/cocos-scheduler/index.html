@@ -1,0 +1,248 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>Cocos - Scheduler - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="Cocos - Scheduler 在cocos程序里,场景的每帧刷新是由一个与屏幕刷新频率相同的定时器来驱动的。在iOS环境里,这个定时器称为CADisplayLink。 每当屏幕当前帧刷新结束时,主线程里维持程序生命周期的NSRunLoop就会向CADisplayLink发送通知。接着, &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="//ajax.useso.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<link href='http://fonts.useso.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2015/12/01/cocos-scheduler">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">Cocos - Scheduler</h2>
+    
+  </header>
+
+  <div class="entry_content"><p>在cocos程序里,场景的每帧刷新是由一个与屏幕刷新频率相同的定时器来驱动的。在iOS环境里,这个定时器称为CADisplayLink。</p>
+
+<p>每当屏幕当前帧刷新结束时,主线程里维持程序生命周期的NSRunLoop就会向CADisplayLink发送通知。接着,CADisplayLink会触发一个名为doCaller的回调函数,在该回调函数里会进行一系列的每帧刷新操作,除了执行由系统控制的场景刷新部分以外,Cocos还构造了一个名为Scheduler(调度器)的东西,让开发者可以参与并自定义与每帧刷新息息相关的操作</p>
+
+<pre><code>//在Cocos引擎里,当Director初始化时会启动该CADisplayLink定时器
+//doCaller函数会执行每帧的刷新操作
+-(void) startMainLoop
+{
+    // Director::setAnimationInterval() is called, we should invalidate it first
+    [self stopMainLoop];
+
+    displayLink = [NSClassFromString(@"CADisplayLink") 
+                    displayLinkWithTarget:self selector:@selector(doCaller:)];
+    [displayLink setFrameInterval: self.interval];
+    [displayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
+}
+</code></pre>
+
+<p>Scheduler里的回调函数先于场景刷新函数被执行,这意味着,如果我们在scheduler回调函数里做一些UI刷新操作,这些操作会在下一帧被及时更新:</p>
+
+<pre><code>_scheduler-&gt;update(_deltaTime);
+...
+_runningScene-&gt;render(_renderer);//render the scene
+</code></pre>
+
+<h1>基础用法</h1>
+
+<p>任何Node以Node为基类的对象都可以直接调用scheduleUpdate方法,然后通过重载update函数来执行回调操作:</p>
+
+<pre><code>this-&gt;scheduleUpdate();
+
+//*.h
+void update(float dt) override;
+//*.cpp
+void HelloWorld::update(float delta){
+    printf("--update--\n");
+}
+</code></pre>
+
+<h1>自定义调度器</h1>
+
+<p>除基础用法以外,还可以通过指定执行频率和回调函数来创建自定义调度器:</p>
+
+<pre><code>this-&gt;schedule(schedule_selector(HelloWorld::updateCustom), 1.0f, kRepeatForever, 0);
+
+//*.h
+void updateCustom(float dt);
+//*.cpp
+void HelloWorld::updateCustom(float dt)
+{
+    printf("--Custom--\n");
+}
+</code></pre>
+
+<p>自定义的Scheduler在回调时需要使用一个Timer来计时,会花费更多的内存和计算时间。并且由于其内部实现机制，其间隔时间至少大于0.1秒,这种scheduler更适合作为定时器来使用。</p>
+
+<h1>调度器优先级</h1>
+
+<p>我们可以为调度器指定优先级，来处理回调方法执行的先后顺序逻辑。</p>
+
+<pre><code>void Node::scheduleUpdate()
+{
+    scheduleUpdateWithPriority(0);
+}
+
+void Node::scheduleUpdateWithPriority(int priority)
+{
+    _scheduler-&gt;scheduleUpdate(this, priority, !_running);
+}
+</code></pre>
+
+<h1>移除</h1>
+
+<p>Scheduler会随Node对象移除而停止,你也可以显示地调用移除函数</p>
+
+<pre><code>node-&gt;unschedulerUpdate();
+node-&gt;unschedule(SEL_SCHEDULE selector, float delay);
+</code></pre>
+
+<h1>参考</h1>
+
+<ul>
+<li><a href="http://www.cocos.com/doc/article/index?type=cocos2d-x&amp;url=/doc/cocos-docs-master/manual/framework/native/v3/scheduler/zh.md">http://www.cocos.com/doc/article/index?type=cocos2d-x&amp;url=/doc/cocos-docs-master/manual/framework/native/v3/scheduler/zh.md</a></li>
+</ul>
+
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2015-12-01 12:12:18 +0800" pubdate>Dec 1<span>st</span>, 2015</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2015 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2015/12/01/cocos-scheduler';
+	var disqus_url = 'http://sbxfc.github.io/blog/2015/12/01/cocos-scheduler';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

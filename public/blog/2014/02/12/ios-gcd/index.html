@@ -1,0 +1,255 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>iOS - GCD任务队列 - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="iOS - GCD任务队列 GCD将多线程操作抽象成任务队列上的一项任务,开发者无需手动创建、管理线程,只需要根据不同类型去获取相应的GCD线程队列即可。在后台,GCD管理着一个线程池为这些队列任务分配多线程环境。 主线程队列 主线程队列,顾名思义就是运行在主线程上的任务队列。 &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="//ajax.useso.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<link href='http://fonts.useso.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2014/02/12/ios-gcd">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">iOS - GCD任务队列</h2>
+    
+  </header>
+
+  <div class="entry_content"><p>GCD将多线程操作抽象成任务队列上的一项任务,开发者无需手动创建、管理线程,只需要根据不同类型去获取相应的GCD线程队列即可。在后台,GCD管理着一个线程池为这些队列任务分配多线程环境。</p>
+
+<h1>主线程队列</h1>
+
+<p>主线程队列,顾名思义就是运行在主线程上的任务队列。由于主线程负责程序的生命周期和UI绘制,所以尽量使用异步方式(dispatch_async)添加线程操作:</p>
+
+<pre><code>//通过dispatch_get_main_queue获取主线程队列
+dispatch_async(dispatch_get_main_queue(), ^{
+    NSLog(@"Do some work!");
+});
+</code></pre>
+
+<h1>串行队列</h1>
+
+<p>使用 dispatch_queue_create 来获取一个在子线程上运行的串行队列,该函数每次都返回一个独立的任务队列。所以,如果想执行多个任务的串行操作,你需要保存一个dispatch_queue_t对象,并确保在在运行时将线程操作都添加到一个队列上。</p>
+
+<p>该函数第一个参数可选并且可以为NULL。因为是串行操作,后一个任务会等到前一个任务完成后才执行:</p>
+
+<pre><code>dispatch_queue_t queue = dispatch_queue_create(NULL,NULL);
+dispatch_async(queue, ^{
+    NSLog(@"Do some work!");
+});
+dispatch_async(queue, ^{
+    NSLog(@"Do another works!");
+});
+</code></pre>
+
+<h1>并行队列</h1>
+
+<p>dispatch_get_global_queue 用于获得全局并行队列,该函数返回的任务队列与函数参数的优先级有关,相同的优先级获得的全局并发队列是相同的。</p>
+
+<p>并行队列上的所有任务操作是在不同的线程上独立执行的,所以执行多个任务时,每个任务的完成时间取决于任务本身的耗时</p>
+
+<pre><code>dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+    NSLog(@"Do some work!");
+});
+</code></pre>
+
+<p>可通过组(dispatch_group_t)来监听并行队列是否全部完成:</p>
+
+<pre><code>dispatch_group_t group = dispatch_group_create();
+dispatch_queue_t globalQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
+
+dispatch_group_async(group,globalQueue, ^{
+    [NSThread sleepForTimeInterval:3];
+    NSLog(@"task1");
+});
+
+dispatch_group_async(group,globalQueue, ^{
+    [NSThread sleepForTimeInterval:1];
+    NSLog(@"task2");
+});
+
+dispatch_group_async(group,globalQueue, ^{
+    [NSThread sleepForTimeInterval:2];
+    NSLog(@"task3");
+});
+
+dispatch_group_notify(group, dispatch_get_main_queue(), ^{
+    NSLog(@"所有任务完成.");
+});
+</code></pre>
+
+<h1>dispatch_barrier_async</h1>
+
+<p>通过 dispatch_barrier_async 可以设置前面的执行完,后一个才执行，而且它后面的任务要等它执行完成之后才会开始</p>
+
+<pre><code>dispatch_queue_t queue = dispatch_queue_create(NULL,NULL);
+dispatch_async(queue, ^{
+    [NSThread sleepForTimeInterval:3];// 耗时的操作
+    NSLog(@"task1");
+});
+
+dispatch_async(queue, ^{
+    [NSThread sleepForTimeInterval:2];
+    NSLog(@"task2");
+});
+
+dispatch_barrier_async(queue, ^{
+    [NSThread sleepForTimeInterval:4];
+    NSLog(@"dispatch_barrier_async");
+});
+
+dispatch_async(queue, ^{
+    [NSThread sleepForTimeInterval:2];
+    NSLog(@"task3");
+});
+</code></pre>
+
+<h1>小结</h1>
+
+<p>由于GCD里的任务队列在使用时是不可取消的,所以尽量不要使用GCD而是选择在其基础上封装的NSOperationQueue。</p>
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2014-02-12 18:31:58 +0800" pubdate>Feb 12<span>th</span>, 2014</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2015 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2014/02/12/ios-gcd';
+	var disqus_url = 'http://sbxfc.github.io/blog/2014/02/12/ios-gcd';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

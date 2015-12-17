@@ -1,0 +1,97 @@
+---
+layout: post
+title: "iOS - GCD任务队列"
+date: 2014-02-12 18:31:58 +0800
+comments: true
+categories: 
+---
+
+GCD将多线程操作抽象成任务队列上的一项任务,开发者无需手动创建、管理线程,只需要根据不同类型去获取相应的GCD线程队列即可。在后台,GCD管理着一个线程池为这些队列任务分配多线程环境。
+
+ 
+#主线程队列
+
+主线程队列,顾名思义就是运行在主线程上的任务队列。由于主线程负责程序的生命周期和UI绘制,所以尽量使用异步方式(dispatch_async)添加线程操作:
+	
+	//通过dispatch_get_main_queue获取主线程队列
+	dispatch_async(dispatch_get_main_queue(), ^{
+		NSLog(@"Do some work!");
+	});
+
+#串行队列
+
+使用 dispatch_queue_create 来获取一个在子线程上运行的串行队列,该函数每次都返回一个独立的任务队列。所以,如果想执行多个任务的串行操作,你需要保存一个dispatch_queue_t对象,并确保在在运行时将线程操作都添加到一个队列上。
+
+该函数第一个参数可选并且可以为NULL。因为是串行操作,后一个任务会等到前一个任务完成后才执行:
+
+    dispatch_queue_t queue = dispatch_queue_create(NULL,NULL);
+    dispatch_async(queue, ^{
+		NSLog(@"Do some work!");
+    });
+    dispatch_async(queue, ^{
+		NSLog(@"Do another works!");
+    });
+
+#并行队列
+
+dispatch_get_global_queue 用于获得全局并行队列,该函数返回的任务队列与函数参数的优先级有关,相同的优先级获得的全局并发队列是相同的。
+
+并行队列上的所有任务操作是在不同的线程上独立执行的,所以执行多个任务时,每个任务的完成时间取决于任务本身的耗时
+	
+	dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+		NSLog(@"Do some work!");
+    });
+
+可通过组(dispatch_group_t)来监听并行队列是否全部完成:
+
+	dispatch_group_t group = dispatch_group_create();
+    dispatch_queue_t globalQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
+    
+    dispatch_group_async(group,globalQueue, ^{
+        [NSThread sleepForTimeInterval:3];
+        NSLog(@"task1");
+    });
+    
+    dispatch_group_async(group,globalQueue, ^{
+        [NSThread sleepForTimeInterval:1];
+        NSLog(@"task2");
+    });
+    
+    dispatch_group_async(group,globalQueue, ^{
+        [NSThread sleepForTimeInterval:2];
+        NSLog(@"task3");
+    });
+    
+    dispatch_group_notify(group, dispatch_get_main_queue(), ^{
+        NSLog(@"所有任务完成.");
+    });
+
+#dispatch_barrier_async
+
+通过 dispatch_barrier_async 可以设置前面的执行完,后一个才执行，而且它后面的任务要等它执行完成之后才会开始
+
+	dispatch_queue_t queue = dispatch_queue_create(NULL,NULL);
+    dispatch_async(queue, ^{
+        [NSThread sleepForTimeInterval:3];// 耗时的操作
+        NSLog(@"task1");
+    });
+    
+    dispatch_async(queue, ^{
+        [NSThread sleepForTimeInterval:2];
+        NSLog(@"task2");
+    });
+    
+    dispatch_barrier_async(queue, ^{
+        [NSThread sleepForTimeInterval:4];
+        NSLog(@"dispatch_barrier_async");
+    });
+    
+    dispatch_async(queue, ^{
+        [NSThread sleepForTimeInterval:2];
+        NSLog(@"task3");
+    });
+
+#小结
+
+由于GCD里的任务队列在使用时是不可取消的,所以尽量不要使用GCD而是选择在其基础上封装的NSOperationQueue。
+

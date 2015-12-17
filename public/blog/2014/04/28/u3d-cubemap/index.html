@@ -1,0 +1,412 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>Unity - 环境反射 - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="Unity - 环境反射 创建Cubemap（立方体纹理） 立方体纹理是以原点为中心,沿6个方向上的六张视野截图生成的立方体纹理。
+在Unity里可以使用RenderToCubemap函数生成一张CubeMap. 一,新建一个Editor文件夹，并在文件夹内创建一个C# &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="//ajax.useso.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<link href='http://fonts.useso.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2014/04/28/u3d-cubemap">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">Unity - 环境反射</h2>
+    
+  </header>
+
+  <div class="entry_content"><h2>创建Cubemap（立方体纹理）</h2>
+
+<hr />
+
+<p>立方体纹理是以原点为中心,沿6个方向上的六张视野截图生成的立方体纹理。<br>
+在Unity里可以使用RenderToCubemap函数生成一张CubeMap.</p>
+
+<br>
+
+
+<p>一,新建一个Editor文件夹，并在文件夹内创建一个C#类取名GenerateStaticCubemap，继承自 ScriptableWizard</p>
+
+<pre><code>//告诉Unity3D这是一个弹出窗口类型的用户编辑器。
+public class GenerateStaticCubemap : ScriptableWizard {
+
+}
+</code></pre>
+
+<p>二,新建渲染点renderPosition 和 保存渲染结果的cubemap</p>
+
+<pre><code>public Transform renderPosition;
+public Cubemap cubemap;
+</code></pre>
+
+<p>三,创建Unity内置的OnWizardUpdate()函数。</p>
+
+<pre><code>//它在向导第一次弹出或者当GUI被用户改变时（如拖进去某些对象，输入某些字符等）时被调用。
+void OnWizardUpdate () 
+{
+    helpString = "select transform to renderer from and cubemap to render into";
+
+    if(renderPosition != null &amp;&amp; cubemap != null){
+        isValid = true;
+    }else{
+        isValid = false;
+    }
+}
+</code></pre>
+
+<p>四,如果选择了渲染点（取GameObject的位置）和制定的cubemap后，isValid满足条件调用内置函数OnWizardCreate函数.</p>
+
+<pre><code>//如果isValid为true 调用该方法
+void OnWizardCreate () 
+{
+    GameObject go = new GameObject("CubeCam",typeof(Camera));
+
+    go.transform.position = renderPosition.position;  
+    go.transform.rotation = Quaternion.identity;  
+
+    //我们设置默认方向，则相机会找到场景中GameObject蓝色箭头指向的景物渲染到cubemap中
+    go.camera.RenderToCubemap(cubemap);  
+
+    //销毁临时相机
+    DestroyImmediate(go);  
+}
+</code></pre>
+
+<p>最后，设置MenuItem，方面我们可以在编辑器顶部菜单打开该窗口。</p>
+
+<pre><code>//在Unity的菜单栏打开这个想到
+[MenuItem("RenderCubemap/Render")]
+static void RenderCubemap() 
+{
+    ScriptableWizard.DisplayWizard("Render CubeMap", typeof(GenerateStaticCubemap), "Render!");
+}
+</code></pre>
+
+<p>代码:</p>
+
+<hr />
+
+<p><a href="https://github.com/truthbeauty/u3dCubeMap">https://github.com/truthbeauty/u3dCubeMap</a></p>
+
+<br>
+
+
+<h2>环境反射</h2>
+
+<hr />
+
+<p>利用Cubemap实现环境反射的原理很简单,在Shader里，我们利用模型表面上每个顶点的法线在Cubemap贴图上找到对应的点，并返回该点的色值。如下图:</p>
+
+<p><img src="/images/2014/4/reflection.png" alt="" /></p>
+
+<p>我们利用Input获取过贴图的UV值,同样我们也可以用它自动获取内置的反射向量worldRefl。</p>
+
+<p>首先设置一下基本属性，来存储我们的Cubemap信息，_ReflAmount控制反射程度:</p>
+
+<pre><code>Properties 
+{
+    _MainTint ("Diffuse Tint", Color) = (1,1,1,1)
+    _MainTex ("Base (RGB)", 2D) = "white" {}
+    _Cubemap ("CubeMap", CUBE) = ""{}
+    _ReflAmount ("Reflection Amount", Range(0.01, 1)) = 0.5
+}
+</code></pre>
+
+<p>在SubShader里做桥连:</p>
+
+<pre><code>    sampler2D _MainTex;
+    samplerCUBE _Cubemap;
+    float4 _MainTint;
+    float _ReflAmount;
+</code></pre>
+
+<p>设置Input结构:</p>
+
+<pre><code>    struct Input 
+    {
+        float2 uv_MainTex;
+        float3 worldRefl;
+    };
+</code></pre>
+
+<p>在surf函数里，通过texCUBE函数取得该点的反射值，类似tex2D函数。</p>
+
+<pre><code>    void surf (Input IN, inout SurfaceOutput o) 
+    {
+        half4 c = tex2D (_MainTex, IN.uv_MainTex) * _MainTint;
+        //texCUBE(samplerCUBE tex , float3 s ) 
+        o.Emission = texCUBE(_Cubemap, IN.worldRefl).rgb * _ReflAmount;
+        o.Albedo = c.rgb;
+        o.Alpha = c.a;
+    }
+</code></pre>
+
+<p>完整代码:</p>
+
+<pre><code>Shader "Custom/SimpleReflection" 
+{
+    Properties 
+    {
+        _MainTint ("Diffuse Tint", Color) = (1,1,1,1)
+        _MainTex ("Base (RGB)", 2D) = "white" {}
+        _Cubemap ("CubeMap", CUBE) = ""{}
+        _ReflAmount ("Reflection Amount", Range(0.01, 1)) = 0.5
+    }
+
+    SubShader 
+    {
+        Tags { "RenderType"="Opaque" }
+        LOD 200
+
+        CGPROGRAM
+        #pragma surface surf Lambert
+
+        sampler2D _MainTex;
+        samplerCUBE _Cubemap;
+        float4 _MainTint;
+        float _ReflAmount;
+
+        struct Input 
+        {
+            float2 uv_MainTex;
+            float3 worldRefl;
+        };
+
+        void surf (Input IN, inout SurfaceOutput o) 
+        {
+            half4 c = tex2D (_MainTex, IN.uv_MainTex) * _MainTint;
+            o.Emission = texCUBE(_Cubemap, IN.worldRefl).rgb * _ReflAmount;
+            o.Albedo = c.rgb;
+            o.Alpha = c.a;
+        }
+        ENDCG
+    } 
+    FallBack "Diffuse"
+}
+</code></pre>
+
+<blockquote><h4>遮掩反射</h4>
+
+<p>有时候，我们不想让整个模型都实现反射效果，我们使用一张灰度贴图遮掩反射，在灰度图对应的模型上面颜色值为灰的部分不实现反射。</p></blockquote>
+
+<p><img src="/images/2014/4/reflection_mask.png" alt="" /></p>
+
+<p>在上面的代码基础上增加<code>_ReflMask</code>属性</p>
+
+<pre><code>_ReflMask ("Reflection Mask", 2D) = ""{}
+</code></pre>
+
+<p>和 CG里</p>
+
+<pre><code>sampler2D _ReflMask;
+</code></pre>
+
+<p>最后修改surf函数</p>
+
+<pre><code>void surf (Input IN, inout SurfaceOutput o) 
+{
+    half4 c = tex2D (_MainTex, IN.uv_MainTex);
+    float3 reflection = texCUBE(_Cubemap, IN.worldRefl).rgb;
+    float4 reflMask = tex2D(_ReflMask, IN.uv_MainTex);
+
+    o.Albedo = c.rgb * _MainTint;
+    o.Emission = (reflection * reflMask.r) * _ReflAmount;
+    o.Alpha = c.a;
+}
+</code></pre>
+
+<p>完整代码：</p>
+
+<pre><code>Shader "Custom/SimpleReflection" 
+{
+    Properties 
+    {
+        _MainTint ("Diffuse Tint", Color) = (1,1,1,1)
+        _MainTex ("Base (RGB)", 2D) = "white" {}
+        _ReflAmount ("Reflection Amount", Range(0, 1)) = 1
+        _Cubemap ("Cubemap", CUBE) = ""{}
+        _ReflMask ("Reflection Mask", 2D) = ""{}
+    }
+
+    SubShader 
+    {
+        Tags { "RenderType"="Opaque" }
+        LOD 200
+
+        CGPROGRAM
+        #pragma surface surf Lambert
+
+        sampler2D _MainTex;
+        sampler2D _ReflMask;
+        samplerCUBE _Cubemap;
+        float4 _MainTint;
+        float _ReflAmount;
+
+        struct Input 
+        {
+            float2 uv_MainTex;
+            float3 worldRefl;
+        };
+
+        void surf (Input IN, inout SurfaceOutput o) 
+        {
+            half4 c = tex2D (_MainTex, IN.uv_MainTex);
+            float3 reflection = texCUBE(_Cubemap, IN.worldRefl).rgb;
+            float4 reflMask = tex2D(_ReflMask, IN.uv_MainTex);
+
+            o.Albedo = c.rgb * _MainTint;
+            o.Emission = (reflection * reflMask.r) * _ReflAmount;
+            o.Alpha = c.a;
+        }
+        ENDCG
+    } 
+    FallBack "Diffuse"
+}
+</code></pre>
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2014-04-28 10:52:16 +0800" pubdate>Apr 28<span>th</span>, 2014</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2015 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2014/04/28/u3d-cubemap';
+	var disqus_url = 'http://sbxfc.github.io/blog/2014/04/28/u3d-cubemap';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

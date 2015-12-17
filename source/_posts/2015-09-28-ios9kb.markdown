@@ -1,0 +1,46 @@
+---
+layout: post
+title: "iOS - iOS9 键盘系统"
+date: 2015-09-28 18:29:52 +0800
+comments: true
+categories: 
+---
+
+我们知道,访问UIApplication的windows属性可以获取当前显示的所有非系统window。其中,在iOS9之前类型为UITextEffectWindow的window就是键盘窗口,结构大致如下:
+
+	windows = { UIWindow,UITextEffectWindow }
+	    
+但在iOS9之后,新增了一个类型为 UIRemoteKeyboardWindow 的窗口用来显示键盘按钮,所以想获取键盘上的按钮,就需要得到UIRemoteKeyboardWindow
+	
+	windows = { UIWindow,UITextEffectWindow,UIRemoteKeyboardWindow }
+	
+获取一个键盘窗口代码(swift):
+
+	internal var keyboardWindow: UIWindow? {
+        let windows = UIApplication.sharedApplication().windows
+        for window in windows {
+            let views = window.subviews
+            for subview in views{
+                let className = NSStringFromClass(subview.dynamicType)
+                if className == "UIKeyboard" {
+                    return window
+                }
+            }
+        }
+        
+        for window in windows.reverse() {
+            let className = NSStringFromClass(window.dynamicType)
+            if className == "UIRemoteKeyboardWindow" {
+                return window
+            }
+        }
+        
+        //获取UITextEffectWindow
+        if windows.count > 1 {
+            return windows.last!
+        }
+        
+        //fail
+        return nil
+    }
+	

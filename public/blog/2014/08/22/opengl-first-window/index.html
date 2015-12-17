@@ -1,0 +1,237 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>OpenGL - 在Xcode里使用GLFW - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="OpenGL - 在Xcode里使用GLFW 下载 当前版本是3.0.4: http://www.glfw.org/download.html 安装 $ cd /下载路径/Downloads/glfw-master
+$ cmake .
+$ sudo make install 编译完成后,前往( &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="//ajax.useso.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<link href='http://fonts.useso.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2014/08/22/opengl-first-window">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">OpenGL - 在Xcode里使用GLFW</h2>
+    
+  </header>
+
+  <div class="entry_content"><h1>下载</h1>
+
+<p>当前版本是3.0.4:</p>
+
+<ul>
+<li><a href="http://www.glfw.org/download.html">http://www.glfw.org/download.html</a></li>
+</ul>
+
+
+<h1>安装</h1>
+
+<pre><code>$ cd /下载路径/Downloads/glfw-master
+$ cmake .
+$ sudo make install
+</code></pre>
+
+<p>编译完成后,前往(Cmd+Shift+G)<font color="#bd260d"><strong>/usr/local/</strong></font>查看生成的lib和include文件内容<br></p>
+
+<h1>新建GLFW</h1>
+
+<ol>
+<li><p>用Xcode新建一个Command Line Tool项目</p></li>
+<li><p>在Build Phases->Link Binary With Libraries里添加 Cocoa.framework 、 CoreVideo.framework、IOKit.framework 、OpenGL.framework,在其他里按Cmd+Shift+G添加/usr/local/lib目录下的libglfw3.a</p></li>
+<li><p>在Build Settings里设置头文件路径,点Header Search Path 添加 /usr/local/include,然后设置库路径,在Library Search Path里添加 /usr/local/lib</p></li>
+</ol>
+
+
+<h1>运行</h1>
+
+<p>下面的代码是从GLFW官网复制的,将代码copy到main.m文件里,直接Command + R运行</p>
+
+<pre><code>#include &lt;GLFW/glfw3.h&gt;
+
+int main(void)
+{
+    GLFWwindow* window;
+
+    /* Initialize the library */
+    if (!glfwInit())
+        return -1;
+
+    /* Create a windowed mode window and its OpenGL context */
+    window = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
+    if (!window)
+    {
+        glfwTerminate();
+        return -1;
+    }
+
+    /* Make the window's context current */
+    glfwMakeContextCurrent(window);
+
+    /* Loop until the user closes the window */
+    while (!glfwWindowShouldClose(window))
+    {
+        /* Render here */
+
+        /* Swap front and back buffers */
+        glfwSwapBuffers(window);
+
+        /* Poll for and process events */
+        glfwPollEvents();
+    }
+
+    glfwTerminate();
+    return 0;
+}
+</code></pre>
+
+<h1>完整工程</h1>
+
+<p><a href="https://github.com/sbxfc/GLFWDemo">https://github.com/sbxfc/GLFWDemo</a></p>
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2014-08-22 17:39:39 +0800" pubdate>Aug 22<span>nd</span>, 2014</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2015 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2014/08/22/opengl-first-window';
+	var disqus_url = 'http://sbxfc.github.io/blog/2014/08/22/opengl-first-window';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

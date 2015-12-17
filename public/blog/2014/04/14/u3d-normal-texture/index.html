@@ -1,0 +1,231 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>Unity3D - 法线贴图  - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="Unity3D - 法线贴图 法线贴图（Normal mapping） 使用高分辨率模型的法线贴图表大幅度地提高 low poly 低面模型的显示效果。 Shader "customShader/NormalMapping" { Properties { //Add these &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="//ajax.useso.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<link href='http://fonts.useso.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2014/04/14/u3d-normal-texture">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">Unity3D - 法线贴图 </h2>
+    
+  </header>
+
+  <div class="entry_content"><h1>法线贴图（Normal mapping）</h1>
+
+<p>使用高分辨率模型的法线贴图表大幅度地提高 low poly 低面模型的显示效果。</p>
+
+<p><img src="/images/2014/4/normal_texture.png" alt="normal_texture" /></p>
+
+<pre><code>Shader "customShader/NormalMapping" 
+{
+    Properties 
+    {
+        //Add these Properties
+        _MainTint ("Diffuse Tint", Color) = (1,1,1,1)
+        _NormalTex ("Normal Map", 2D) = "bump" {}
+        _NormalIntensity ("Normal Map Intensity", Range(0,2)) = 1
+    }
+
+    SubShader 
+    {
+        Tags { "RenderType"="Opaque" }
+        LOD 200
+
+        CGPROGRAM
+        #pragma surface surf Lambert
+
+        //Link the property to the CG program
+        sampler2D _NormalTex;
+        float4 _MainTint;
+        float _NormalIntensity;
+
+        //Make sure you get the uvs for the texture in the Struct
+        struct Input 
+        {
+            float2 uv_NormalTex;
+        };
+
+        void surf (Input IN, inout SurfaceOutput o) 
+        {
+            //Get teh normal Data out of the normal map textures
+            //using the UnpackNormal() function.
+            float3 normalMap = UnpackNormal(tex2D(_NormalTex, IN.uv_NormalTex));
+            normalMap = float3(normalMap.x * _NormalIntensity, normalMap.y * _NormalIntensity, normalMap.z);
+
+            //Apply the new normals to the lighting model
+            o.Normal = normalMap.rgb;
+            o.Albedo = _MainTint.rgb;
+            o.Alpha = _MainTint.a;
+        }
+        ENDCG
+    } 
+    FallBack "Diffuse"
+}
+</code></pre>
+
+<p>使用<code>UnpackNormal()</code>  函数将贴图的法线信息<code>normalMap</code>取出，并设置模型表面法线值。
+由于tex2D()取值区间是[0,1],而UnpackNormal()将颜色空间里的法线[0,1],转换至真正3D空间里的法线范围[-1,1]。</p>
+
+<pre><code>normalMap = float3(normalMap.x * _NormalIntensity, normalMap.y * _NormalIntensity, normalMap.z);
+</code></pre>
+
+<p>修改发现向量的x,y值，增加贴图的亮度。</p>
+
+<h1>工作原理</h1>
+
+<p>假设有一个球体的多边形模型只能近似表示曲面形状。通过在模型上应用RGB位图纹理，就可以对更加细致的法线向量进行编码。位图中的每一个通道即红色、绿色、蓝色通道都对应于一个空间尺度 X、Y、Z，这些空间尺度与物体空间法线图的固定的坐标系统相关，或者与 tangenet 空间法线图场合中根据位置相对于纹理坐标平滑变化的坐标系统相关。这使得模型表面更加细致，尤其是与先进的光照技术一起使用的时候更是如此。 —— 抄的。</p>
+
+<p>大致意思是，利用贴图保存一份模型表面单位向量的信息，然后在Shader计算时应用。</p>
+
+<p>PS.可以设置一下 Tiling 值x=12 y=12.</p>
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2014-04-14 18:54:09 +0800" pubdate>Apr 14<span>th</span>, 2014</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2015 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2014/04/14/u3d-normal-texture';
+	var disqus_url = 'http://sbxfc.github.io/blog/2014/04/14/u3d-normal-texture';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

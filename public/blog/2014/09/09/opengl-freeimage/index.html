@@ -1,0 +1,194 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>使用FreeImage库(Mac OS) - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="使用FreeImage库(Mac OS) FreeImage是一个开源图片开发库,最后一个版本3.1.6。 下载地址: http://freeimage.sourceforge.net/download.html 编译FreeImage库: $ cd /Users/Downloads/ &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="//ajax.useso.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<link href='http://fonts.useso.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2014/09/09/opengl-freeimage">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">使用FreeImage库(Mac OS)</h2>
+    
+  </header>
+
+  <div class="entry_content"><p>FreeImage是一个开源图片开发库,最后一个版本3.1.6。</p>
+
+<p>下载地址:</p>
+
+<p><a href="http://freeimage.sourceforge.net/download.html">http://freeimage.sourceforge.net/download.html</a></p>
+
+<p>编译FreeImage库:</p>
+
+<pre><code>$ cd /Users/Downloads/FreeImage
+$ make
+</code></pre>
+
+<p>3.1.6版本我在Mac下没有编译通过,我用的是3.1.54版本并做了两次修改:</p>
+
+<p>3.1.54下载地址:<br>
+<a href="http://sourceforge.net/projects/freeimage/">http://sourceforge.net/projects/freeimage/</a></p>
+
+<p>一,正常编译会出错,因为Makefile.osx里的配置已经过期。
+下载并替换掉包里的Makefile.osx文件:<br>
+<a href="https://github.com/opengl-records/FreeImage-Makefile.osx">https://github.com/opengl-records/FreeImage-Makefile.osx</a></p>
+
+<p>二,在 Source/OpenEXR/IlmImf/ImfAutoArray.h 里,添加:</p>
+
+<pre><code>#include &lt;cstring&gt;
+</code></pre>
+
+<p>参见:</p>
+
+<p><a href="http://stackoverflow.com/questions/19080303/how-to-compile-freeimage-on-mac-os-x-10-8">http://stackoverflow.com/questions/19080303/how-to-compile-freeimage-on-mac-os-x-10-8</a></p>
+
+<p>使用FreeImage库时，需要设置一下Hearder search paths和 Lib search patchs,并在Build Phases里将libfreeimage.a添加进来。</p>
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2014-09-09 11:29:05 +0800" pubdate>Sep 9<span>th</span>, 2014</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2015 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2014/09/09/opengl-freeimage';
+	var disqus_url = 'http://sbxfc.github.io/blog/2014/09/09/opengl-freeimage';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

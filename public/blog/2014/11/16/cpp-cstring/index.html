@@ -1,0 +1,348 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>C/C++ cstring头文件 - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="C/C++ cstring头文件 char* strcpy (char *s1, const char *s2); 将字符串s2复制到字符数组s1中去。字符数组s1的长度应不小于&#8221;字符串&#8221;s2的长度,&ldquo;字符串&#8221;s2 可以为字符数组名, &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="//ajax.useso.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<link href='http://fonts.useso.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2014/11/16/cpp-cstring">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">C/C++ cstring头文件</h2>
+    
+  </header>
+
+  <div class="entry_content"><h2>char* strcpy (char *s1, const char *s2);</h2>
+
+<hr />
+
+<p>将字符串s2复制到字符数组s1中去。<br>字符数组s1的长度应不小于&#8221;字符串&#8221;s2的长度,&ldquo;字符串&#8221;s2 可以为字符数组名,也可以是一个字符串常量。<br></p>
+
+<pre><code>char s1[15];
+char s2[50] = "John Lennon";//字符串长度为12
+strcpy(s1, s2);
+printf(s1);
+</code></pre>
+
+<p>输出:<em>John Lennon</em></p>
+
+<pre><code>char s1[15];
+const char* s2 = "John Lennon";//字符串长度为12
+strcpy(s1, s2);
+printf(s1);
+</code></pre>
+
+<p>输出:<em>John Lennon</em></p>
+
+<br>
+
+
+<h2>char* strncpy (char *s1, const char *s2, size_t len);</h2>
+
+<hr />
+
+<p>将s2的前len个字符复制到s1中指定的地址, 不加 &lsquo;\0&rsquo;</p>
+
+<pre><code>char s1[12] = "";
+char s2[50] = "John Lennon";
+strncpy(s1, s2,4);
+printf(s1);
+</code></pre>
+
+<p>输出:<em>John</em></p>
+
+<br>
+
+
+<h2>三.void* memcpy (void *dest, const void *src, size_t length);</h2>
+
+<hr />
+
+<p>将src的前length个字节复制到dest中指定的地址, 不加 &lsquo;\0&#8217;。dest和src不能是同一块内存区域。</p>
+
+<pre><code>char dest[12] = "";
+char src[50] = "Goodman";
+memcpy(dest, src);
+printf(s1);
+</code></pre>
+
+<p>输出:<em>Good</em></p>
+
+<br>
+
+
+<h2>void* memmove (void *s1, const void *s2, size_t len);</h2>
+
+<hr />
+
+<p>当源单元和目的单元缓冲区交迭时使用。源和目的可以是同一块内存区域(例如数组某个元素在数组存储器内部移动数据)</p>
+
+<br>
+
+
+<h2>char* strcat (char *s1, const char *s2);</h2>
+
+<hr />
+
+<p>把字符串 2 接到字符串 1 后面（字符串 1 要足够大）。连接前两个字符串都有 &ldquo;/0&rdquo; ,连接时将字符串1后 &ldquo;/0&rdquo; 丢弃,只在新字符串后保留 &lsquo;/0&rsquo;</p>
+
+<pre><code>char s1[50] = "John";
+char s2[50] = "Lennon";
+strcat(s1," ");
+strcat(s1,s2);
+
+printf(s1);
+</code></pre>
+
+<p>输出:<em>John Lennon</em></p>
+
+<br>
+
+
+<h2>int strcmp (const char *s1, const char *s2);</h2>
+
+<hr />
+
+<p>两个字符串自左至右逐个字符相比(按 ASCII 码值大小比较)直到出现不同的字符或者遇到 &ldquo;/0&rdquo; 为止,如果全部字符相同,则认为相等,若出现不同字符,则以第一个不相同的字符为准</p>
+
+<pre><code>const char* s1 = "John Lennon";
+const char* s2 = "John Smith";
+int len = strcmp(s1, s2);
+printf("%d",len);//输出:-7
+</code></pre>
+
+<ul>
+<li>如果字符串 1=字符串 2，函数返回值为 0</li>
+<li>如果字符串 1>字符串 2，函数返回值为正数</li>
+<li>如果字符串1&lt;字符串 2，函数返回值为负数</li>
+</ul>
+
+
+<br>
+
+
+<h2>int strncmp (const char *s1, const char *s2, size_t len);</h2>
+
+<hr />
+
+<p>对 s1 和 s2 的前len个字符作比较</p>
+
+<br>
+
+
+<h2>int memcmp (const void *s1, const void *s2, size_t len);</h2>
+
+<hr />
+
+<p>对 s1 和 s2 的前 len 个字节作比较</p>
+
+<br>
+
+
+<h2>size_t strlen (const char *s);</h2>
+
+<hr />
+
+<p>它是测试字符串长度的函数，函数的值为字符串中的实际长度(不包括 &ldquo;/0&rdquo;)</p>
+
+<h1>memset</h1>
+
+<pre><code>void memset (void* s, int val, size_t len);
+</code></pre>
+
+<p>将从 s 开始len个字节置设置为val.</p>
+
+<pre><code>char buffer[] = "Hello world\n";
+printf("Buffer before memset: %s\n", buffer);
+memset(buffer, '*', strlen(buffer) );
+printf("Buffer after memset: %s\n", buffer);
+</code></pre>
+
+<p>输出:<em>Buffer before memset: Hello world</em><br>
+<em>Buffer after memset: </em>************</p>
+
+<br>
+
+
+<h2>char* strerror (int errno);</h2>
+
+<hr />
+
+<p>返回指向错误信息字符串的指针</p>
+
+<h2>char * fgets( char *str, int count, FILE *stream );</h2>
+
+<hr />
+
+<p>从给定的文件流中读取不超过(count &ndash; 1)个字符。<br>若读取的是本行最后一个字符时在该串字符后加上换行符，并把它们存储在str中。</p>
+
+<pre><code>FILE* fp = fopen("1.txt","rt");
+if(fp == NULL){
+    printf("文件不存在!");
+    return false;
+}
+
+std::vector&lt;std::string&gt; fLines;
+char sz[255];
+
+while( fgets(sz,255,fp) ){
+    fLines.push_back( sz );
+}
+
+const char** codes = new const char*[fLines.size()];
+
+for(int i=0;i&lt;int(fLines.size());i++){
+    codes[i] = fLines[i].c_str();
+}
+
+//delete[] codes;
+</code></pre>
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2014-11-16 20:04:24 +0800" pubdate>Nov 16<span>th</span>, 2014</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2015 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2014/11/16/cpp-cstring';
+	var disqus_url = 'http://sbxfc.github.io/blog/2014/11/16/cpp-cstring';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

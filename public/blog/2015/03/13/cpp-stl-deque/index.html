@@ -1,0 +1,233 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>STL - deque容器 - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="STL - deque容器 deque是一个非常高效地在首尾插入或删除元素的容器。 和vector一样,deque是也一个连续内存容器。但它是由一个或多个内存块组成,每个内存块里的元素是内存连续的。deque的结构里有一个专门管理所有内存块的类似map的容器, &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="//ajax.useso.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<link href='http://fonts.useso.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2015/03/13/cpp-stl-deque">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">STL - deque容器</h2>
+    
+  </header>
+
+  <div class="entry_content"><p>deque是一个非常高效地在首尾插入或删除元素的容器。</p>
+
+<p>和vector一样,deque是也一个连续内存容器。但它是由一个或多个内存块组成,每个内存块里的元素是内存连续的。deque的结构里有一个专门管理所有内存块的类似map的容器,map容器里每个元素对应一个内存块指针。</p>
+
+<p>在执行前、后插入元素的操作中,如果当前内存块存储空间已满就会新开辟一块新的内存空间并把指针赋值给map。当删除某个元素时,如果该元素是其所在内存块里的最后一个元素,完成删除后会释放缓存区。整个操作过程中,无需将其他内存块里的元素重新序列话。</p>
+
+<p>除了可以进行高效的首尾操作以外。deque还可以像vector一样使用[ ]或at访问中间元素,但效率不及vector。</p>
+
+<hr />
+
+<p>容器的选择</p>
+
+<p>vector是一种可以默认使用的序列类型,当很频繁地对序列中部进行插入和删除时应该用list,当大部分插入和删除发生在序列的头或尾时可以选择deque这种数据结构。</p>
+
+<hr />
+
+<p>成员函数</p>
+
+<p>Interator:</p>
+
+<ul>
+<li>list.begin() 指向第一个元素的Interator。</li>
+<li>list.end() 指向末尾元素的Interator。</li>
+<li>list.rbegin() 指向第末尾元素的反向Interator。</li>
+<li>list.rend() 指向第一个元素的反向Interator。</li>
+</ul>
+
+
+<p>Capacity/Size:</p>
+
+<ul>
+<li>list.empty() 若list内部为空，则回传true值。</li>
+<li>list.size() 回传list内实际的元素个数。</li>
+<li>list.resize() 重新分派list的长度。</li>
+</ul>
+
+
+<p>Element Access:</p>
+
+<ul>
+<li>list.front() 存取第一个元素。</li>
+<li>list.back() 存取最末个元素。</li>
+</ul>
+
+
+<p>Modify Methods:</p>
+
+<ul>
+<li>list.push_front() 增加一个新的元素在 list 的前端。</li>
+<li>list.pop_front() 删除 list 的第一个元素。</li>
+<li>list.push_back() 增加一个新的元素在 list 的尾端。</li>
+<li>list.pop_back() 删除 list 的最末个元素</li>
+</ul>
+
+
+<hr />
+
+<p>完整代码:<a href="https://github.com/sbxfc/STLContainers/tree/master/STL-Deque">https://github.com/sbxfc/STLContainers/tree/master/STL-Deque</a></p>
+
+<hr />
+
+<p>参考:</p>
+
+<p>Effective.STL</p>
+
+<p>标准模板库:<br><a href="http://zh.wikipedia.org/zh-cn/%E6%A0%87%E5%87%86%E6%A8%A1%E6%9D%BF%E5%BA%93">http://zh.wikipedia.org/zh-cn/%E6%A0%87%E5%87%86%E6%A8%A1%E6%9D%BF%E5%BA%93</a></p>
+
+<p>STL源码剖析&mdash;-deque:<br><a href="http://blog.csdn.net/Hackbuteer1/article/details/7729451">http://blog.csdn.net/Hackbuteer1/article/details/7729451</a></p>
+
+<p>microsoft-deque:<br><a href="https://technet.microsoft.com/zh-cn/sysinternals/bb398188.aspx">https://technet.microsoft.com/zh-cn/sysinternals/bb398188.aspx</a></p>
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2015-03-13 17:57:18 +0800" pubdate>Mar 13<span>th</span>, 2015</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2015 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2015/03/13/cpp-stl-deque';
+	var disqus_url = 'http://sbxfc.github.io/blog/2015/03/13/cpp-stl-deque';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

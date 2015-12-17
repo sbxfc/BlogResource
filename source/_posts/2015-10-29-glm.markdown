@@ -1,0 +1,31 @@
+---
+layout: post
+title: "glm数学库"
+date: 2015-10-29 11:56:31 +0800
+comments: true
+categories: 
+---
+
+glm库是一个C++头文件形式的几何数学库,用于GLSL规范下的图形绘制。(OpenGL Mathematics (GLM) is a header only C++ mathematics library for graphics software based on the OpenGL Shading Language (GLSL) specifications.)
+
+下载glm库:<br>
+<http://glm.g-truc.net/><br>
+<https://github.com/g-truc/glm/releases>
+
+如果使用Xcode,下载之后将解压后的glm文件夹路径(根目录)包含在Build Settings/Header Search Path里即可,使用时include相应的文件。
+
+示例如下:
+	
+	#include <glm/vec3.hpp> // glm::vec3
+	#include <glm/vec4.hpp> // glm::vec4
+	#include <glm/mat4x4.hpp> // glm::mat4
+	#include <glm/gtc/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale, glm::perspective
+	glm::mat4 camera(float Translate, glm::vec2 const & Rotate)
+	{	
+		glm::mat4 Projection = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.f);
+		glm::mat4 View = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -Translate));
+		View = glm::rotate(View, Rotate.y, glm::vec3(-1.0f, 0.0f, 0.0f));
+		View = glm::rotate(View, Rotate.x, glm::vec3(0.0f, 1.0f, 0.0f));
+		glm::mat4 Model = glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
+		return Projection * View * Model;
+	}

@@ -1,0 +1,313 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>Unity3D - 过程纹理 - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="Unity3D - 过程纹理 过程纹理 过程纹理主要用于模拟自然界中常见的Marble,Stone,Wood,Cloud等纹理。大多数的过程纹理都是基于某类噪声函数（Noise Function），比如说perlin noise。在过去，由于过程纹理计算量很大，在实时绘制中很少使用。 &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="//ajax.useso.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<link href='http://fonts.useso.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2014/04/14/u3d-procedural-textures">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">Unity3D - 过程纹理</h2>
+    
+  </header>
+
+  <div class="entry_content"><h1>过程纹理</h1>
+
+<p>过程纹理主要用于模拟自然界中常见的Marble,Stone,Wood,Cloud等纹理。大多数的过程纹理都是基于某类噪声函数（Noise Function），比如说perlin noise。在过去，由于过程纹理计算量很大，在实时绘制中很少使用。但是GPU的出现，促进了过程纹理在实时渲染中的广泛应用。</p>
+
+<p>1,新建一个名为ProceduralTexture的C#文件和一个Plane,并将脚本拖到平面上。  <br>
+2，设置脚本</p>
+
+<pre><code>using UnityEngine;
+using System.Collections;
+
+public class ProceduralTexture : MonoBehaviour 
+{
+    #region Public Variables
+    public int widthHeight = 512;//贴图的长宽
+    public Texture2D generatedTexture;//贴图数据
+    #endregion
+
+    #region Private Variables
+    //These variables will be internal to this
+    //script
+    private Material currentMaterial;
+    private Vector2 centerPosition;
+    #endregion
+
+
+    // Use this for initialization
+    void Start () 
+    {
+        //检查模型是否有材质
+        if(!currentMaterial)
+        {
+            currentMaterial = transform.renderer.sharedMaterial;
+            if(!currentMaterial)
+            {
+                Debug.LogWarning("Cannot find a material on: " + transform.name);
+            }
+        }
+
+        //生成过程贴图
+        if(currentMaterial)
+        {
+            //Generate the prabola texture
+            centerPosition = new Vector2(0.5f, 0.5f);
+            generatedTexture = GenerateParabola();
+
+            //Assign it to this transforms material
+            currentMaterial.SetTexture("_MainTex", generatedTexture);
+        }
+
+        Debug.Log(Vector2.Distance(new Vector2(256,256), new Vector2(32,32))/256.0f);
+
+    }
+
+    //创建新的贴图
+    private Texture2D GenerateParabola()
+    {
+        //创建一个新的2D贴图
+        Texture2D proceduralTexture = new Texture2D(widthHeight, widthHeight);
+
+        //获得贴图的中心点
+        Vector2 centerPixelPosition = centerPosition * widthHeight;
+
+        //遍历贴图上的每一个像素点 
+        for(int x = 0; x &lt; widthHeight; x++)
+        {
+            for(int y = 0; y &lt; widthHeight; y++)
+            {
+                //获取当前像素点距离贴图中心的距离，并将其转化为[0,1]区间，方便颜色设值
+                Vector2 currentPosition = new Vector2(x,y);
+                float pixelDistance = Vector2.Distance(currentPosition, centerPixelPosition)/(widthHeight*0.5f);
+
+                //Mathf.Clamp函数确保取值在0-1之间
+                //值由大变小
+                pixelDistance = Mathf.Abs(1-Mathf.Clamp(pixelDistance, 0f,1f));
+
+                //设置颜色值
+                Color pixelColor = new Color(pixelDistance, pixelDistance, pixelDistance, 1.0f);
+                proceduralTexture.SetPixel(x,y,pixelColor);
+
+            }
+        }
+        //将像素应用到贴图
+        proceduralTexture.Apply();
+
+        //return the texture to the main program.
+        return proceduralTexture;
+    }
+}
+</code></pre>
+
+<p>3,运行之后，能看到以Panel中心点为圆心的圆。颜色由中心向外依次加深,代码里描述了这个渐变贴图的创建过程。</p>
+
+<hr />
+
+<h1>环绕效果</h1>
+
+<p>下面的代码，对贴图生成函数<code>GenerateParabola</code>进行了一些有趣的修改。</p>
+
+<pre><code>private Texture2D GenerateParabola()
+{
+    //Create a new Texture2D
+    Texture2D proceduralTexture = new Texture2D(widthHeight, widthHeight);
+
+    //Get the center of the texture
+    Vector2 centerPixelPosition = centerPosition * widthHeight;
+
+    //loop through each pixel of the new texture and determine its 
+    //distance from the center and assign a pixel value based on that.
+    for(int x = 0; x &lt; widthHeight; x++)
+    {
+        for(int y = 0; y &lt; widthHeight; y++)
+        {
+            //获取当前像素点距离贴图中心的距离，并将其转化为[0,1]区间，方便颜色设值
+            Vector2 currentPosition = new Vector2(x,y);
+            float pixelDistance = Vector2.Distance(currentPosition, centerPixelPosition)/(widthHeight*0.5f);
+            //Mathf.Clamp函数确保取值在0-1之间
+            //颜色值由大变小
+            pixelDistance = Mathf.Abs(1-Mathf.Clamp(pixelDistance, 0f,1f));
+            //环绕效果
+            pixelDistance = (Mathf.Sin(pixelDistance * 30.0f) * pixelDistance);
+
+            //you can also do some more advanced vector calculations to achieve
+            //other types of data about the model itself and its uvs and
+            //pixels
+            Vector2 pixelDirection = centerPixelPosition - currentPosition;
+            pixelDirection.Normalize();
+            float rightDirection = Vector2.Angle(pixelDirection, Vector3.right)/360;
+            float leftDirection = Vector2.Angle(pixelDirection, Vector3.left)/360;
+            float upDirection = Vector2.Angle(pixelDirection, Vector3.up)/360;
+
+            //Invert the values and make sure we dont get any negative values 
+            //or values above 1.
+
+
+            //注释打开看效果1
+            //Color pixelColor = new Color(Mathf.Max(0.0f, rightDirection),Mathf.Max(0.0f, leftDirection), Mathf.Max(0.0f,upDirection), 1f);
+            //星云效果2
+            Color pixelColor = new Color(pixelDistance, pixelDistance, pixelDistance, 1.0f);
+            //注释打开看效果3
+            //Color pixelColor = new Color(rightDirection, leftDirection, upDirection, 1.0f);
+            proceduralTexture.SetPixel(x,y,pixelColor);
+        }
+    }
+    //Finally force the application of the new pixels to the texture
+    proceduralTexture.Apply();
+
+    //return the texture to the main program.
+    return proceduralTexture;
+}
+</code></pre>
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2014-04-14 18:58:15 +0800" pubdate>Apr 14<span>th</span>, 2014</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2015 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2014/04/14/u3d-procedural-textures';
+	var disqus_url = 'http://sbxfc.github.io/blog/2014/04/14/u3d-procedural-textures';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>
