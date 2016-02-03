@@ -150,7 +150,7 @@
     </url>
     <url>
         <loc>http://sbxfc.github.io/blog/2014/11/01/ios-memory/</loc>
-        <lastmod>2015-10-20T10:41:36+08:00</lastmod>
+        <lastmod>2016-01-14T11:44:23+08:00</lastmod>
     </url>
     <url>
         <loc>http://sbxfc.github.io/blog/2014/11/16/u3d-static-batching/</loc>
@@ -158,7 +158,7 @@
     </url>
     <url>
         <loc>http://sbxfc.github.io/blog/2014/11/16/cpp-cstring/</loc>
-        <lastmod>2015-10-20T10:41:36+08:00</lastmod>
+        <lastmod>2016-01-23T16:17:03+08:00</lastmod>
     </url>
     <url>
         <loc>http://sbxfc.github.io/blog/2014/11/18/cpp-union/</loc>
@@ -174,7 +174,7 @@
     </url>
     <url>
         <loc>http://sbxfc.github.io/blog/2014/11/30/big-or-little-endian/</loc>
-        <lastmod>2015-10-20T10:41:36+08:00</lastmod>
+        <lastmod>2016-01-23T11:23:17+08:00</lastmod>
     </url>
     <url>
         <loc>http://sbxfc.github.io/blog/2014/12/03/insertion-sort/</loc>
@@ -186,19 +186,19 @@
     </url>
     <url>
         <loc>http://sbxfc.github.io/blog/2015/01/13/design-pattern-factory/</loc>
-        <lastmod>2015-10-20T10:41:36+08:00</lastmod>
+        <lastmod>2015-12-29T17:18:44+08:00</lastmod>
     </url>
     <url>
         <loc>http://sbxfc.github.io/blog/2015/01/29/network-byte-array/</loc>
-        <lastmod>2015-10-20T10:41:36+08:00</lastmod>
+        <lastmod>2016-01-23T17:46:41+08:00</lastmod>
     </url>
     <url>
         <loc>http://sbxfc.github.io/blog/2015/02/03/network-tcp-socket/</loc>
-        <lastmod>2015-10-20T10:41:36+08:00</lastmod>
+        <lastmod>2015-12-31T15:47:33+08:00</lastmod>
     </url>
     <url>
         <loc>http://sbxfc.github.io/blog/2015/02/03/network-tcp-socket-server/</loc>
-        <lastmod>2015-10-20T10:41:36+08:00</lastmod>
+        <lastmod>2015-12-31T16:40:16+08:00</lastmod>
     </url>
     <url>
         <loc>http://sbxfc.github.io/blog/2015/02/28/cpp-pointer/</loc>
@@ -218,7 +218,7 @@
     </url>
     <url>
         <loc>http://sbxfc.github.io/blog/2015/03/13/cpp-stl-vector/</loc>
-        <lastmod>2015-10-20T18:02:17+08:00</lastmod>
+        <lastmod>2016-01-23T14:09:34+08:00</lastmod>
     </url>
     <url>
         <loc>http://sbxfc.github.io/blog/2015/03/13/cpp-stl-list/</loc>
@@ -278,11 +278,11 @@
     </url>
     <url>
         <loc>http://sbxfc.github.io/blog/2015/09/28/ios9kb/</loc>
-        <lastmod>2015-10-20T17:45:41+08:00</lastmod>
+        <lastmod>2015-12-28T20:12:25+08:00</lastmod>
     </url>
     <url>
         <loc>http://sbxfc.github.io/blog/2015/10/09/ccjs-start/</loc>
-        <lastmod>2015-11-17T12:22:25+08:00</lastmod>
+        <lastmod>2015-12-28T20:11:52+08:00</lastmod>
     </url>
     <url>
         <loc>http://sbxfc.github.io/blog/2015/10/15/ccjs-websocket/</loc>
@@ -294,31 +294,47 @@
     </url>
     <url>
         <loc>http://sbxfc.github.io/blog/2015/11/09/cocos-resolution/</loc>
-        <lastmod>2015-12-03T16:24:22+08:00</lastmod>
+        <lastmod>2015-12-28T20:08:28+08:00</lastmod>
     </url>
     <url>
         <loc>http://sbxfc.github.io/blog/2015/11/19/cocos-auto-batching/</loc>
-        <lastmod>2015-12-02T16:15:43+08:00</lastmod>
+        <lastmod>2015-12-28T20:10:15+08:00</lastmod>
     </url>
     <url>
         <loc>http://sbxfc.github.io/blog/2015/11/23/run-cocos2d-js-on-xcode/</loc>
-        <lastmod>2015-11-23T21:31:27+08:00</lastmod>
+        <lastmod>2015-12-28T19:58:54+08:00</lastmod>
     </url>
     <url>
         <loc>http://sbxfc.github.io/blog/2015/11/25/cocos-spine/</loc>
-        <lastmod>2015-12-02T16:23:37+08:00</lastmod>
+        <lastmod>2015-12-28T19:56:44+08:00</lastmod>
     </url>
     <url>
         <loc>http://sbxfc.github.io/blog/2015/12/01/cocos-scheduler/</loc>
-        <lastmod>2015-12-17T15:14:11+08:00</lastmod>
+        <lastmod>2015-12-28T19:56:16+08:00</lastmod>
     </url>
     <url>
         <loc>http://sbxfc.github.io/blog/2015/12/03/js-prototype/</loc>
-        <lastmod>2015-12-04T11:04:43+08:00</lastmod>
+        <lastmod>2015-12-28T18:31:48+08:00</lastmod>
     </url>
     <url>
         <loc>http://sbxfc.github.io/blog/2015/12/04/cocos2d-texture/</loc>
-        <lastmod>2015-12-17T15:08:54+08:00</lastmod>
+        <lastmod>2015-12-28T18:08:32+08:00</lastmod>
+    </url>
+    <url>
+        <loc>http://sbxfc.github.io/blog/2015/12/30/libevent/</loc>
+        <lastmod>2015-12-31T11:06:44+08:00</lastmod>
+    </url>
+    <url>
+        <loc>http://sbxfc.github.io/blog/2016/01/04/unix-signal/</loc>
+        <lastmod>2016-01-11T12:26:18+08:00</lastmod>
+    </url>
+    <url>
+        <loc>http://sbxfc.github.io/blog/2016/01/11/unix-select/</loc>
+        <lastmod>2016-01-16T15:16:46+08:00</lastmod>
+    </url>
+    <url>
+        <loc>http://sbxfc.github.io/blog/2016/01/15/memory-of-jsb/</loc>
+        <lastmod>2016-01-25T11:06:58+08:00</lastmod>
     </url>
     <url>
         <loc>http://sbxfc.github.io/about/</loc>
@@ -326,11 +342,11 @@
     </url>
     <url>
         <loc>http://sbxfc.github.io/blog/archives/</loc>
-        <lastmod>2015-12-17T15:14:11+08:00</lastmod>
+        <lastmod>2016-01-25T11:06:58+08:00</lastmod>
     </url>
     <url>
         <loc>http://sbxfc.github.io/</loc>
-        <lastmod>2015-12-17T15:14:11+08:00</lastmod>
+        <lastmod>2016-01-25T11:06:58+08:00</lastmod>
     </url>
     <url>
         <loc>http://sbxfc.github.io/robots.txt</loc>

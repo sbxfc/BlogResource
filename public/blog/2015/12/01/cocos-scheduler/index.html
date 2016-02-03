@@ -6,10 +6,10 @@
     
 
 <meta charset="utf-8">
-<title>Cocos - Scheduler - sbxfc</title>
+<title>cocos2d - scheduler(调度器) - sbxfc</title>
 <meta name="author" content="sbxfc">
 <meta name="description"
-      content="Cocos - Scheduler 在cocos程序里,场景的每帧刷新是由一个与屏幕刷新频率相同的定时器来驱动的。在iOS环境里,这个定时器称为CADisplayLink。 每当屏幕当前帧刷新结束时,主线程里维持程序生命周期的NSRunLoop就会向CADisplayLink发送通知。接着, &hellip;">
+      content="cocos2d - scheduler(调度器) 在cocos2d里,场景的每帧刷新是由一个与屏幕帧频相等的定时器来驱动绘制的,在iOS环境里,这个定时器是CADisplayLink 每当屏幕上一帧刷新结束时,主线程里维持程序生命周期的NSRunLoop就会向CADisplayLink发送通知。 &hellip;">
 
 
 <!-- http://t.co/dKP3o1e -->
@@ -74,13 +74,15 @@
 <article class="entry" role="article">
 
   <header>
-    <h2 class="entry_title">Cocos - Scheduler</h2>
+    <h2 class="entry_title">cocos2d - scheduler(调度器)</h2>
     
   </header>
 
-  <div class="entry_content"><p>在cocos程序里,场景的每帧刷新是由一个与屏幕刷新频率相同的定时器来驱动的。在iOS环境里,这个定时器称为CADisplayLink。</p>
+  <div class="entry_content"><p>在cocos2d里,场景的每帧刷新是由一个与屏幕帧频相等的定时器来驱动绘制的,在iOS环境里,这个定时器是CADisplayLink</p>
 
-<p>每当屏幕当前帧刷新结束时,主线程里维持程序生命周期的NSRunLoop就会向CADisplayLink发送通知。接着,CADisplayLink会触发一个名为doCaller的回调函数,在该回调函数里会进行一系列的每帧刷新操作,除了执行由系统控制的场景刷新部分以外,Cocos还构造了一个名为Scheduler(调度器)的东西,让开发者可以参与并自定义与每帧刷新息息相关的操作</p>
+<p>每当屏幕上一帧刷新结束时,主线程里维持程序生命周期的NSRunLoop就会向CADisplayLink发送通知。接着,CADisplayLink会触发一个名为doCaller的回调函数,在该回调函数里cocos2d引擎进行了一系列的帧刷新操作。</p>
+
+<p>在这个过程里,除了执行基本的场景刷新以外,cocos2d还定义了一个名为scheduler(调度器)的定时器,让开发者可以参与管理与每帧刷新息息相关的操作</p>
 
 <pre><code>//在Cocos引擎里,当Director初始化时会启动该CADisplayLink定时器
 //doCaller函数会执行每帧的刷新操作
@@ -96,16 +98,16 @@
 }
 </code></pre>
 
-<p>Scheduler里的回调函数先于场景刷新函数被执行,这意味着,如果我们在scheduler回调函数里做一些UI刷新操作,这些操作会在下一帧被及时更新:</p>
+<p><font color='#bd260d'><strong>scheduler的回调函数优先于场景刷新函数被执行,这意味着,如果我们在scheduler回调函数里做一些UI刷新操作,这些操作会在下一帧被及时更新。</strong></font></p>
 
-<pre><code>_scheduler-&gt;update(_deltaTime);
+<pre><code>_scheduler-&gt;update(_deltaTime);   //调用scheduler
 ...
-_runningScene-&gt;render(_renderer);//render the scene
+_runningScene-&gt;render(_renderer);//渲染场景
 </code></pre>
 
-<h1>基础用法</h1>
+<h1>基本用法</h1>
 
-<p>任何Node以Node为基类的对象都可以直接调用scheduleUpdate方法,然后通过重载update函数来执行回调操作:</p>
+<p>任何Node对象以Node的子类都可以直接调用scheduleUpdate方法,然后通过重载update函数来执行回调操作:</p>
 
 <pre><code>this-&gt;scheduleUpdate();
 
@@ -113,11 +115,11 @@ _runningScene-&gt;render(_renderer);//render the scene
 void update(float dt) override;
 //*.cpp
 void HelloWorld::update(float delta){
-    printf("--update--\n");
+    //Do something!
 }
 </code></pre>
 
-<h1>自定义调度器</h1>
+<h1>自定义scheduler</h1>
 
 <p>除基础用法以外,还可以通过指定执行频率和回调函数来创建自定义调度器:</p>
 
@@ -126,32 +128,29 @@ void HelloWorld::update(float delta){
 //*.h
 void updateCustom(float dt);
 //*.cpp
-void HelloWorld::updateCustom(float dt)
-{
-    printf("--Custom--\n");
+void HelloWorld::updateCustom(float dt){
+    //Do something!
 }
 </code></pre>
 
-<p>自定义的Scheduler在回调时需要使用一个Timer来计时,会花费更多的内存和计算时间。并且由于其内部实现机制，其间隔时间至少大于0.1秒,这种scheduler更适合作为定时器来使用。</p>
+<p>自定义的scheduler在回调时使用一个Timer来计时,所以会花费更多的内存和计算时间,而且由于其内部实现机制,其间隔时间至少大于0.1秒。这种scheduler更适合作为定时器来使用。</p>
 
-<h1>调度器优先级</h1>
+<h1>优先级</h1>
 
-<p>我们可以为调度器指定优先级，来处理回调方法执行的先后顺序逻辑。</p>
+<p>我们还可以为调度器指定优先级，来处理回调方法执行的先后顺序逻辑。</p>
 
-<pre><code>void Node::scheduleUpdate()
-{
+<pre><code>void Node::scheduleUpdate(){
     scheduleUpdateWithPriority(0);
 }
 
-void Node::scheduleUpdateWithPriority(int priority)
-{
+void Node::scheduleUpdateWithPriority(int priority){
     _scheduler-&gt;scheduleUpdate(this, priority, !_running);
 }
 </code></pre>
 
 <h1>移除</h1>
 
-<p>Scheduler会随Node对象移除而停止,你也可以显示地调用移除函数</p>
+<p>Scheduler会随Node对象移除而停止,当然你也可以显示地执行移除函数</p>
 
 <pre><code>node-&gt;unschedulerUpdate();
 node-&gt;unschedule(SEL_SCHEDULE selector, float delay);
@@ -206,7 +205,7 @@ node-&gt;unschedule(SEL_SCHEDULE selector, float delay);
       <footer role="contentinfo">
 	<!-- include footer -->
 	<p>
-  Copyright &copy; 2015 - sbxfc -
+  Copyright &copy; 2016 - sbxfc -
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
 </p>
 

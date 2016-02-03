@@ -6,10 +6,11 @@
     
 
 <meta charset="utf-8">
-<title>网络字节序(二)* - sbxfc</title>
+<title>网络编程 - ByteArray - sbxfc</title>
 <meta name="author" content="sbxfc">
 <meta name="description"
-      content="网络字节序(二)* BSD Socket API提供了16和32bit整数转化字节序的方法。但是,包括string 、double、float、long 在内的格式都是常用于网络通信的数据格式。 这时,我们需要自己去将这些数据转化为网络字节流。实现字节流转化的思路有两种: &hellip;">
+      content="网络编程 - ByteArray 将一些基本数据类型(诸如string 、double、float、long)转化为网络字节序的思路有两种: 通过函数的方式进行字节颠倒,从而改变字节序
+通过移位运算进行字节位置改变 函数转换 函数转换的思路比较直接,首先是判断当前设备是大端设备还是小端设备。 &hellip;">
 
 
 <!-- http://t.co/dKP3o1e -->
@@ -74,73 +75,82 @@
 <article class="entry" role="article">
 
   <header>
-    <h2 class="entry_title">网络字节序(二)*</h2>
+    <h2 class="entry_title">网络编程 - ByteArray</h2>
     
   </header>
 
-  <div class="entry_content"><p>BSD Socket API提供了16和32bit整数转化字节序的方法。但是,包括string 、double、float、long 在内的格式都是常用于网络通信的数据格式。</p>
+  <div class="entry_content"><p>将一些基本数据类型(诸如string 、double、float、long)转化为网络字节序的思路有两种:</p>
 
-<p>这时,我们需要自己去将这些数据转化为网络字节流。实现字节流转化的思路有两种:</p>
+<ol>
+<li>通过函数的方式进行字节颠倒,从而改变字节序</li>
+<li>通过移位运算进行字节位置改变</li>
+</ol>
 
-<h1>第一种方式是使用反转函数修改字节顺序</h1>
 
-<p>首先,判断当前设备是大端序还是小端序。如果是大端序,我们可将字节流直接放进字节数组里用于传输。如果是小端序,因为大端和小端的字节排列顺序正好相反。所以，我们可以通过一个反转函数将数据里的字节进行反转,最终得到我们需要的字节流。</p>
+<h1>函数转换</h1>
 
-<p>这种方式的核心是一个反转函数:</p>
+<p>函数转换的思路比较直接,首先是判断当前设备是大端设备还是小端设备。如果是大端设备,那么在写入相应的字节数组时就不必调整。如果当前设备是小端设备,那么就通过相应的转换函数将字节序转换为大端序,然后再写入数组。</p>
+
+<p>这种方式的核心是一个字节逆序函数,结构如下:</p>
 
 <pre><code> /**
  * 将字节源 bytes 里的字节顺序反转
  * @param bytes 源字节
  * @param size 字节长度
  */
-void SFByteArray::reversalArray(char *bytes, size_t size)
+void ByteArray::reversalArray(char *bytes, size_t size)
 {
-    for(size_t i = 0; i &lt; size / 2; i++)
-    {
-        char tb;
-        tb = *(bytes + i);
+    for(size_t i = 0; i &lt; size / 2; i++){
+        char temp;
+        temp = *(bytes + i);
         *(bytes + i) = *(bytes + size - i - 1);
-        *(bytes + size - i - 1) = tb;
+        *(bytes + size - i - 1) = temp;
     }
 }
 </code></pre>
 
-<h1>另一种方式是使用移位运算符</h1>
+<p><strong>完整示例:</strong><a href="https://github.com/sbxfc/ReversalByteArray">https://github.com/sbxfc/ReversalByteArray</a></p>
 
-<p>除了使用逆转函数以外,还可以通过位移运算符来实现网络字节流的读写。使用移位运算符,直接读取高位或地位字节,无需进行大小端转换。（我们对一个数值进行移位运算的时候，不需要去考虑内存的排列顺序,移位运算符是在寄存器中进行的运算。永远左侧是高位，右侧是地位。)</p>
+<h1>移位运算</h1>
 
-<pre><code>bytesBuf[writePos++] = (value &gt;&gt; 8) &amp; 0xff;
-bytesBuf[writePos++] = value &amp; 0xff;
+<p>另外一种改变字节顺序的方式是移位运算。由于移位运算是在寄存器中进行的运算,所以使用移位运算符在对一个数值进行移位操作时不需要考虑内存的排列顺序,永远左侧是高位右侧是低位。</p>
+
+<p>获取一个高位字节时,首先移除相应的低位字节,然后通过&amp;运算符与0xff运算获取一个高位字节的数据:</p>
+
+<pre><code>//右移8位,相当于去掉了低位上的8个字节
+bytesBuf[writePos++] = (value &gt;&gt; 8) &amp; 0xff;
 </code></pre>
 
-<p>如果我们想获取一个高位字节，我们只需要右移相应的字节,移除低位即可。为了确保移位之后的数值是8位字节,我们使用了按位“与”运算。</p>
+<p>在将字节转化为数值时,首先通过移位运算,设置相应高位或低位值,然后利用|运算符将不同位合并:</p>
 
 <pre><code>short value = 0;
 value  = (bytes[0] &amp; 0xff) &lt;&lt; 8;
 value |= (bytes[1] &amp; 0xff);
 </code></pre>
 
-<p>从网络字节流里去读数值,首先把高位字节左移,获取高位对应的数值。然后与低位数值进行按位“或”运算,将低位和高位拼接在一起。</p>
+<p><strong>完整代码:</strong><a href="https://github.com/sbxfc/ByteArray">https://github.com/sbxfc/ByteArray</a></p>
 
-<h1>按位“与” &amp;</h1>
+<h1>运算符 &amp;</h1>
 
-<p>参加按位“与”运算的两个数据,按照二进制进行“与”运算。</p>
+<p>与运算符&amp;两侧的数据,按照二进制数据进行与运算,比如两侧数据的二进制值分别是 0011 和0101,当进行&amp;运算时:</p>
 
-<p>运算规则：<br>0&amp;0=0;<br>0&amp;1=0;<br>1&amp;0=0;<br>1&amp;1=1;</p>
+<pre><code>0&amp;0=0;
+0&amp;1=0;
+1&amp;0=0;
+1&amp;1=1;
+</code></pre>
 
-<p>即：两位同时为“1”，结果才为“1”，否则为0 <br></p>
+<p>只有两位同时为1,结果才为1,否则为0。在大小端转化时,进行按位与运算,相当于对数值进行byte类型强转。</p>
 
-<p>例如：3&amp;5  即 0000 0011 &amp; 0000 0101 = 0000 0001   因此，3&amp;5的值得1。在大小端转化时,进行按位与运算,相当于对数值进行byte类型强转。</p>
-
-<h1>按位“或” |</h1>
+<h1>运算符 |</h1>
 
 <p>按位“或”的运算规则和按位“与”相反</p>
 
-<p>1|1=1<br>1|0=1<br>0|1=1<br>0|0=0</p>
-
-<h1>完整代码</h1>
-
-<p>完整代码:<a href="https://github.com/CPPSF/ByteArrayDemo">https://github.com/CPPSF/ByteArrayDemo</a></p>
+<pre><code>0&amp;0=1;
+0&amp;1=1;
+1&amp;0=1;
+1&amp;1=0;
+</code></pre>
 </div>
 
   <footer>
@@ -184,7 +194,7 @@ value |= (bytes[1] &amp; 0xff);
       <footer role="contentinfo">
 	<!-- include footer -->
 	<p>
-  Copyright &copy; 2015 - sbxfc -
+  Copyright &copy; 2016 - sbxfc -
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
 </p>
 

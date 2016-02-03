@@ -1,67 +1,37 @@
 ---
 layout: post
-title: "工厂设计模式"
+title: "工厂模式"
 date: 2015-01-13 18:38:01 +0800
 comments: true
 categories: 
 ---
-工厂设计模式
----
----
 
-编程中,当我们创建一个对象时,我们会选择以下方式实例化对象:
+工厂模式属于创建型模式,大致可以分为三类,简单工厂模式、工厂方法模式、抽象工厂模式。
 
-	Object* obj = new Object();
-	
-但当初始化工作并不像赋值操作一样简单,可能需要一段很长的代码去创建对象时,这样写就很难看了。
+#一,简单工厂模式
 
-常常是,我们写了一段很长的初始化代码,当我们再次对其做修改时,可能会牵一发动全身。
 
-还有一种情况，我们可能需要初始化的是一些Object的子类,比如SubObj1,SubObj2,...
 
-按照面向接口编程,我们将Object抽象成一个接口,并实例化它们:
+简单工厂模式的主要特点是需要在工厂类中做判断，从而创建相应对象,缺点是在增加新的类型时,需要修改工厂类。这就违反了开放封闭原则。
 
-	Object obj1 = new SubObj1();
-	Object obj2 = new SubObj2();
-	....
-	
-随着项目的深入,可能会涵生出更多子类,SubObj3,SubObj4.... 那我们要对这些子类一个个实例化,可能更糟糕的是，我们还要对以前的代码进行修改。
-
-工厂模式就是专门负责将大量有共同接口的类实例化,而且不必事先知道每次是要实例化哪一个类的模式。它定义一个用于创建对象的接口，由子类决定实例化哪一个类。
-
-<!--more-->
-
-一,简单工厂模式
----
----
-
-工厂模式属于创建型模式，大致可以分为三类，简单工厂模式、工厂方法模式、抽象工厂模式。
-
-首先是简单工厂模式,简单工厂模式的主要特点是需要在工厂类中做判断，从而创造相应的产品。
-
-缺点:在增加新的类型时，需要修改工厂类。这就违反了开放封闭原则。
-
-	class CarBase
-	{
+	class CarBase{
 	public:
 	    virtual ~CarBase(){};
 	    virtual void show() = 0;
-	};
+	};	
 	
-	class SportsCar:public CarBase
-	{
+	//跑车
+	class SportsCar:public CarBase{
 	public:
 	    void show() {std::cout<<"制造了一辆跑车!"<<std::endl;}
 	};
-	
-	class SUV:public CarBase
-	{
+	//越野车
+	class SUV:public CarBase{
 	public:
 	    void show() {std::cout<<"制造了一辆越野车!"<<std::endl;}
 	};
-	
-	class Truck:public CarBase
-	{
+	//卡车
+	class Truck:public CarBase{
 	public:
 	    void show() {std::cout<<"制造了一辆卡车!"<<std::endl;}
 	};
@@ -73,13 +43,13 @@ categories:
 	    {
 	        switch(type)
 	        {
-	            case CarType_SportsCar:
+	            case 跑车:
 	                return new SportsCar();
 	                break;
-	            case CarType_SUV:
+	            case 越野车:
 	                return new SUV();
 	                break;
-	            case CarType_Truck:
+	            case 卡车:
 	                return new Truck();
 	                break;
 	            default:break;
@@ -87,8 +57,7 @@ categories:
 	    }
 	};
 	
-	int main()
-	{
+	int main(){
 	    CarFactory factory;
 	    CarBase* car1 = factory.creatCar(CarType_SportsCar);
 	    car1->show();
@@ -100,17 +69,9 @@ categories:
 	    car3->show();
 	}
 
-- 输出:<br>
-*制造了一辆跑车!<br>*
-*制造了一辆卡车!<br>*
-*制造了一辆越野车!<br>*
-<br>
+#二,工厂方法模式(Factory Method)
 
-二,工厂方法模式
----
----
-
-工厂方法(Factory Method)模式,是定义一个创建产品对象的工厂接口，将实际创建工作推迟到子类当中。核心工厂类不再负责产品的创建，这样核心类成为一个抽象工厂角色，仅负责具体工厂子类必须实现的接口，`这样进一步抽象化的好处是使得工厂方法模式可以使系统在不修改具体工厂角色的情况下引进新的产品。`
+工厂方法模式,是定义一个创建产品对象的工厂接口，将实际创建工作推迟到子类当中。核心工厂类不再负责产品的创建，这样核心类成为一个抽象工厂角色，仅负责具体工厂子类必须实现的接口，`这样进一步抽象化的好处是使得工厂方法模式可以使系统在不修改具体工厂角色的情况下引进新的产品。`
 
 工厂方法模式是简单工厂模式的衍生，解决了许多简单工厂模式的问题。首先完全实现‘开－闭 原则’，实现了可扩展。其次更复杂的层次结构，可以应用于产品结果复杂的场合。
 
@@ -137,27 +98,23 @@ categories:
 缺点:每增加一种产品,就需要增加一个对象的工厂。如果增加许多新类型,就要创建相应的工厂。相比于简单工厂模式,工厂方法模式需要更多的类定义。而且随着产品类型的增多,增加了结构复杂度。`相比于简单工厂模式只需要维护一个类,工厂方法模式增加了维护的复杂度。`
 	
 	//抽象产品类
-	class CarBase
-	{
+	class CarBase{
 	public:
 	    virtual ~CarBase(){};
 	    virtual void show() = 0;
 	};
 	
-	class SportsCar:public CarBase
-	{
+	class SportsCar:public CarBase{
 	public:
 	    void show() {std::cout<<"建造了一辆跑车!"<<std::endl;}
 	};
 	
-	class SUV:public CarBase
-	{
+	class SUV:public CarBase{
 	public:
 	    void show() {std::cout<<"建造了一辆越野车!"<<std::endl;}
 	};
 	
-	class Truck:public CarBase
-	{
+	class Truck:public CarBase{
 	public:
 	    void show() {std::cout<<"建造了一辆卡车!"<<std::endl;}
 	};
@@ -212,17 +169,9 @@ categories:
 	    CarBase* car3 = factory3.creatCar();
 	    car3->show();
 	}
-	
-- 输出:<br>
-*建造了一辆跑车!<br>*
-*建造了一辆越野车!<br>*
-*建造了一辆卡车!<br>*
-<br>
 
 
-抽象工厂模式
----
----
+#抽象工厂模式
 
 所谓的抽象工厂是指一个工厂等级结构可以创建出分属于不同产品等级结构的一个产品族中的所有对象。
 
@@ -330,8 +279,3 @@ categories:
 	    delete text2;
 	    return 0;
 	}
-
-- 输出:<br>*Win button.<br>
-Win Text.<br><br>
-Mac button.<br>
-Max Text.*

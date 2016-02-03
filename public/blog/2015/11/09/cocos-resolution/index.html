@@ -6,10 +6,10 @@
     
 
 <meta charset="utf-8">
-<title>Cocos - 屏幕适配 - sbxfc</title>
+<title>cocos2d - 屏幕适配 - sbxfc</title>
 <meta name="author" content="sbxfc">
 <meta name="description"
-      content="Cocos - 屏幕适配 现在,几乎人手都有一台移动设备。无论是手机还是iPad,这些设备的尺寸千差万别。因此,想开要发一款能在不同设备上友好显示的游戏,就要综合这些设备的特点,设计合理的适配方案。 从2.0.4开始,Cocos2d-x就提出了自己的多分辨率适配方案,经过这几年的发展已趋于成熟。 &hellip;">
+      content="cocos2d - 屏幕适配 现在,几乎每人都有一台移动设备。无论是手机还是iPad,这些设备的尺寸千差万别。因此,想开要发一款能在不同屏幕上友好显示的游戏,就要综合这些设备的特点,设计合理的适配方案。 从2.0.4开始,Cocos2d-x就提出了自己的多分辨率适配方案, &hellip;">
 
 
 <!-- http://t.co/dKP3o1e -->
@@ -74,11 +74,11 @@
 <article class="entry" role="article">
 
   <header>
-    <h2 class="entry_title">Cocos - 屏幕适配</h2>
+    <h2 class="entry_title">cocos2d - 屏幕适配</h2>
     
   </header>
 
-  <div class="entry_content"><p>现在,几乎人手都有一台移动设备。无论是手机还是iPad,这些设备的尺寸千差万别。因此,想开要发一款能在不同设备上友好显示的游戏,就要综合这些设备的特点,设计合理的适配方案。</p>
+  <div class="entry_content"><p>现在,几乎每人都有一台移动设备。无论是手机还是iPad,这些设备的尺寸千差万别。因此,想开要发一款能在不同屏幕上友好显示的游戏,就要综合这些设备的特点,设计合理的适配方案。</p>
 
 <p>从2.0.4开始,Cocos2d-x就提出了自己的多分辨率适配方案,经过这几年的发展已趋于成熟。对于开发者来说,如果能掌握这些技巧,就能够很好地解决适配问题。</p>
 
@@ -86,25 +86,25 @@
 
 <p>在Cocos里,官方把适配方案分为了两步,第一步是资源到设计尺寸的适配。</p>
 
-<p>因为设备是多种多样的,当我们在开发游戏时并不会假定界面是基于某台设备来设计界面。通常,我们会选择一个较为通用的尺寸来设计界面(比如1027*768),这个尺寸就是设计尺寸。</p>
+<p>因为设备尺寸是参差不齐的,当我们在开发游戏时并不会假定界面是基于某台设备来设计的。通常,我们会选择一个较为通用的尺寸来进行界面布局(比如1027*768),这时选取的这个尺寸称为设计尺寸。</p>
 
-<p>从资源到设计尺寸的映射,其实就是图片到设计尺寸的映射。例如,我们为iPhone3G和iPhone 4设计一款游戏。iPhone 3G的分辨率是320*480,而iPhone 4的分辨率是640*960。尽管这两种设备分辨率不同,但是尺寸一样大。所以,这两种设备可以使用同一个设计尺寸,只需要将iPhone4的图片资源换成高清图即可。</p>
+<p>而从资源到设计尺寸的映射,其实就是图片到设计尺寸的映射。例如,我们为iPhone3G和iPhone 4设计一款游戏。iPhone 3G的分辨率是320*480,而iPhone 4的分辨率是640*960。尽管这两种设备分辨率不同,但是屏幕尺寸一样大。在这样的情况下,我们使用同样的设计尺寸,只不过将iPhone4的图片资源换成2倍的即可。</p>
 
-<p>通过Cocos的setContentScaleFactor接口可以设置所有资源的缩放因子:</p>
+<p>通过 cocos2d 的setContentScaleFactor函数可以设置所有加载资源的缩放因子:</p>
 
 <pre><code>director-&gt;setContentScaleFactor(2);
 </code></pre>
 
 <p>设置完之后,一张640*960的背景图在一个sprite显示时,高宽变为为320*480,而分辨率变为了原本的4倍。这样一来,iPhone 3G和iPhone 4的屏幕适配做好了。</p>
 
-<p>当然,因为改变了缩放因子,这两种设备设置加载的资源就不同,为了方便管理,我们为其设置了不同的资源目录:</p>
+<p>当然,因为改变了缩放因子,这两种设备设置加载的资源就不同,为了方便管理,我们会为它们设置不同的资源目录:</p>
 
 <pre><code>/Resource
     /iphone
     /iphonehd
 </code></pre>
 
-<p>同时,根据具体设备为其指定Resource下的默认资源路径:</p>
+<p>并根据具体设备指定Resource下的默认资源路径:</p>
 
 <pre><code>vector&lt;string&gt; searchPath;
 if (iPadHD){    
@@ -112,6 +112,7 @@ if (iPadHD){
 }else if(iPhone){
     searchPath.push_back("iphone");
 }
+//如果这两个目录下没有所需的资源,加载common目录资源
 searchPath.push_back("common");
 FileUtils::getInstance()-&gt;setSearchPaths(searchPath);
 </code></pre>
@@ -209,7 +210,7 @@ Director::getInstance()-&gt;getVisibleOrigin()//可视区域起点
       <footer role="contentinfo">
 	<!-- include footer -->
 	<p>
-  Copyright &copy; 2015 - sbxfc -
+  Copyright &copy; 2016 - sbxfc -
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
 </p>
 

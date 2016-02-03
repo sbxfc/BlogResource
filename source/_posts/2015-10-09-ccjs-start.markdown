@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "CocosJS 初探"
+title: "cocos2d-JS 初探"
 date: 2015-10-09 18:21:41 +0800
 comments: true
 categories: 
@@ -53,12 +53,6 @@ cc.winSize表示游戏窗口大小,而cc.visibleRect表示游戏的可视区域�
 
 - http://www.cocos.com/doc/article/index?type=cocos2d-x&url=/doc/cocos-docs-master/manual/framework/html5/v3/eventManager/zh.md
 
-#调度器(schedule)
 
-调度器是通过Note的每帧刷新方法update来计算时间的,但是帧可能会阻塞,所以时间并不准确,但对于一些界面刷新是非常有用的。
-
-	note.schedule(func,1,cc.REPEAT_FOREVER);
-
-#好记性不如烂笔头,待续...
 
 

@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "C/C++ cstring头文件"
+title: "C/C++ string.h"
 date: 2014-11-16 20:04:24 +0800
 comments: true
 categories: 
@@ -40,21 +40,40 @@ char\* strncpy (char \*s1, const char \*s2, size_t len);
     
 输出:*John* 
 
-<br>
-三.void\* memcpy (void \*dest, const void \*src, size_t length);
----
 
----
-将src的前length个字节复制到dest中指定的地址, 不加 '\0'。dest和src不能是同一块内存区域。
+#memcpy
 
-	char dest[12] = "";
-    char src[50] = "Goodman";
-    memcpy(dest, src);
-    printf(s1);
+	void * memcpy ( void * destination, const void * source, size_t num );
+
+c和c++使用的内存拷贝函数，memcpy函数的功能是从源src所指的内存地址的起始位置开始拷贝n个字节到目标dest所指的内存地址的起始位置中。
+
+
+	/* memcpy example */
+	#include <stdio.h>
+	#include <string.h>
+	
+	struct {
+	  char name[40];
+	  int age;
+	} person, person_copy;
+	
+	int main ()
+	{
+	  char myname[] = "Pierre de Fermat";
+	
+	  /* using memcpy to copy string: */
+	  memcpy ( person.name, myname, strlen(myname)+1 );
+	  person.age = 46;
+	
+	  /* using memcpy to copy structure: */
+	  memcpy ( &person_copy, &person, sizeof(person) );
+	
+	  printf ("person_copy: %s, %d \n", person_copy.name, person_copy.age );
+	
+	  return 0;
+	}
     
-输出:*Good* 
 
-<br>
 void\* memmove (void \*s1, const void \*s2, size_t len);
 ---
 
@@ -100,14 +119,33 @@ int strncmp (const char \*s1, const char \*s2, size_t len);
 ---
 对 s1 和 s2 的前len个字符作比较
 
-<br>
-int memcmp (const void \*s1, const void \*s2, size_t len);
----
+#memcpy
 
----
-对 s1 和 s2 的前 len 个字节作比较
+	void* memcpy (void *buf1, const void *buf2, size_t length);
 
-<br>
+该函数用来比较buf1和buf2的前length个字节是否相同,该函数是按字节来比较的,如果返回0则表示相同。需要注意的是,buf1和buf2不能是同一块内存区域。
+
+	#include<string.h>
+	#include<stdio.h>
+	void main()
+	{
+		char *s1 = "Hello,Programmers!";
+		char *s2 = "Hello,Programmers!";
+		int r = memcmp(s1,s2,strlen(s1));
+		if(!r)
+		    printf("s1 and s2 are identical\n");/*s1等于s2*/
+		elseif(r<0)
+		    printf("s1 is less than s2\n");/*s1小于s2*/
+		else
+		    printf("s1 is greater than s2\n");/*s1大于s2*/
+		return 0;
+	}
+
+
+输出结果:
+	
+	s1 and s2 are identical
+	
 size_t strlen (const char \*s);
 ---
 
@@ -162,3 +200,7 @@ char \* fgets( char \*str, int count, FILE \*stream );
     }
 
     //delete[] codes;
+    
+#参见 
+
+- <http://www.cplusplus.com/reference/cstring/memcpy/>

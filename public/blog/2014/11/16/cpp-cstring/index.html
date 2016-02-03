@@ -6,10 +6,10 @@
     
 
 <meta charset="utf-8">
-<title>C/C++ cstring头文件 - sbxfc</title>
+<title>C/C++ string.h - sbxfc</title>
 <meta name="author" content="sbxfc">
 <meta name="description"
-      content="C/C++ cstring头文件 char* strcpy (char *s1, const char *s2); 将字符串s2复制到字符数组s1中去。字符数组s1的长度应不小于&#8221;字符串&#8221;s2的长度,&ldquo;字符串&#8221;s2 可以为字符数组名, &hellip;">
+      content="C/C++ string.h char* strcpy (char *s1, const char *s2); 将字符串s2复制到字符数组s1中去。字符数组s1的长度应不小于&#8221;字符串&#8221;s2的长度,&ldquo;字符串&#8221;s2 可以为字符数组名, &hellip;">
 
 
 <!-- http://t.co/dKP3o1e -->
@@ -74,7 +74,7 @@
 <article class="entry" role="article">
 
   <header>
-    <h2 class="entry_title">C/C++ cstring头文件</h2>
+    <h2 class="entry_title">C/C++ string.h</h2>
     
   </header>
 
@@ -117,25 +117,38 @@ printf(s1);
 
 <p>输出:<em>John</em></p>
 
-<br>
+<h1>memcpy</h1>
 
-
-<h2>三.void* memcpy (void *dest, const void *src, size_t length);</h2>
-
-<hr />
-
-<p>将src的前length个字节复制到dest中指定的地址, 不加 &lsquo;\0&#8217;。dest和src不能是同一块内存区域。</p>
-
-<pre><code>char dest[12] = "";
-char src[50] = "Goodman";
-memcpy(dest, src);
-printf(s1);
+<pre><code>void * memcpy ( void * destination, const void * source, size_t num );
 </code></pre>
 
-<p>输出:<em>Good</em></p>
+<p>c和c++使用的内存拷贝函数，memcpy函数的功能是从源src所指的内存地址的起始位置开始拷贝n个字节到目标dest所指的内存地址的起始位置中。</p>
 
-<br>
+<pre><code>/* memcpy example */
+#include &lt;stdio.h&gt;
+#include &lt;string.h&gt;
 
+struct {
+  char name[40];
+  int age;
+} person, person_copy;
+
+int main ()
+{
+  char myname[] = "Pierre de Fermat";
+
+  /* using memcpy to copy string: */
+  memcpy ( person.name, myname, strlen(myname)+1 );
+  person.age = 46;
+
+  /* using memcpy to copy structure: */
+  memcpy ( &amp;person_copy, &amp;person, sizeof(person) );
+
+  printf ("person_copy: %s, %d \n", person_copy.name, person_copy.age );
+
+  return 0;
+}
+</code></pre>
 
 <h2>void* memmove (void *s1, const void *s2, size_t len);</h2>
 
@@ -193,17 +206,34 @@ printf("%d",len);//输出:-7
 
 <p>对 s1 和 s2 的前len个字符作比较</p>
 
-<br>
+<h1>memcpy</h1>
 
+<pre><code>void* memcpy (void *buf1, const void *buf2, size_t length);
+</code></pre>
 
-<h2>int memcmp (const void *s1, const void *s2, size_t len);</h2>
+<p>该函数用来比较buf1和buf2的前length个字节是否相同,该函数是按字节来比较的,如果返回0则表示相同。需要注意的是,buf1和buf2不能是同一块内存区域。</p>
 
-<hr />
+<pre><code>#include&lt;string.h&gt;
+#include&lt;stdio.h&gt;
+void main()
+{
+    char *s1 = "Hello,Programmers!";
+    char *s2 = "Hello,Programmers!";
+    int r = memcmp(s1,s2,strlen(s1));
+    if(!r)
+        printf("s1 and s2 are identical\n");/*s1等于s2*/
+    elseif(r&lt;0)
+        printf("s1 is less than s2\n");/*s1小于s2*/
+    else
+        printf("s1 is greater than s2\n");/*s1大于s2*/
+    return 0;
+}
+</code></pre>
 
-<p>对 s1 和 s2 的前 len 个字节作比较</p>
+<p>输出结果:</p>
 
-<br>
-
+<pre><code>s1 and s2 are identical
+</code></pre>
 
 <h2>size_t strlen (const char *s);</h2>
 
@@ -263,6 +293,13 @@ for(int i=0;i&lt;int(fLines.size());i++){
 
 //delete[] codes;
 </code></pre>
+
+<h1>参见</h1>
+
+<ul>
+<li><a href="http://www.cplusplus.com/reference/cstring/memcpy/">http://www.cplusplus.com/reference/cstring/memcpy/</a></li>
+</ul>
+
 </div>
 
   <footer>
@@ -306,7 +343,7 @@ for(int i=0;i&lt;int(fLines.size());i++){
       <footer role="contentinfo">
 	<!-- include footer -->
 	<p>
-  Copyright &copy; 2015 - sbxfc -
+  Copyright &copy; 2016 - sbxfc -
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
 </p>
 

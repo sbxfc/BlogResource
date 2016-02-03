@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Cocos - Spine骨骼动画"
+title: "cocos2d - Spine骨骼动画"
 date: 2015-11-25 14:14:58 +0800
 comments: true
 categories: 

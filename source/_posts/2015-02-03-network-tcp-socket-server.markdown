@@ -1,29 +1,17 @@
 ---
 layout: post
-title: "TCP套接字服务器 网络通信(四)"
+title: "#TCP套接字通信 服务器"
 date: 2015-02-03 18:45:26 +0800
 comments: true
 categories: 
 ---
 
-TCP套接字服务器
----
-----
-
-和客户端一样,socket服务器通过调用socket函数创建套接口,指定期望的通信协议和套接字类型。
+和客户端一样,TCP套接字服务器通过调用socket函数创建套接口,指定期望的通信协议和套接字类型。
 	
-	SOCKET ServerSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	socket(AF_INET,SOCK_STREAM, IPPROTO_TCP);
 
-	if (ServerSocket == INVALID_SOCKET)
-	{
-		cout << "创建套接字失败!::" << GetLastError() << endl;
-		return -1;
-	}
-<!--more-->
+#bind函数
 
-bind函数
----
-----
 bind函数把一个本地协议地址赋予一个套接字。对于网际网协议,协议地址是32位的IPv4地址或128位的IPv6地址与16位的TCP或UDP端口号的组合。
 	
 	#include <sys/socket.h>
@@ -37,9 +25,8 @@ bind函数把一个本地协议地址赋予一个套接字。对于网际网协�
 
 - 进程可以把一个特定的IP地址捆绑到它的套接字上，不过这个IP地址必须属于其所在主机的网络接口之一。对于TCP客户，这就为该套接字上发送的IP数据报指派了源IP地址。对于TCP服务器，这就限定该套接字只能接受那些目的地为这个IP地址的客户端连接。TCP客户端通常不把IP地址捆绑到它的套接字上。当连接套接字时，内核将根据所用外出网络接口来选择源IP地址,而所用外出接口则取决于所到达服务器所需的路径。如果TCP服务器没有把IP地址捆绑到它的套接字上，内核就把客户端发送的SYN的目的IP地址作为服务器的源IP地址。
 
-listen函数
----
----
+#listen
+
 listen函数仅由TCP服务器调用,它做两件事情。
 
 1. 当socket函数创建一个套接字时，它被假设为一个主动套接字，也就是说，它是一个将调用connect发起连接的客户端套接字。listen函数把一个未连接的套接字转换成一个被动套接字，指示内核应该接受指向该套接字的连接请求。
@@ -50,9 +37,7 @@ listen函数仅由TCP服务器调用,它做两件事情。
 
 本函数通常应该在调用socket和bind这两个函数之后,并在调用accept之前调用。  
 
-accept函数
----
----
+#accept
 
 accept函数由TCP服务器调用,用于从已完成连接队列头返回下一个已完成连接。如果已完成连接为空，那么进程被投入睡眠（假定套接字默认是阻塞方式）。
 
@@ -63,6 +48,7 @@ accept函数由TCP服务器调用,用于从已完成连接队列头返回下一�
 
 如果accept成功，那么其返回值是由内核自动生成的一个全新的描述符。
 
-完整代码(vs2013):<br>
-<https://github.com/sbxNetwork/TCPSocketServer>
+#完整代码
+
+<https://github.com/sbxfc/Socket>
 	

@@ -4,7 +4,7 @@
   <title><![CDATA[sbxfc]]></title>
   <link href="http://sbxfc.github.io/atom.xml" rel="self"/>
   <link href="http://sbxfc.github.io/"/>
-  <updated>2015-12-17T15:30:03+08:00</updated>
+  <updated>2016-02-03T11:26:31+08:00</updated>
   <id>http://sbxfc.github.io/</id>
   <author>
     <name><![CDATA[sbxfc]]></name>
@@ -14,33 +14,574 @@
 
   
   <entry>
-    <title type="html"><![CDATA[Cocos - 纹理素材的选择 ]]></title>
-    <link href="http://sbxfc.github.io/blog/2015/12/04/cocos2d-texture/"/>
-    <updated>2015-12-04T12:15:05+08:00</updated>
-    <id>http://sbxfc.github.io/blog/2015/12/04/cocos2d-texture</id>
-    <content type="html"><![CDATA[<p>在cocos2d里,纹理的使用主要分为两步:</p>
+    <title type="html"><![CDATA[Cocos2d-JSB 内存管理]]></title>
+    <link href="http://sbxfc.github.io/blog/2016/01/15/memory-of-jsb/"/>
+    <updated>2016-01-15T14:42:31+08:00</updated>
+    <id>http://sbxfc.github.io/blog/2016/01/15/memory-of-jsb</id>
+    <content type="html"><![CDATA[<h1>Error : Invalid Native Object</h1>
+
+<p>如果你写的Cocos2d-JS程序在iOS/Android原生环境里运行时出现 <font color='#bd260d'>Error : Invalid Native Object</font> ,那么你有可能遇到了JSB的内存问题。</p>
+
+<p>我们知道,Cocos2d-JS在原生环境里运行的实际上是Cocos2dx引擎而非Cocos2d-HTML5,Javascript程序通过JSB调用Cocos2dx引擎的API,由于 Javascript 本身有一套垃圾回收机制,Cocos2dx也有一套,当两者共同运行时,就会由于沟通问题出现一些差错。</p>
+
+<p>Invalid Native Object 的错误原因是,JS端访问了一个已经释放了相应C++绘制对象的JS对象。</p>
+
+<h1>全局变量不被回收</h1>
+
+<p>官网列举了一个这样的示例。首先,在程序里创建了一个全局变量globalNode:</p>
+
+<pre><code>var globalNode = new cc.Node();
+</code></pre>
+
+<p>当程序运行时,globalNode没有通过 addChild 添加到其他Node上,而是通过设置一个按钮的回调来将自己添加到节点上:</p>
+
+<pre><code>onTouched:function(sender){
+    sender.addChild(globalNode);
+}
+</code></pre>
+
+<p>当按钮点击时,控制台会出现下列错误:</p>
+
+<p><font color='#bd260d'><em>jsb: ERROR: File /Users/sbxfc/Documents/XXX/frameworks/cocos2d-x/cocos/scripting/js-bindings/
+auto/jsb_cocos2dx_auto.cpp: Line: 1973, Function: js_cocos2dx_Node_addChild<br>
+Invalid Native Object</em></font></p>
+
+<p>按照我们一贯的思路,可能察觉不出这个程序的问题。我们通过CCNode.js里一段注释作为引子来解析这段程序错误的原因:</p>
+
+<blockquote><p>If you created an engine object and haven&rsquo;t added it into the scene graph during the same frame.JSB&rsquo;s native autorelease pool will consider this object a useless one and release it directly</p></blockquote>
+
+<p>当程序当前帧绘制完成之后,那些没有被添加到场景上的绘制对象将被删除并进行垃圾回收,所以globalNode在C++端的对象会被移除,按正常逻辑globalNode也将被回收,但是由于globalNode是一个全局对象不能被回收,所以就出现了上述错误。</p>
+
+<h1>cc.Node的生命周期</h1>
+
+<p>为了更清除地了解整个过程,我们看一下Node对象被创建和释放的整个流程。首先,我们使用 cc.Node.create() 来创建对象时会执行以下操作:</p>
+
+<p>首先,在游戏启动的时候(applicationDidFinishLaunching),游戏引擎会通过addRegisterCallback将JS代码往C++的映射:</p>
+
+<pre><code>static JSFunctionSpec st_funcs[] = {
+    JS_FN("create", js_cocos2dx_CCNode_create, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
+    JS_FS_END
+};
+
+jsb_CCNode_prototype = JS_InitClass(
+    cx, global,
+    NULL, // parent proto
+    jsb_CCNode_class,
+    js_cocos2dx_CCNode_constructor, 0, // constructor
+    properties,
+    funcs,
+    NULL, // no static properties
+    st_funcs);
+</code></pre>
+
+<p>cc.Node.create() 会被隐射到 C函数 js_cocos2dx_CCNode_create()上,该函数的结构如下:</p>
+
+<pre><code>JSBool js_cocos2dx_CCNode_create(JSContext *cx, uint32_t argc, jsval *vp)
+{
+    if (argc == 0) {
+        cocos2d::CCNode* ret = cocos2d::CCNode::create();
+        jsval jsret;
+        do {
+        if (ret) {
+            js_proxy_t *proxy = js_get_or_create_proxy(cx, ret);
+            jsret = OBJECT_TO_JSVAL(proxy-&gt;obj);
+        } else {
+            jsret = JSVAL_NULL;
+        }
+    } while (0);
+        JS_SET_RVAL(cx, vp, jsret);
+        return JS_TRUE;
+    }
+    JS_ReportError(cx, "wrong number of arguments");
+    return JS_FALSE;
+}
+</code></pre>
+
+<p>在该函数里,通过调用 js_cocos2dx_CCNode_create 来创建了一个js_proxy_t类型的对象 proxy,js_cocos2dx_CCNode_create 是通过下面的SpiderMonkey API 完成调用的:</p>
+
+<pre><code>JS_AddObjectRoot(cx, &amp;proxy-&gt;obj);
+</code></pre>
+
+<p>JS_AddObjectRoot 将 JSObject 添加到垃圾回收中,proxy->obj将JSObject隐射到Javascript中,也就是说,最后proxy得到了JS端对象(cc.Node)的访问权限。</p>
+
+<p>cc.Node.create()创建的对象最终在Cocos2dx端被保存到内存里,并且通过JS_RemoveObjectRoot来移除JS端对象的引用。</p>
+
+<p>当cocos2d::CCNode对象被移除时,会在下一帧自动释放掉,接着CCObject的析构函数会被调用,代码如下:</p>
+
+<pre><code>// if the object is referenced by Lua engine, remove it
+if (m_nLuaID)
+{
+    CCScriptEngineManager::sharedManager()-&gt;getScriptEngine()-&gt;removeScriptObjectByCCObject(this);
+}
+else
+{
+    CCScriptEngineProtocol* pEngine = CCScriptEngineManager::sharedManager()-&gt;getScriptEngine();
+    if (pEngine != NULL &amp;&amp; pEngine-&gt;getScriptType() == kScriptTypeJavascript)
+    {
+        pEngine-&gt;removeScriptObjectByCCObject(this);
+    }
+}
+</code></pre>
+
+<p>析构函数触发了pEngine->removeScriptObjectByCCObject,而该函数做了下面这些事情:</p>
+
+<pre><code>void ScriptingCore::removeScriptObjectByCCObject(CCObject* pObj)
+{
+    js_proxy_t* nproxy;
+    js_proxy_t* jsproxy;
+    void *ptr = (void*)pObj;
+    nproxy = jsb_get_native_proxy(ptr);
+    if (nproxy) {
+        JSContext *cx = ScriptingCore::getInstance()-&gt;getGlobalContext();
+        jsproxy = jsb_get_js_proxy(nproxy-&gt;obj);
+        JS_RemoveObjectRoot(cx, &amp;jsproxy-&gt;obj);
+        jsb_remove_proxy(nproxy, jsproxy);
+    }
+}
+</code></pre>
+
+<p>其中,函数JS_RemoveObjectRoot被调用,JS端对象引用被移除,jsb_remove_proxy将会移除掉哈希表中的映射关系。至此,Cocos2d-x完成了整个对象的垃圾回收管理。</p>
+
+<h1>retain()和release()</h1>
+
+<p>在上面的问题里,cc.Node的引用对象是全局变量所以没有被释放掉,而其绘制对象cocos2d::CCNode却被垃圾回收了。</p>
+
+<p>为了避免出现 Invalid Native Object 的情形,我们可以使用retain()函数来使Cocos2dx端的绘制对象增加引用计数,我们知道C++端是通过引用计算来控制内存管理的。当我们需要释放时,只需要手动调用release()即可。但是需要注意的是,retain和release是一一对应关系,retain之后必须要release一下,不然会造成内存泄露。</p>
+
+<h1>其他</h1>
+
+<p>除了全局变量以外,还有一些情形也会导致JS端的对象无法被释放掉。下面是另一个错误示例,首先,创建了一个node对象,node在当前帧没有被添加到场景里,而是在一秒钟(1000ms)后被添加到场景里:</p>
+
+<pre><code>var self = this;
+this.node = new cc.Node();
+setTimeout(function(){
+    self.node.setLocalZOrder(1);
+},1000);
+</code></pre>
+
+<p>当改程序运行时,会出现 Invalid Native Object 错误:</p>
+
+<p><font color='#bd260d'><em>File /Users/sbxfc/Documents/cocos/projects/demo/frameworks/cocos2d-x/cocos/scripting/js-bindings/auto/jsb_cocos2dx_auto.cpp: Line: 4186, Function: js_cocos2dx_Node_setLocalZOrder js_cocos2dx_Node_setLocalZOrder : Invalid Native Object</em></font></p>
+
+<p>理解该示例错误的关键在于JS里的参数传递和闭包。setTimeout形成的闭包会在程序运行时异步执行,其中self.node通过匿名参数的形式传递到函数内部,而函数参数传递本身是一种值传递,其传递的是对象引用的副本。所以Cocos2dx无法释放setTimeout函数里的self.node,最终也会导致Invalid Native Object错误。</p>
+
+<p>当然,上面的问题也可以使用retain、release对解决。CCNode.js里关于函数retain、release有详细的注释,开发者可以借此了解到有关释放问题和JSB机制不健全的说明,并以此理解引擎开发者的困扰。</p>
+
+<h1>参见</h1>
 
 <ul>
-<li>第一步是从本地加载并读取纹理数据到内存。</li>
-<li>第二步是将内存里的纹理数据通过OpenGL接口以copy的方式上传到GPU内存。</li>
+<li><a href="http://bosn.me/js/js-call-by-sharing/">JS是按值传递还是按引用传递?</a></li>
+<li><a href="http://www.cocos.com/doc/article/index?type=cocos2d-x&amp;url=/doc/cocos-docs-master/manual/framework/cocos2d-js/1-about-cocos2d-js/1-1-a-brief-history/zh.md">Javascript Binding</a></li>
+<li><a href="http://www.cocos.com/doc/article/index?type=wiki&amp;url=/doc/cocos-docs-master/manual/framework/native/wiki/memory-management-of-jsb/zh.md">JSB内存管理</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[POSIX - select]]></title>
+    <link href="http://sbxfc.github.io/blog/2016/01/11/unix-select/"/>
+    <updated>2016-01-11T11:01:41+08:00</updated>
+    <id>http://sbxfc.github.io/blog/2016/01/11/unix-select</id>
+    <content type="html"><![CDATA[<h1>I/O 复用 和 select函数</h1>
+
+<p>在《UNIX网络编程》里描述了这样一个例子,当客户端通过TCP协议正常连接服务端之后,紧接着,客户端进入标准输入的阻塞状态。此时,服务器突然重启,因为正处于输入状态所以客户端无法通过read函数读取对端返回EOF状态,直到输入结束,客户端恢复read为止(可能已久过去了许多时间)。</p>
+
+<p>这种情况不是我们预期的结果。我们想让程序有一种预先设置内核通知的能力,当内核一旦发现进程指定的一个或多个I/O条件已就绪(比如输入完成,或可以进行读取数据时),它就告知进程。这个能力称为I/O复用,是由select和poll函数支持的,还有前者较新的POSIX变种pselect。</p>
+
+<p><img src="http://sbxfc.github.io/images/2016/1/io_multiplexing.png" alt="IO multiplexing" /></p>
+
+<p>上图显示了IO复用的一般流程,首先,在图示集流阀(select)的位置,我们设置了许多需要监听的事件,然后select进入睡眠状态,当这些事件的其中一个或多个事件条件满足时,唤醒select函数,接着来执行相应的操作。</p>
+
+<p>关于IO复用有一个很形象比喻:</p>
+
+<p><a href="http://www.zhihu.com/question/32163005/answer/55687802">一个酒吧服务员（一个线程），前面趴了一群醉汉，突然一个吼一声“倒酒”（事件），你小跑过去给他倒一杯，然后随他去吧，突然又一个要倒酒，你又过去倒上，就这样一个服务员服务好多人，有时没人喝酒，服务员处于空闲状态，可以干点别的玩玩手机。至于epoll与select，poll的区别在于后两者的场景中醉汉不说话，你要挨个问要不要酒，没时间玩手机了。io多路复用大概就是指这几个醉汉共用一个服务员。</a></p>
+
+<h1>select函数</h1>
+
+<p>select函数允许程序指示内核等待多个事件的任何一个发生,并且在一个或多个事件发生时,或是经历一段指定的时间后才唤醒它。</p>
+
+<pre><code>#include &lt;sys/select.h&gt;
+#include &lt;sys/time.h&gt;
+
+struct timeval{
+    long tv_sec;/*秒*/
+    long tv_usec;/*毫秒*/
+};
+
+int select(int maxfd, fd_set* readfds, fd_set* writefds, fd_set* errorfds, struct timeval* timeout);
+</code></pre>
+
+<p>一),首先从最后一个参数说起。timeout告知内核等待指定描述符中的任何一个就绪所花费时间。该参数会有以下三种情况:</p>
+
+<ol>
+<li>永远等待下去 : 仅在有一个描述符准备好时I/O才返回。为此,我们把该参数设置为空指针(NULL)。</li>
+<li>等待一段固定时间 : 在有一个描述符准备好I/O时返回,但等待时间不超过由timeval结构中指定的时间。</li>
+<li>根本不等待 : 检查描述符后立刻返回,这称为轮询(polling)。为此,该参数必须指向一个timeval结构,而且其中的定时器值必须为0。</li>
+</ol>
+
+
+<p>二),中间的三个参数readfds,writefds,errorfds用于指定我们让内核试读、写和异常条件的描述符集合。目前支持的异常条件只有两个:</p>
+
+<ol>
+<li>某个套接字的<strong>带外数据</strong>的到达。</li>
+<li>某个已置为分组模式的伪终端存在可从其他端读取的控制状态信息。</li>
+</ol>
+
+
+<p>如果该三个参数都为NULL,那么我们就有了一个比Unix的sleep更精确的定时器(sleep以秒为最小单位)。</p>
+
+<p>三),maxfd 参数指定待测试的描述符个数,它的值是待测试的最大描述符加1,描述符0,1,2&hellip;maxfd-1将都被测试。</p>
+
+<h1>示例代码</h1>
+
+<p><a href="https://github.com/sbxfc/POSIX-select">https://github.com/sbxfc/POSIX-select</a></p>
+
+<h1>运行</h1>
+
+<p>1,客户端</p>
+
+<pre><code>//Mac终端 
+$ gcc client_select.c -o client
+$ ./client
+$ hi //客户端输入
+$ input is readable //输出~~
+$ socket is readable //输出~~
+$ hi //回射服务器返回
+</code></pre>
+
+<p>2,服务端(回射服务器)</p>
+
+<pre><code>$ gcc server_select.c
+$ ./a.out 
+</code></pre>
+
+<h1>参见</h1>
+
+<hr />
+
+<ul>
+<li>&lt;UNIX网络编程></li>
+<li><a href="https://zh.wikipedia.org/zh/%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8">https://zh.wikipedia.org/zh/%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8</a></li>
+<li><a href="https://zh.wikipedia.org/wiki/Select_(Unix)">https://zh.wikipedia.org/wiki/Select_(Unix)</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[POSIX - signal]]></title>
+    <link href="http://sbxfc.github.io/blog/2016/01/04/unix-signal/"/>
+    <updated>2016-01-04T14:24:14+08:00</updated>
+    <id>http://sbxfc.github.io/blog/2016/01/04/unix-signal</id>
+    <content type="html"><![CDATA[<h1>信号产生</h1>
+
+<p>1,通过 raise 发送信号给当前进程。</p>
+
+<pre><code>#include &lt;signal.h&gt; 
+
+/**
+ * 成功返回0,否则返回 -1
+ * @param signo 信号类型
+ */
+int raise(int signo) 
+</code></pre>
+
+<p>2,在权限允许的情况下通过 kill 发送信号给指定进程。</p>
+
+<pre><code>#include &lt;sys/types.h&gt; 
+#include &lt;signal.h&gt; 
+
+/**
+ * @param pid 进程ID,
+ * 当pid &gt; 0时,信号发送至ID为pid的进程,
+ * 当pid = 0时,信号发送至同一进程组的进程,
+ * 当pid &lt; 0&amp;&amp;pid != -1时,信号发送至进程组ID为(-1*pid)的所有进程
+ * 当pid = -1时,信号发送至除自身进程以外的所有ID大于1的进程
+ * 
+ * @param signo 信号类型
+ * 当 signo = 0 时,实际不发送任何信号,但照常进行错误检查,
+ * 因此,可用于检查目标进程是否存在,以及当前进程是否具有向目标发送信号的权限
+ * (root权限的进程可以向任何进程发送信号，非root权限的进程
+ * 只能向属于同一个session或者同一个用户的进程发送信号)
+ */
+int kill(pid_t pid,int signo)
+</code></pre>
+
+<p>3,sigqueue(Linux) 相比于kill,sigqueue传递了更多的附加信息,但只能向一个进程发送信号。成功返回0,否则返回 -1。</p>
+
+<p>在调用sigqueue时,sigval_t指定的信息会拷贝到3参数信号处理函数（3参数信号处理函数指的是信号处理函数由sigaction安装,并设定了sa_sigaction
+指针）的siginfo_t结构中，这样信号处理函数就可以处理这些信息了。
+sigqueue系统调用支持发送带参数信号,所以比kill()系统调用的功能要灵活和强大得多。(Note:sigqueue是Linux系统下信号发送函数,我的Mac机没有所以只摘抄了一些介绍。)</p>
+
+<pre><code>#include &lt;sys/types.h&gt; 
+#include &lt;signal.h&gt; 
+
+typedef union sigval {
+    int  sival_int;
+    void *sival_ptr;
+}sigval_t;
+
+/**
+ * @param pid 进程ID
+ * @param signo 信号值 sigqueue 不能发送信号给一个进程组,如果 signo = 0,将会执行错误检,
+ * 但实际上不发送任何信号，0值信号可用于检查pid的有效性以及当前进程是否有权限向目标进程发送信号
+ */
+int sigqueue(pid_t pid, int signo, const union sigval val) 
+</code></pre>
+
+<p>4,alarm 在指定的时间seconds秒后,将向进程本身发送SIGALRM信号，又称为闹钟时间。进程调用alarm后,任何以前的alarm()调用都将无效。如果参数seconds为零,那么进程内将不再包含任何闹钟时间。返回值,如果调用alarm()前,进程中已经设置了闹钟时间，则返回上一个闹钟时间的剩余时间,否则返回0。</p>
+
+<pre><code>#include &lt;unistd.h&gt; 
+unsigned int alarm(unsigned int seconds); 
+</code></pre>
+
+<p>5,setitimer setitimer比alarm功能强大,setitimer调用成功返回0,否则返回-1。支持3种类型的定时器:</p>
+
+<ul>
+<li>ITIMER_REAL:设定绝对时间;经过指定的时间后，内核将发送SIGALRM信号给本进程;</li>
+<li>ITIMER_VIRTUAL 设定程序执行时间;经过指定的时间后,内核将发送SIGVTALRM信号给本进程；</li>
+<li>ITIMER_PROF 设定进程执行以及内核因本进程而消耗的时间和,经过指定的时间后,内核将发送ITIMER_VIRTUAL信号给本进程;</li>
 </ul>
 
 
-<p>前者,主要涉及到图片尺寸以及加载后纹理的内存占用问题。例如,我们加载了一张1024*1024的png图片(rgba8888格式),其大小约为1024*1024*4 = 4MB。这意味着,如果这张纹理图片放进安装包就会使整个包增加4MB,如果在运行时加载到游戏里就相当于多了至少4MB内存。</p>
+<!--more-->
 
-<p>对于一个有责任心(小肚鸡肠)的开发者来说,程序无缘无故增加了4MB内存,总是会让人耿耿于怀的。能不能把尺寸或者运行时内存减少一点呢?答案是可以的。</p>
 
-<p>想要解决纹理的内存问题,我们先看一下纹理为何会占用了这么多内存。首先是我们常见的格式,无论是png还是jpg,这些图片都是非压缩格式纹理。非压缩纹理的意思是,这些图片里的rgba四个通道值在文件里都是按照顺序排列的。非压缩格式图片的却别在于,有一些只使用了rgb三个通道值,有一些则使用的少于8位精度值的通道。</p>
+<pre><code>#include &lt;sys/time.h&gt;
+/**
+* @param which 定时器类型
+* @param value 
+*/
+int setitimer(int which, const struct itimerval *value, struct itimerval *ovalue));
+</code></pre>
 
-<p>cocos2d支持十余种像素格式的非压缩纹理,上面提到的rgba8888就是其中一种,也是常用的格式。一般来说,图片的扩展名和它的像素格式没什么关系,一个png图片可能是rgba8888也可能是rgba4444或者其他的像素格式。</p>
+<p>6,abort 向进程发送SIGABRT信号,默认情况下进程会异常退出,当然可定义自己的信号处理函数。即使SIGABRT被进程设置为阻塞信号,调用abort()后，SIGABRT仍然能被进程接收。该函数无返回值。</p>
 
-<p>在这里,rgba8888表示该图片上的每个像素点支持R、G、B三通道以及Alpha通道,这四个通道值是精度为8位的二进制数。即这种像素格式上的每个通道值有2<sup>8</sup> = 256种精度选择,而2<sup>8</sup>的值等于1byte,所以rgba8888上每个像素的大小是4*1byte = 4byte。以此推之,RGBA4444就是通道值精度为16(2<sup>4</sup> = 16)包含RGBA四通道的纹理,大小为4*0.5byte = 2byte。可以看出RGBA4444的大小是RGBA8888的一半,但是精度却只有16。</p>
+<pre><code>#include &lt;stdlib.h&gt;
+void abort(void);
+</code></pre>
 
-<p>因此,一张RGBA8888的纹理转化为RGBA4444之后,其尺寸会减少为原图的一半,但是精度会损失。一般来说,这种精度的损失对一些渐变色的纹理影响比较明显。但是无论是精度16还是精度256,这些色值都会映射到OpenGL支持的[0,1]颜色区间。我们应当根据实际情况选取合适的像素格式来减少图片尺寸和运行时的内存。</p>
+<h1>安装信号(信号监听)</h1>
 
-<p>通常来说,对于非压缩纹理图片 rgb565 和 rgba5551(RGB5A1) 的效果和内存占用情况相对会好一些。</p>
+<p>如果进程想要处理某一信号,就需要在进程里安装该信号。</p>
 
-<p>Cocos支持的非压缩纹理像素格式:</p>
+<p>1,signal</p>
+
+<pre><code>#include &lt;signal.h&gt; 
+
+/**
+* 第一个参数信号值。
+* 第二个参数是信号值的处理。第二个参数如果设为 SIG_IGN 表示可忽略该信号,
+* 如果设为 SIG_DFL 表示采用系统的默认处理方式,也可以指定一个处理函数。
+*/
+void (*signal(int, void (*)(int)))(int);
+</code></pre>
+
+<p>2,sigaction</p>
+
+<pre><code>#include &lt;signal.h&gt; 
+
+/**
+ * @param union 联合数据结构中的两个元素_sa_handler以及*_sa_sigaction指定信号关联函数,
+ * 即用户指定的信号处理函数。除了可以是用户自定义的处理函数外,还可以为SIG_DFL(采用缺省的处理方式),
+ * 也可以为SIG_IGN（忽略信号）
+ * @param sa_restorer,已过时,POSIX不支持它,不应再被使用。
+ */
+struct sigaction {
+    union{
+        __sighandler_t _sa_handler;
+        void (*_sa_sigaction)(int,struct siginfo *, void *)；
+    }_u
+    sigset_t sa_mask；
+    unsigned long sa_flags； 
+    void (*sa_restorer)(void)；
+}
+
+/**
+* @param signum 信号值,可以为除SIGKILL及SIGSTOP外的任何一个特定有效的信号。
+* @param act 指向结构sigaction的一个实例的指针,在结构sigaction的实例中,
+* 指定了对特定信号的处理，可以为空，进程会以缺省方式对信号处理。
+* @param oldact oldact指向的对象用来保存原来对相应信号的处理,可指定oldact为NULL。
+* 如果把第二、第三个参数都设为NULL,那么该函数可用于检查信号的有效性。
+*/
+int sigaction(int signum,const struct sigaction *act,struct sigaction *oldact));
+</code></pre>
+
+<h1>阻塞信号/恢复信号</h1>
+
+<p>有时候我们不希望信号立刻执行,同时也不想信号被忽略掉(SIG_IGN)。这时,我们可以设置阻塞信号,并在信号恢复后接收阻塞的信号。</p>
+
+<p>如果信号在被阻塞期间产生了一次或多次,那么该信号被解除阻塞之后通常只提交一次,也就是说Unix信号默认是不排队的。</p>
+
+<pre><code>#include &lt;signal.h&gt;
+
+/**
+ * @func 1
+ * @param how 选择阻塞方式,how有以下三种值:
+ * SIG_BLOCK 添加set阻塞信号集合,第二个参数为本次设置之前的阻塞信号集合
+ * SIG_UNBLOCK 如果当前进程阻塞集中包含set阻塞信号集合,则解除该阻塞信号集合
+ * SIG_SETMASK 设置当前阻塞集为set指定的集合,第二个参数NULL
+ */
+int sigprocmask(int how,  const  sigset_t *set, sigset_t *oldset))；
+
+/**
+ * 获取当前已递送到进程,却被阻塞的所有信号,
+ * 从set指向的信号集中获取返回结果。
+ */
+int sigpending(sigset_t *set));
+
+/**
+ * @func 2
+ * 获取当前已递送到进程,却被阻塞的所有信号,
+ * 从set指向的信号集中获取返回结果。
+ */
+int sigsuspend(const sigset_t *mask));
+
+/**
+ * @func 3
+ * 用于在接收到某个信号之前, 临时用mask替换进程的信号掩码, 并暂停进程执行，直到收到信号为止。
+ * 也就是说,进程执行到sigsuspend时,sigsuspend并不会立刻返回,进程处于TASK_INTERRUPTIBLE状态
+ * 并立刻放弃CPU,等待UNBLOCK（mask之外的）信号的唤醒。进程在接收到UNBLOCK（mask之外）信号后,
+ * 调用处理函数，然后把现在的信号集还原为原来的,sigsuspend返回,进程恢复执行。
+ * 该系统调用始终返回-1，并将errno设置为EINTR。
+ */
+sigsuspend(const sigset_t *mask));
+</code></pre>
+
+<h1>完整示例</h1>
+
+<ul>
+<li><a href="https://github.com/sbxfc/signal">https://github.com/sbxfc/signal</a></li>
+</ul>
+
+
+<h1>参见</h1>
+
+<ul>
+<li><a href="https://zh.wikipedia.org/wiki/Unix%E4%BF%A1%E5%8F%B7">Unix信号</a></li>
+<li><a href="http://en.cppreference.com/w/c/program/raise">http://en.cppreference.com/w/c/program/raise</a></li>
+<li><a href="http://www.ibm.com/developerworks/cn/linux/l-ipc/part2/index1.html">http://www.ibm.com/developerworks/cn/linux/l-ipc/part2/index1.html</a></li>
+<li><a href="https://zh.wikipedia.org/wiki/Kill_(%E5%91%BD%E4%BB%A4)">https://zh.wikipedia.org/wiki/Kill_(%E5%91%BD%E4%BB%A4)</a></li>
+<li>&lt;kernal/signal.c></li>
+<li><a href="http://pubs.opengroup.org/onlinepubs/009695399/functions/sigqueue.html">http://pubs.opengroup.org/onlinepubs/009695399/functions/sigqueue.html</a></li>
+<li><a href="http://www.ibm.com/developerworks/cn/linux/l-ipc/part2/index1.html">http://www.ibm.com/developerworks/cn/linux/l-ipc/part2/index1.html</a></li>
+<li><a href="http://www.ibm.com/developerworks/cn/linux/l-ipc/part2/index2.html">http://www.ibm.com/developerworks/cn/linux/l-ipc/part2/index2.html</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[在Xcode里使用libevent库]]></title>
+    <link href="http://sbxfc.github.io/blog/2015/12/30/libevent/"/>
+    <updated>2015-12-30T17:43:19+08:00</updated>
+    <id>http://sbxfc.github.io/blog/2015/12/30/libevent</id>
+    <content type="html"><![CDATA[<h1>编译</h1>
+
+<p>从官网下载最新的release包<a href="http://libevent.org/">libevent-2.0.22-stable.tar.gz</a></p>
+
+<p>解压并进入相应目录后,执行下列编译代码:</p>
+
+<pre><code>./configure &amp;&amp; make  
+sudo make install
+</code></pre>
+
+<p>完成编译后按Command+Shilt+G进入 /usr/local/lib 文件夹就可以看到生成的文件目录 libevent-2.0.22</p>
+
+<h1>使用示例</h1>
+
+<p>新建一个Command Line Tool 的c++项目,首先在Build Phases->Link Binary With Libraries里添加三个.a库文件 libevent_core.a、libevent_extra.a、libevent_phreads.a(这几个库文件的选择视情况而定)。</p>
+
+<p>检查Building Setting里的Library Search Paths是否已添加了libevent库文件目录,如果没有则添加(以下是我本机路径):</p>
+
+<pre><code>/usr/local/libevent-2.0.22/lib //库文件目录
+</code></pre>
+
+<p>在Header Search Paths里将头文件的目录添加进去(以下是我本机路径):</p>
+
+<pre><code>/usr/local/libevent-2.0.22/include //头文件的目录
+</code></pre>
+
+<p>在main.cpp添加简单定时器代码:</p>
+
+<pre><code>#include &lt;stdio.h&gt;
+#include &lt;iostream&gt;
+
+// libevent头文件
+#include &lt;event.h&gt;
+using namespace std;
+
+struct event evt;
+struct timeval tv;
+
+// 定时事件回调函数
+void time_cb(int sock, short event, void *arg)
+{
+    printf("timer wakeup\n");
+    //重新添加定时事件（定时事件触发后默认自动删除）
+    event_add((struct event*)arg, &amp;tv);
+}
+
+int main()
+{
+    //初始化
+    struct event_base *base = event_init();
+
+    tv.tv_sec = 1; //1s period
+    tv.tv_usec = 0;
+
+    //设置定时事件
+    evtimer_set(&amp;evt,time_cb, &amp;evt);
+
+    // 添加定时事件
+    event_add(&amp;evt, &amp;tv);
+
+    //事件循环
+    event_base_dispatch(base);
+
+    return 0;
+}
+</code></pre>
+
+<h1>参见</h1>
+
+<ul>
+<li><a href="http://libevent.org/">http://libevent.org/</a></li>
+<li>libevent源码深度剖析.pdf</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[cocos2d - 纹理的选择 ]]></title>
+    <link href="http://sbxfc.github.io/blog/2015/12/04/cocos2d-texture/"/>
+    <updated>2015-12-04T12:15:05+08:00</updated>
+    <id>http://sbxfc.github.io/blog/2015/12/04/cocos2d-texture</id>
+    <content type="html"><![CDATA[<p>普通的2D纹理就是一张图片,在cocos2d里,纹理的使用主要分为两步:</p>
+
+<ul>
+<li>一,从本地加载纹理图片,并将纹理数据读取到内存。</li>
+<li>二,将内存里的纹理数据以copy的形式上传到GPU内存。</li>
+</ul>
+
+
+<p><font color='#bd260d'><strong>前者主要涉及到的问题是图片尺寸以及加载后的内存占用。</strong></font>例如,我们要从本地加载了一张1024*1024的png图片(假设是RGBA8888格式),其大小约为1024*1024*4 = 4MB。这意味着,如果这张图片打包进安装包就会使整个程序增加4MB,如果在运行时加载到游戏里就相当于多了至少4MB内存。</p>
+
+<p>对于一个有责任心(小肚鸡肠)的开发者来说,程序无缘无故增加了4MB内存,无疑是令人耿耿于怀的。能不能把尺寸或者运行时内存减少一点呢?答案是可以的。</p>
+
+<p>要解决纹理的内存问题,首先,我们应当了解一下纹理图片为何会占了这么多内存。对于,我们常见的图片,无论是png还是jpg图片,他们都是非压缩纹理。非压缩纹理的意思是,这些图片的RGBA四个通道的像素数据在文件里都是按照一定顺序规则排列的。类似于RGBA,RGBA,&hellip;.,RGBA这样的排列,不同的非压缩格式图片的区别在于,有一些只使用了rgb三个通道值,有一些使用的通道精度是小于2<sup>8</sup>。</p>
+
+<p>cocos2d支持十余种格式的非压缩纹理,上面提到的RGBA8888就是其中一种,也是最常见的一种(一般来说,没有特殊设置图片的像素格式就是RGBA8888)。并且图片的扩展名和它的像素格式没什么直接关系,一个png图片其像素格式可能是RGBA8888、RGBA4444也或者是其他格式。</p>
+
+<p>说到这里,那么RGBA8888纹理有什么特别的地方呢？首先,该纹理格式上的每个像素点包括了R、G、B以及Alpha四个通道值,并且每个通道值是精度2<sup>8</sup>,图片数据是以二进制存储的,我们知道2<sup>8</sup>的bit值等于1byte,所以RGBA8888格式的纹理每个像素通道大小是1byte,所以该格式的纹理每个像素大小就是4*1byte = 4byte。</p>
+
+<p>以此推之,RGBA4444像素格式就是通道精度为 2<sup>4</sup>,包含RGBA四个通道的纹理。其大小为4*0.5byte = 2byte。由此可见,RGBA4444纹理的大小是RGBA8888的一半。也就是说,如果我们有张RGBA8888的纹理图片,如果能把它转化为RGBA4444,其尺寸立刻就减小了二分之一。多么诱人,但是我们也注意到RGBA4444相较于RGBA8888,其精度只有2<sup>4</sup>=16。这种精度的损失对一些颜色渐变的纹理来说,影响比较明显。但是无论精度区间是[0,16]还是[0,256],这些像素都会被映射到OpenGL支持的[0,1]这个颜色区间。</p>
+
+<p>所以,我们应当根据实际情况选取合适的像素格式来减少图片尺寸和运行时的内存。<font color='#bd260d'><strong>通常来说,对于非压缩纹理 rgb565 和 rgba5551(RGB5A1) 的效果和内存占用相对会好一些。</strong></font></p>
+
+<p>cocos2d支持的非压缩纹理像素格式:</p>
 
 <pre><code>    enum class PixelFormat
     {
@@ -72,11 +613,13 @@
 
 <h1>加载时的设置</h1>
 
-<p>不同的像素格式,在加载时也需要注意格式问题。</p>
+<p><font color='#bd260d'><strong>不同的非压缩纹理时,在加载时需要注意格式问题。</strong></font></p>
 
 <p>cocos2d对纹理的默认处理方式是PixelFormat::NONE,这个设置在游戏运行时会被转化为默认值为&#8221;RGBA8888&#8221;。但是,如果要加载的纹理图片的格式RGBA4444,这时引擎就会通过转换函数将RGBA4444转为RGBA8888。</p>
 
-<p>这种转换不是我们想要的,我们想直接将RGBA4444这种格式的纹理数据放到GPU上绘制,因为RGBA4444是OpenGL可以直接读取并渲染的格式,我们不需要将其转化为RGBA8888,转换不但会增加内存(rgba4444->rgba888内存增加一倍)还会耗费一定的CPU。</p>
+<p>这种转换不是我们想要的,我们想直接加载并绘制RGBA4444这种格式的纹理图片。因为RGBA4444是OpenGL可以直接读取并渲染的格式,我们不需要再将其转化为其他格式。(转换不但会耗费一定的CPU,也会增加运行时内存(rgba4444->rgba888内存增加一倍))</p>
+
+<p>所以,在加载时如果遇到非RGBA8888的情况,需要进行代码声明:</p>
 
 <pre><code>//在这里,我们高呼,我们加载的格式是RGBA5551,不用帮我们转换
 [Texture2D setDefaultAlphaPixelFormat:kTexture2DPixelFormat_RGB5A1];
@@ -89,7 +632,7 @@ Sprite *s2 = [Sprite spriteWithFile:@"rgba8888.png"];
 [self addChild:s2];
 </code></pre>
 
-<p>主要注意的是,在Sprite里,除了initWithTexture以外,其他全部创建方法会将纹理自动加载到内存并向GPU内存上传纹理数据。所以,实际开发中如果图像资源中同时包含多种格式,一定要小心处理。</p>
+<p>需要注意的是,在Sprite里,除了initWithTexture以外,其他全部创建方法会将纹理自动加载到内存并向GPU内存上传纹理数据。所以,实际开发中如果图像资源中同时包含多种纹理格式,一定要小心处理。</p>
 
 <p>OpenGL通过glTexImage2D上传非压缩纹理,虽然GPU拥有高效的图像处理速度,但是从本地内存向显卡内存传递图片数据仍然是CPU和GPU共同处理的过程,资源的绘制效率也会受资源数据的大小限制(传输中的宽带问题,数据越大传输时间越长),所以预先上传纹理数据会对纹理的绘制效率有很大的提高,可以参见Texture2DCache对纹理缓存的管理。</p>
 
@@ -113,7 +656,7 @@ Sprite *s2 = [Sprite spriteWithFile:@"rgba8888.png"];
 
 <h1>压缩纹理</h1>
 
-<p>除了非压缩纹理外,Cocos也支持压缩纹理,压缩纹理是通过一些优化算法将像素数据进行压缩,这些压缩纹理可以在相应的GPU直接解析(比如PVR格式的文件就可以直接 PowerVR图形芯片 解析)。</p>
+<p>除了非压缩纹理外,cocos2d也支持压缩纹理,压缩纹理是通过一些优化算法将像素数据进行压缩,这些压缩纹理可以在相应的GPU直接解析(比如PVR格式的文件就可以直接 PowerVR图形芯片 解析)。</p>
 
 <p>在OpenGL里,压缩纹理通过 glCompressedTexImage2D 接口将纹理数据从本地上传到GPU内存:</p>
 
@@ -159,26 +702,26 @@ Sprite *s2 = [Sprite spriteWithFile:@"rgba8888.png"];
 <h1>纹理选择</h1>
 
 <ul>
-<li><p>在 iOS 设备上最好使用PVR格式的压缩格式,因为iOS设备采用的是 PowerVR 图形芯片,PVR格式图片在PowerVR图形芯片中效率极高，占用显存也小。<a href="http://blog.chukong-inc.com/index.php/2013/02/04/%E5%A6%82%E4%BD%95%E4%BC%98%E5%8C%96cocos2d-x%E6%B8%B8%E6%88%8F%E7%9A%84%E5%86%85%E5%AD%98/">其中PVRTC4格式的PVR有损压缩包pvr.ccz,尺寸是原来的1/8</a></p></li>
-<li><p>在 Android 设备上使用双层 ETC1 的压缩纹理(极少数的GPU对ETC格式支持有问题。)。</p></li>
+<li><p><font color='#bd260d'><strong>在 iOS 设备上最好使用PVR格式的压缩格式</strong></font>,因为iOS设备采用的是 PowerVR 图形芯片,PVR格式图片在PowerVR图形芯片中效率极高，占用显存也小。<a href="http://blog.chukong-inc.com/index.php/2013/02/04/%E5%A6%82%E4%BD%95%E4%BC%98%E5%8C%96cocos2d-x%E6%B8%B8%E6%88%8F%E7%9A%84%E5%86%85%E5%AD%98/">其中PVRTC4格式的PVR有损压缩包pvr.ccz,尺寸是原来的1/8</a></p></li>
+<li><p><font color='#bd260d'><strong>在 Android 设备上使用双层 ETC1 的压缩纹理</strong></font>(极少数的GPU对ETC格式支持有问题。)。</p></li>
 </ul>
 
 
 <h1>TexturePacker</h1>
 
-<p>TexturePacker是一款很多的纹理压缩工具,上述的纹理格式都可以通过TexturePacker工具导出,下图是以导出一个PVRTC4格式的pvr.ccz文件的截图:</p>
+<p>TexturePacker是一款很出众的纹理压缩工具,上述的纹理格式都可以通过TexturePacker工具导出,下图是以导出一个PVRTC4格式的pvr.ccz文件的截图:</p>
 
 <p><img src="http://sbxfc.github.io/images/2015/12/texture_packer.png" alt="" /></p>
 
 <h1>参见</h1>
 
 <ul>
+<li><a href="http://blog.chukong-inc.com/index.php/2013/02/04/%E5%A6%82%E4%BD%95%E4%BC%98%E5%8C%96cocos2d-x%E6%B8%B8%E6%88%8F%E7%9A%84%E5%86%85%E5%AD%98/">如何优化Cocos2d-X游戏的内存</a></li>
+<li><a href="http://blog.csdn.net/kaitiren/article/details/8054856">pvr与png的内存占用</a></li>
+<li><a href="http://pngmini.com/">ImageAlpha Mac</a></li>
 <li><a href="https://www.khronos.org/opengles/sdk/docs/man/xhtml/glTexImage2D.xml">https://www.khronos.org/opengles/sdk/docs/man/xhtml/glTexImage2D.xml</a></li>
 <li><a href="http://www.learn-cocos2d.com/2011/11/depth-ios-cocos2d-performance-analysis-test-project/#image-formats">http://www.learn-cocos2d.com/2011/11/depth-ios-cocos2d-performance-analysis-test-project/#image-formats</a></li>
 <li><a href="http://matrixcn.tumblr.com/post/75239316805/%E6%89%B9%E9%87%8F%E8%BD%AC%E6%8D%A2png%E5%9B%BE%E7%89%87%E5%88%B0rgba4444">http://matrixcn.tumblr.com/post/75239316805/%E6%89%B9%E9%87%8F%E8%BD%AC%E6%8D%A2png%E5%9B%BE%E7%89%87%E5%88%B0rgba4444</a></li>
-<li><a href="http://blog.chukong-inc.com/index.php/2013/02/04/%E5%A6%82%E4%BD%95%E4%BC%98%E5%8C%96cocos2d-x%E6%B8%B8%E6%88%8F%E7%9A%84%E5%86%85%E5%AD%98/">如何优化Cocos2d-X游戏的内存</a></li>
-<li><a href="http://pngmini.com/">ImageAlpha Mac</a></li>
-<li><a href="http://blog.csdn.net/kaitiren/article/details/8054856">pvr与png的内存占用</a></li>
 </ul>
 
 ]]></content>
@@ -196,14 +739,14 @@ Sprite *s2 = [Sprite spriteWithFile:@"rgba8888.png"];
 <p>当我们为实例对象的一个属性赋值时实际上并不是对Prototype里的属性进行修改,而是在实例上设置一个新属性。当程序访问该实例上的属性时,编译器会首先搜索实例自身的属性(即新添加的属性),如果没找到才会去搜索其继承的Prototype上的值:</p>
 
 <pre><code>function Person{}
-Person.prototype.name = "ss";
+Person.prototype.name = "sbxfc";
 
 var p = new Person();
 //p身上没有name属性,转而去Person身上找
 console.log(p.name);
 
 //该name属性非Person上的name属性
-p.name = "p";
+p.name = "ss";
 console.log(p.name);
 </code></pre>
 
@@ -218,13 +761,15 @@ console.log(p.name);
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Cocos - Scheduler]]></title>
+    <title type="html"><![CDATA[cocos2d - scheduler(调度器)]]></title>
     <link href="http://sbxfc.github.io/blog/2015/12/01/cocos-scheduler/"/>
     <updated>2015-12-01T12:12:18+08:00</updated>
     <id>http://sbxfc.github.io/blog/2015/12/01/cocos-scheduler</id>
-    <content type="html"><![CDATA[<p>在cocos程序里,场景的每帧刷新是由一个与屏幕刷新频率相同的定时器来驱动的。在iOS环境里,这个定时器称为CADisplayLink。</p>
+    <content type="html"><![CDATA[<p>在cocos2d里,场景的每帧刷新是由一个与屏幕帧频相等的定时器来驱动绘制的,在iOS环境里,这个定时器是CADisplayLink</p>
 
-<p>每当屏幕当前帧刷新结束时,主线程里维持程序生命周期的NSRunLoop就会向CADisplayLink发送通知。接着,CADisplayLink会触发一个名为doCaller的回调函数,在该回调函数里会进行一系列的每帧刷新操作,除了执行由系统控制的场景刷新部分以外,Cocos还构造了一个名为Scheduler(调度器)的东西,让开发者可以参与并自定义与每帧刷新息息相关的操作</p>
+<p>每当屏幕上一帧刷新结束时,主线程里维持程序生命周期的NSRunLoop就会向CADisplayLink发送通知。接着,CADisplayLink会触发一个名为doCaller的回调函数,在该回调函数里cocos2d引擎进行了一系列的帧刷新操作。</p>
+
+<p>在这个过程里,除了执行基本的场景刷新以外,cocos2d还定义了一个名为scheduler(调度器)的定时器,让开发者可以参与管理与每帧刷新息息相关的操作</p>
 
 <pre><code>//在Cocos引擎里,当Director初始化时会启动该CADisplayLink定时器
 //doCaller函数会执行每帧的刷新操作
@@ -240,16 +785,16 @@ console.log(p.name);
 }
 </code></pre>
 
-<p>Scheduler里的回调函数先于场景刷新函数被执行,这意味着,如果我们在scheduler回调函数里做一些UI刷新操作,这些操作会在下一帧被及时更新:</p>
+<p><font color='#bd260d'><strong>scheduler的回调函数优先于场景刷新函数被执行,这意味着,如果我们在scheduler回调函数里做一些UI刷新操作,这些操作会在下一帧被及时更新。</strong></font></p>
 
-<pre><code>_scheduler-&gt;update(_deltaTime);
+<pre><code>_scheduler-&gt;update(_deltaTime);   //调用scheduler
 ...
-_runningScene-&gt;render(_renderer);//render the scene
+_runningScene-&gt;render(_renderer);//渲染场景
 </code></pre>
 
-<h1>基础用法</h1>
+<h1>基本用法</h1>
 
-<p>任何Node以Node为基类的对象都可以直接调用scheduleUpdate方法,然后通过重载update函数来执行回调操作:</p>
+<p>任何Node对象以Node的子类都可以直接调用scheduleUpdate方法,然后通过重载update函数来执行回调操作:</p>
 
 <pre><code>this-&gt;scheduleUpdate();
 
@@ -257,11 +802,11 @@ _runningScene-&gt;render(_renderer);//render the scene
 void update(float dt) override;
 //*.cpp
 void HelloWorld::update(float delta){
-    printf("--update--\n");
+    //Do something!
 }
 </code></pre>
 
-<h1>自定义调度器</h1>
+<h1>自定义scheduler</h1>
 
 <p>除基础用法以外,还可以通过指定执行频率和回调函数来创建自定义调度器:</p>
 
@@ -270,32 +815,29 @@ void HelloWorld::update(float delta){
 //*.h
 void updateCustom(float dt);
 //*.cpp
-void HelloWorld::updateCustom(float dt)
-{
-    printf("--Custom--\n");
+void HelloWorld::updateCustom(float dt){
+    //Do something!
 }
 </code></pre>
 
-<p>自定义的Scheduler在回调时需要使用一个Timer来计时,会花费更多的内存和计算时间。并且由于其内部实现机制，其间隔时间至少大于0.1秒,这种scheduler更适合作为定时器来使用。</p>
+<p>自定义的scheduler在回调时使用一个Timer来计时,所以会花费更多的内存和计算时间,而且由于其内部实现机制,其间隔时间至少大于0.1秒。这种scheduler更适合作为定时器来使用。</p>
 
-<h1>调度器优先级</h1>
+<h1>优先级</h1>
 
-<p>我们可以为调度器指定优先级，来处理回调方法执行的先后顺序逻辑。</p>
+<p>我们还可以为调度器指定优先级，来处理回调方法执行的先后顺序逻辑。</p>
 
-<pre><code>void Node::scheduleUpdate()
-{
+<pre><code>void Node::scheduleUpdate(){
     scheduleUpdateWithPriority(0);
 }
 
-void Node::scheduleUpdateWithPriority(int priority)
-{
+void Node::scheduleUpdateWithPriority(int priority){
     _scheduler-&gt;scheduleUpdate(this, priority, !_running);
 }
 </code></pre>
 
 <h1>移除</h1>
 
-<p>Scheduler会随Node对象移除而停止,你也可以显示地调用移除函数</p>
+<p>Scheduler会随Node对象移除而停止,当然你也可以显示地执行移除函数</p>
 
 <pre><code>node-&gt;unschedulerUpdate();
 node-&gt;unschedule(SEL_SCHEDULE selector, float delay);
@@ -311,7 +853,7 @@ node-&gt;unschedule(SEL_SCHEDULE selector, float delay);
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Cocos - Spine骨骼动画]]></title>
+    <title type="html"><![CDATA[cocos2d - Spine骨骼动画]]></title>
     <link href="http://sbxfc.github.io/blog/2015/11/25/cocos-spine/"/>
     <updated>2015-11-25T14:14:58+08:00</updated>
     <id>http://sbxfc.github.io/blog/2015/11/25/cocos-spine</id>
@@ -358,7 +900,7 @@ addChild(skeletonNode);
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[在Xcode上运行Cocos2dx-JS项目]]></title>
+    <title type="html"><![CDATA[在Xcode上运行Cocos2d-JS工程]]></title>
     <link href="http://sbxfc.github.io/blog/2015/11/23/run-cocos2d-js-on-xcode/"/>
     <updated>2015-11-23T17:21:14+08:00</updated>
     <id>http://sbxfc.github.io/blog/2015/11/23/run-cocos2d-js-on-xcode</id>
@@ -382,13 +924,13 @@ addChild(skeletonNode);
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Cocos - 使用自动批绘制]]></title>
+    <title type="html"><![CDATA[cocos2d - 批次绘制]]></title>
     <link href="http://sbxfc.github.io/blog/2015/11/19/cocos-auto-batching/"/>
     <updated>2015-11-19T16:52:57+08:00</updated>
     <id>http://sbxfc.github.io/blog/2015/11/19/cocos-auto-batching</id>
     <content type="html"><![CDATA[<h1>自动批绘制</h1>
 
-<p>在3.0版本以后,Cocos2d-x里的图形渲染实现了自动批绘制(Auto-batching)的优化。引擎的渲染部分对相同材质的连续渲染指令(QuadCommand)进行过滤,如果当前的渲染对象的材质和上一次渲染的材质一样,就不渲染了,保存一下所需的信息,继续遍历下一个,直到发现当前材质和上一个材质不一样，才重新开始渲染。</p>
+<p>从3.0版本以后,cocos2d的图形渲染模块实现了自动批绘制(Auto-batching)的优化。引擎的渲染部分对相同材质的连续渲染指令(QuadCommand)进行过滤,如果当前的渲染对象的材质和上一次渲染的材质一样,就不渲染了,保存一下所需的信息,继续遍历下一个,直到发现当前材质和上一个材质不一样，才重新开始渲染。</p>
 
 <p>这样一来,渲染指令里相邻的且材质ID相同的多个draw call就能减少为一个,过程如下图:</p>
 
@@ -503,11 +1045,11 @@ batch-&gt;addChild(sprite2, 0, kTagSprite2);
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Cocos - 屏幕适配]]></title>
+    <title type="html"><![CDATA[cocos2d - 屏幕适配]]></title>
     <link href="http://sbxfc.github.io/blog/2015/11/09/cocos-resolution/"/>
     <updated>2015-11-09T17:50:41+08:00</updated>
     <id>http://sbxfc.github.io/blog/2015/11/09/cocos-resolution</id>
-    <content type="html"><![CDATA[<p>现在,几乎人手都有一台移动设备。无论是手机还是iPad,这些设备的尺寸千差万别。因此,想开要发一款能在不同设备上友好显示的游戏,就要综合这些设备的特点,设计合理的适配方案。</p>
+    <content type="html"><![CDATA[<p>现在,几乎每人都有一台移动设备。无论是手机还是iPad,这些设备的尺寸千差万别。因此,想开要发一款能在不同屏幕上友好显示的游戏,就要综合这些设备的特点,设计合理的适配方案。</p>
 
 <p>从2.0.4开始,Cocos2d-x就提出了自己的多分辨率适配方案,经过这几年的发展已趋于成熟。对于开发者来说,如果能掌握这些技巧,就能够很好地解决适配问题。</p>
 
@@ -515,25 +1057,25 @@ batch-&gt;addChild(sprite2, 0, kTagSprite2);
 
 <p>在Cocos里,官方把适配方案分为了两步,第一步是资源到设计尺寸的适配。</p>
 
-<p>因为设备是多种多样的,当我们在开发游戏时并不会假定界面是基于某台设备来设计界面。通常,我们会选择一个较为通用的尺寸来设计界面(比如1027*768),这个尺寸就是设计尺寸。</p>
+<p>因为设备尺寸是参差不齐的,当我们在开发游戏时并不会假定界面是基于某台设备来设计的。通常,我们会选择一个较为通用的尺寸来进行界面布局(比如1027*768),这时选取的这个尺寸称为设计尺寸。</p>
 
-<p>从资源到设计尺寸的映射,其实就是图片到设计尺寸的映射。例如,我们为iPhone3G和iPhone 4设计一款游戏。iPhone 3G的分辨率是320*480,而iPhone 4的分辨率是640*960。尽管这两种设备分辨率不同,但是尺寸一样大。所以,这两种设备可以使用同一个设计尺寸,只需要将iPhone4的图片资源换成高清图即可。</p>
+<p>而从资源到设计尺寸的映射,其实就是图片到设计尺寸的映射。例如,我们为iPhone3G和iPhone 4设计一款游戏。iPhone 3G的分辨率是320*480,而iPhone 4的分辨率是640*960。尽管这两种设备分辨率不同,但是屏幕尺寸一样大。在这样的情况下,我们使用同样的设计尺寸,只不过将iPhone4的图片资源换成2倍的即可。</p>
 
-<p>通过Cocos的setContentScaleFactor接口可以设置所有资源的缩放因子:</p>
+<p>通过 cocos2d 的setContentScaleFactor函数可以设置所有加载资源的缩放因子:</p>
 
 <pre><code>director-&gt;setContentScaleFactor(2);
 </code></pre>
 
 <p>设置完之后,一张640*960的背景图在一个sprite显示时,高宽变为为320*480,而分辨率变为了原本的4倍。这样一来,iPhone 3G和iPhone 4的屏幕适配做好了。</p>
 
-<p>当然,因为改变了缩放因子,这两种设备设置加载的资源就不同,为了方便管理,我们为其设置了不同的资源目录:</p>
+<p>当然,因为改变了缩放因子,这两种设备设置加载的资源就不同,为了方便管理,我们会为它们设置不同的资源目录:</p>
 
 <pre><code>/Resource
     /iphone
     /iphonehd
 </code></pre>
 
-<p>同时,根据具体设备为其指定Resource下的默认资源路径:</p>
+<p>并根据具体设备指定Resource下的默认资源路径:</p>
 
 <pre><code>vector&lt;string&gt; searchPath;
 if (iPadHD){    
@@ -541,6 +1083,7 @@ if (iPadHD){
 }else if(iPhone){
     searchPath.push_back("iphone");
 }
+//如果这两个目录下没有所需的资源,加载common目录资源
 searchPath.push_back("common");
 FileUtils::getInstance()-&gt;setSearchPaths(searchPath);
 </code></pre>
@@ -652,7 +1195,7 @@ glm::mat4 camera(float Translate, glm::vec2 const &amp; Rotate)
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[CocosJS 初探]]></title>
+    <title type="html"><![CDATA[cocos2d-JS 初探]]></title>
     <link href="http://sbxfc.github.io/blog/2015/10/09/ccjs-start/"/>
     <updated>2015-10-09T18:21:41+08:00</updated>
     <id>http://sbxfc.github.io/blog/2015/10/09/ccjs-start</id>
@@ -708,15 +1251,6 @@ cc.eventManager.dispatchEvent(event);
 <li><a href="http://www.cocos.com/doc/article/index?type=cocos2d-x&amp;url=/doc/cocos-docs-master/manual/framework/html5/v3/eventManager/zh.md">http://www.cocos.com/doc/article/index?type=cocos2d-x&amp;url=/doc/cocos-docs-master/manual/framework/html5/v3/eventManager/zh.md</a></li>
 </ul>
 
-
-<h1>调度器(schedule)</h1>
-
-<p>调度器是通过Note的每帧刷新方法update来计算时间的,但是帧可能会阻塞,所以时间并不准确,但对于一些界面刷新是非常有用的。</p>
-
-<pre><code>note.schedule(func,1,cc.REPEAT_FOREVER);
-</code></pre>
-
-<h1>好记性不如烂笔头,待续&hellip;</h1>
 ]]></content>
   </entry>
   
@@ -735,7 +1269,7 @@ cc.eventManager.dispatchEvent(event);
 <pre><code>windows = { UIWindow,UITextEffectWindow,UIRemoteKeyboardWindow }
 </code></pre>
 
-<p>获取一个键盘窗口代码(swift):</p>
+<p>获取一个键盘窗口(swift):</p>
 
 <pre><code>internal var keyboardWindow: UIWindow? {
     let windows = UIApplication.sharedApplication().windows
@@ -1648,374 +2182,6 @@ if(0 != err) //检查Socket初始化是否成功
 <p>sockimp.pdf:<br><a href="http://www.openss7.org/papers/strsock/sockimp.pdf">http://www.openss7.org/papers/strsock/sockimp.pdf</a></p>
 
 <p>windows/linux socket接口的异同:<br><a href="http://blog.chinaunix.net/uid-28323465-id-3876368.html">http://blog.chinaunix.net/uid-28323465-id-3876368.html</a></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[iOS - Run Loop]]></title>
-    <link href="http://sbxfc.github.io/blog/2015/05/08/ios-run-loops/"/>
-    <updated>2015-05-08T14:14:25+08:00</updated>
-    <id>http://sbxfc.github.io/blog/2015/05/08/ios-run-loops</id>
-    <content type="html"><![CDATA[<h1>什么是RunLoop</h1>
-
-<p>RunLoop是iOS里线程的一部分,任何线程,包括主线程都包含了一个Run Loop对象。RunLoop的作用相当于在线程上维持一个类似while的死循环,使线程在任何时刻都处于待命状态,并且在不执行任务时 RunLoop 会让线程进入睡眠状态(不占用CPU资源)。</p>
-
-<p>主线程上的RunLoop在App运行时由系统自动启动,子线程里的RunLoop需要手动运行。运行时,RunLoop在需要监听Time Source或者Input Source类型的至少一种事件源,如果RunLoop没有绑定事件源,在运行后会立即退出。当事件源没有触发时,RunLoop会让线程进入睡眠状态,当事件源发生时RunLoop会唤醒线程来处理事件。</p>
-
-<h1>运行RunLoop</h1>
-
-<p>1）RunLoop 在 Foundation 层和 Core Foundation 层都有对应的接口。</p>
-
-<p>Foundation层:</p>
-
-<pre><code>//运行 RunLoop 在NSDefaultRunLoopMode模式下
-- (void)run;
-//运行 RunLoop 在指定模式下,直到指定的时间结束
-- runMode:beforeDate:
-//运行 RunLoop 在NSDefaultRunLoopMode模式下,直到指定的时间结束
-- runUntilDate:
-- acceptInputForMode:beforeDate:
-</code></pre>
-
-<p>Core Foundation层:</p>
-
-<pre><code>//运行 CFRunLoopRef
-void CFRunLoopRun();
-//运行 CFRunLoopRef: 参数为运行模式、时间和是否在处理Input Source后退出标志，返回值是exit原因
-SInt32 CFRunLoopRunInMode (mode, seconds, returnAfterSourceHandled);
-//停止运行 CFRunLoopRef
-void CFRunLoopStop( CFRunLoopRef rl );
-//唤醒 CFRunLoopRef
-void CFRunLoopWakeUp ( CFRunLoopRef rl );
-</code></pre>
-
-<p>2）RunLoop的退出方式:</p>
-
-<ul>
-<li><p>以超时配置RunLoop启动,RunLoop会在指定的时间自动退出。</p></li>
-<li><p>显式的停止RunLoop（调用CFRunLoopStop函数）</p></li>
-<li><p><a href="https://developer.apple.com/library/prerelease/mac/documentation/Cocoa/Reference/Foundation/Classes/NSRunLoop_Class/">https://developer.apple.com/library/prerelease/mac/documentation/Cocoa/Reference/Foundation/Classes/NSRunLoop_Class/</a></p></li>
-<li><a href="https://developer.apple.com/library/mac/documentation/CoreFoundation/Reference/CFRunLoopRef/">https://developer.apple.com/library/mac/documentation/CoreFoundation/Reference/CFRunLoopRef/</a></li>
-</ul>
-
-
-<h1>运行模式</h1>
-
-<p>RunLoop运行时只能以一种固定的模式运行,只会监控这个Mode下添加的Time Source和Input Source。如果这个模式下没有添加事件源,RunLoop会立刻退出。大多数时候，Run Loop都是运行在系统定义的默认模式上。</p>
-
-<p>1）NSDefaultRunLoopMode : 大多数工作默认的运行模式</p>
-
-<p>2) UITrackingRunLoopMode : 用于跟踪触摸事件触发的模式（比如UITableView上下滑动）, 主线程中当触摸事件发生时会设置为这个模式。</p>
-
-<p>3) GSEventReceiveRunLoopMode : 用来接受系统事件,内部的Run Loop模式。</p>
-
-<p>4）NSConnectionReplyMode : 使用这个Mode去监听NSConnection对象的状态，我们很少需要自己使用这个Mode。</p>
-
-<p>5）NSModalPanelRunLoopMode : 使用这个Mode在Model Panel情况下去区分事件(OS X开发中会遇到)。</p>
-
-<p>6) NSRunLoopCommonModes : 是一组常用的模式集合，将一个input source关联到这个模式集合上，等于将input source关联到这个模式集合中的所有模式上。在iOS系统中NSRunLoopCommonMode包含NSDefaultRunLoopMode、NSTaskDeathCheckMode、UITrackingRunLoopMode，我有个timer要关联到这些模式上，一个个注册很麻烦，我可以用</p>
-
-<pre><code>CFRunLoopAddCommonMode([[NSRunLoop currentRunLoop] getCFRunLoop],(__bridge CFStringRef) NSEventTrackingRunLoopMode)
-</code></pre>
-
-<p>将NSEventTrackingRunLoopMode或者其他模式添加到这个NSRunLoopCommonModes模式中，然后只需要将Timer关联到NSRunLoopCommonModes，即可以实现Run Loop运行在这个模式集合中任何一个模式时，这个Timer都可以被触发。默认情况下NSRunLoopCommonModes包含了NSDefaultRunLoopMode和UITrackingRunLoopMode。注意：让Run Loop运行在NSRunLoopCommonModes下是没有意义的，因为一个时刻Run Loop只能运行在一个特定模式下，而不可能是个模式集合。</p>
-
-<h1>事件源</h1>
-
-<p>归根结底，Run Loop就是个处理事件的Loop，可以添加Timer和其他Input Source等各种事件源，如果事件源没有发生时，Run Loop就可能让线程进入asleep状态，而事件源发生时就会唤醒休眠的(asleep)的子线程来处理事件。Run Loop的事件源事件源分两类：Timer Source和Input Source(包括-performSelector:*API调用簇，Port Input Source、自定义Input Source)。</p>
-
-<p>1）Timer Source类型的事件源,就是创建Timer添加到RunLoop中。在Cocoa里,使用NSTimer创建定时器加入Run Loop,在Core Foundation里使用CFRunLoopTimerRef类型,本质上NSTimer是CFRunLoopTimerRef的简单扩展。需要注意的是,使用scheduledTimerWithTimeInterval 创建的定时器会默认以NSDefaultRunLoopMode模式添加到Run Loop里。而使用timerWithTimeInterval或其他接口创建的Timer需要手动使用 -addTimer:forMode 添加到RunLoop中。如果事件源没有被添加到RunLoop中,则NSTimer不会监听到相应的事件。</p>
-
-<pre><code>NSTimer* timer = [NSTimer timerWithTimeInterval:1.0f target:self selector:@selector(doFireTimer:) userInfo:nil repeats:YES];
-[runLoop addTimer:timer forMode:NSDefaultRunLoopMode];
-</code></pre>
-
-<p>2) Input Source中的-performSelector:*API调用簇方法，有以下这些接口：</p>
-
-<pre><code>performSelectorOnMainThread:withObject:waitUntilDone:  
-performSelectorOnMainThread:withObject:waitUntilDone:modes:
-
-performSelector:onThread:withObject:waitUntilDone:  
-performSelector:onThread:withObject:waitUntilDone:modes:
-
-performSelector:withObject:afterDelay:  
-performSelector:withObject:afterDelay:inModes:
-
-cancelPreviousPerformRequestsWithTarget:  
-cancelPreviousPerformRequestsWithTarget:selector:object:
-</code></pre>
-
-<p>这些API最后两个是取消当前线程中调用，其他API是在主线程或者当前线程下的Run Loop中执行指定的@selector。</p>
-
-<p>3）Port Input Source</p>
-
-<p>Cocoa和Core Foundation提供了基于端口的对象用于线程或进程间的通信。</p>
-
-<p>如果要建立和<font color="#bd260d"><strong>NSMachPort</strong></font>对象的本地连接,你需要创建端口对象并加入主线程的Run Loop里。当运行次线程的时候,你传递端口对象到次线程的入口点。次线程通过端口对象将消息传入主线程。</p>
-
-<p>首先在主线程建立端口对象,并在次线程的启动时将端口对象传入:</p>
-
-<pre><code>//设置主线程port，子线程通过此端口发送消息给主线程
-NSPort *myPort = [NSMachPort port];
-if (myPort) {
-    myPort.delegate = self;
-    [[NSRunLoop currentRunLoop] addPort:myPort forMode:NSDefaultRunLoopMode];
-
-    //启动次线程,并传入端口信息
-    [NSThread detachNewThreadSelector:@selector(launchThreadWithPort:) toTarget:[MyWorkerClass class] withObject:myPort];
-}
-</code></pre>
-
-<p>PS:<font color="#bd260d"><strong>NSPortMessage</strong></font>
-是私有 API,官网示例中的线程通实例,客户端实现会有问题。线程间通信完全可以用<font color="#bd260d"><strong>GCD</strong></font>
-或<font color="#bd260d"><strong>performSelector</strong></font>函数等更简便的方式去实现:</p>
-
-<p><a href="http://stackoverflow.com/questions/12384210/is-nsportmessage-in-the-ios-api">http://stackoverflow.com/questions/12384210/is-nsportmessage-in-the-ios-api</a></p>
-
-<h1>观察者</h1>
-
-<p>为了方便理解,贴一下代码:</p>
-
-<ul>
-<li><a href="https://github.com/sbxfc/RunLoops/">https://github.com/sbxfc/RunLoops/</a></li>
-</ul>
-
-
-<p>Run Loop里有一组用于监听事件源的Observers,observers可以通过Core Foundation层的接口定义,并监听指定模式下的事件源触发。</p>
-
-<pre><code>CFRunLoopAddObserver(cfRunLoop, observer, kCFRunLoopDefaultMode);
-</code></pre>
-
-<p>程序里,大多数情况都是运行在 kCFRunLoopDefaultMode 模式下的,假如我们此时拖动示例中的TableView发现NSTimer事件源不再触发,并且收到RunLoop推出信号。因为此时,RunLoop</p>
-
-<p>加入我们监听主线程运行的RunLoop UITrackingRunLoopMode 模式下,而NSTimer默认是运行在 kCFRunLoopDefaultMode 模式下的。有一种解决方式是将Timer添加到forMode:NSRunLoopCommonModes模式下,这也就意味着timer要跟触摸事件同时分享主线程,为了使程序拖动时流畅,在一些很繁重的计算情况下不建议这样去做,因为这样在一定程序上妨碍了流畅度。</p>
-
-<pre><code>    [[NSRunLoop mainRunLoop] addTimer:timer forMode:NSRunLoopCommonModes];
-</code></pre>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[IF YOU LOVE SOMETHING,SET IT FREE]]></title>
-    <link href="http://sbxfc.github.io/blog/2015/04/17/ue4-begin/"/>
-    <updated>2015-04-17T18:06:30+08:00</updated>
-    <id>http://sbxfc.github.io/blog/2015/04/17/ue4-begin</id>
-    <content type="html"><![CDATA[<p><img src="http://sbxfc.github.io/images/2015/4/ue4-begin.jpg" alt="" /></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[C/C++ 类型转化]]></title>
-    <link href="http://sbxfc.github.io/blog/2015/04/16/cpp-convert/"/>
-    <updated>2015-04-16T20:05:03+08:00</updated>
-    <id>http://sbxfc.github.io/blog/2015/04/16/cpp-convert</id>
-    <content type="html"><![CDATA[<h1><font color='#bd260d'>const_cast</font></h1>
-
-<p>const_cast,移除对象的常量性,一般用于移除指针或引用的常量性,不适用于对象。const_cast去除常量性不是为了修改常量所指向的内容,而是为了使函数能接受实参</p>
-
-<p><strong>const_cast</strong>作用于指针,转化后的指针pval和常量val的地址相同。但是操作*pval不会影响常量val。<font color='#bd260d'><strong>*pval修改的是一个临时对象</strong></font></p>
-
-<pre><code>const int val = 17;
-int* pval = const_cast&lt;int*&gt;(&amp;val);
-*pval = 200;    
-std::cout &lt;&lt; "*pval="&lt;&lt;*pval&lt;&lt;std::endl;//*pval = 200
-std::cout &lt;&lt; "pval 地址="&lt;&lt;pval&lt;&lt;std::endl;    
-std::cout &lt;&lt; "&amp;val 地址="&lt;&lt;&amp;val&lt;&lt;std::endl;
-std::cout &lt;&lt; "val="&lt;&lt;val&lt;&lt;std::endl;//常量val值不变
-</code></pre>
-
-<p>const_cast作用于引用,转化后的引用refval并未指向常量val,而是指向一个临时对象。此时,修改引用refval不会对val造成影响</p>
-
-<pre><code>const int val = 17;
-int refval = const_cast&lt;int&amp;&gt;(val);
-refval = 100;
-std::cout &lt;&lt; "refval="&lt;&lt;refval&lt;&lt;std::endl;  //refval = 100
-std::cout &lt;&lt; "val="&lt;&lt;val&lt;&lt;std::endl;        //val = 17
-</code></pre>
-
-<p>const_cast不能用于对象</p>
-
-<pre><code>const int val = 17;
-int num = const_cast&lt;int&gt;(val);//错误,不能通过编译
-</code></pre>
-
-<!-- more -->
-
-
-<h1><font color='#bd260d'>static_cast</font></h1>
-
-<p>static_cast 运算符可用于将指向基类的指针转换为指向派生类的指针等操作。此类转换并非始终安全。</p>
-
-<p>通常使用static_cast转换数值数据类型，例如将枚举型转换为整型或将整型转换为浮点型，而且你能确定参与转换的数据类型。static_cast 转换安全性不如 dynamic_cast 转换，因为 static_cast 不执行运行时类型检查，而 dynamic_cast 执行该检查。 对不明确的指针的 dynamic_cast 将失败，而 static_cast 的返回结果看似没有问题，这是危险的。 尽管 dynamic_cast 转换更加安全，但是 dynamic_cast 只适用于指针或引用，而且运行时类型检查也是一项开销。</p>
-
-<pre><code>//转换数值数据类型
-int val = static_cast&lt;int&gt;(3.141592654);
-
-//将无类型指针转化为某一类型指针
-void* p = &amp;val;
-int* pval = static_cast&lt;int*&gt;(p);
-</code></pre>
-
-<h1><font color='#bd260d'>reinterpret_cast</font></h1>
-
-<p>“通常为操作数的位模式提供较低层的重新解释”也就是说将数据以二进制存在形式的重新解释。</p>
-
-<pre><code>int *ip;
-char *pc = reinterpret_cast&lt;char*&gt;(ip);
-// 需要记得pc所指向的真实对象是int型,并⾮字符串。
-// 如果将pc当作字符指针进⾏行操作,可能会造成运⾏行时错误
-// 如int len = strlen(pc);
-</code></pre>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[C/C++ 结构体]]></title>
-    <link href="http://sbxfc.github.io/blog/2015/04/14/cpp-struct/"/>
-    <updated>2015-04-14T17:35:22+08:00</updated>
-    <id>http://sbxfc.github.io/blog/2015/04/14/cpp-struct</id>
-    <content type="html"><![CDATA[<p>结构体的声明规则,struct为结构体关键字,tag为结构体标志,member-list为结构体成员列表,variable-list为此结构体声明的变量:</p>
-
-<pre><code>struct tag { 
-    member-list 
-} variable-list 
-</code></pre>
-
-<p>在一般情况下，tag、member-list、variable-list这3部分至少要出现2个。以下为示例：</p>
-
-<pre><code>//此声明声明了拥有3个成员的结构体，分别为整型的a，字符型的b和双精度的c
-//同时又声明了结构体变量s1
-//这个结构体并没有标明其标签
-struct 
-{
-    int a;
-    char b;
-    double c;
-} s1;
-
-//此声明声明了拥有3个成员的结构体，分别为整型的a，字符型的b和双精度的c
-//结构体的标签被命名为SIMPLE,没有声明变量
-struct SIMPLE
-{
-    int a;
-    char b;
-    double c;
-};
-//用SIMPLE标签的结构体，另外声明了变量t1、t2、t3
-struct SIMPLE t1, t2[20], *t3;
-
-//也可以用typedef创建新类型
-typedef struct
-{
-    int a;
-    char b;
-    double c; 
-} Simple2;
-//现在可以用Simple2作为类型声明新的结构体变量
-Simple2 u1, u2[20], *u3;
-</code></pre>
-
-<p>结构体的成员可以包含其他结构体，也可以包含指向自己结构体类型的指针，而通常这种指针的应用是为了实现一些更高级的数据结构如链表和树等。</p>
-
-<pre><code>//此结构体的声明包含了其他的结构体
-struct COMPLEX
-{
-    char string[100];
-    struct SIMPLE a;
-};
-
-//此结构体的声明包含了指向自己类型的指针
-struct NODE
-{
-    char string[100];
-    struct NODE *next_node;
-};
-</code></pre>
-
-<p>如果两个结构体互相包含，则需要对其中一个结构体进行不完整声明，如下所示：</p>
-
-<pre><code>struct B;    //对结构体B进行不完整声明
-
-//结构体A中包含指向结构体B的指针
-struct A
-{
-    struct B *partner;
-    //other members;
-};
-
-//结构体B中包含指向结构体A的指针，在A声明完后，B也随之进行声明
-struct B
-{
-    struct A *partner;
-    //other members;
-};
-</code></pre>
-
-<h1>结构体成员访问</h1>
-
-<p>结构体成员依据结构体变量类型的不同，一般有2种访问方式，一种为直接访问，一种为间接访问。直接访问应用于普通的结构体变量，间接访问应用于指向结构体变量的指针。直接访问使用结构体变量名.成员名，间接访问使用(*结构体指针名).成员名或者使用结构体指针名->成员名。相同的成员名称依靠不同的变量前缀区分。</p>
-
-<pre><code>    struct SIMPLE
-    {
-        int a;
-        char b;
-    };
-
-    //声明结构体变量s1和指向结构体变量的指针s2
-    struct SIMPLE s1, *s2;
-
-    //给变量s1和s2的成员赋值,注意s1.a和s2-&gt;a并不是同一成员
-    s1.a = 5;
-    s1.b = 6;
-    s2-&gt;a = 3;
-    s2-&gt;b = 4;
-</code></pre>
-
-<h1>结构体变量存储</h1>
-
-<p>在内存里,编译器根据成员变量在结构体里的排列顺序为其分配内存。第一个成员变量的内存地址相对结构体内存地址的偏移量为0,若单个成员变量所占内存小于对齐参数时,会空出额外内存单元。</p>
-
-<p>在下图中,第一个成员变量a占一个内存单元（1字节）,由于最小对齐参数为8,a后面有7个内存单元被空出:</p>
-
-<p><img src="http://sbxfc.github.io/images/2015/4/struct.png" alt="" /></p>
-
-<p>在结构体里,对齐数取结构体里最大的内存变量和预设对齐数之间的最小值,结构体的总大小为最大对齐数的整数倍。</p>
-
-<p>使用关键字sizeof可以获取结构体所占内存,使用offsetof宏可以查看结构体的某个特定成员在结构体的位置:</p>
-
-<pre><code>struct SIMPLE
-{
-    char a;
-    double b;
-};
-
-//获得SIMPLE类型结构体所占内存大小
-int size_simple = sizeof( struct SIMPLE );
-
-//获得成员b相对于SIMPLE储存地址的偏移量
-int offset_b = offsetof( struct SIMPLE, b );
-</code></pre>
-
-<p>使用代码修改结构体的预设对齐数:</p>
-
-<pre><code>#pragma pack(8)
-struct SIMPLE
-{
-    int a;
-    char b;
-};
-#pragma pack()
-</code></pre>
-
-<hr />
-
-<p><font color='#bd260d'><em>VS可以在设置里修改预设对齐数,Xcode不能,而且Xcode下使用宏修改预设对齐数无效。<br>ps. Xcode里的可以按照预设对齐数为1来计算<br>难道是由于编译器用的是apple家的LLVM 6.0的关系？ 0.0</em></font></p>
-
-<hr />
-
-<h1>参见</h1>
-
-<p>结构体 (C语言):<br><a href="http://zh.wikipedia.org/zh-cn/%E7%BB%93%E6%9E%84%E4%BD%93_(C%E8%AF%AD%E8%A8%80)">http://zh.wikipedia.org/zh-cn/%E7%BB%93%E6%9E%84%E4%BD%93_(C%E8%AF%AD%E8%A8%80)</a></p>
 ]]></content>
   </entry>
   

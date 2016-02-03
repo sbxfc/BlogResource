@@ -14,7 +14,7 @@ categories:
 	
 	windows = { UIWindow,UITextEffectWindow,UIRemoteKeyboardWindow }
 	
-获取一个键盘窗口代码(swift):
+获取一个键盘窗口(swift):
 
 	internal var keyboardWindow: UIWindow? {
         let windows = UIApplication.sharedApplication().windows

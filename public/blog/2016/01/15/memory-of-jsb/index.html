@@ -1,0 +1,320 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>Cocos2d-JSB 内存管理 - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="Cocos2d-JSB 内存管理 Error : Invalid Native Object 如果你写的Cocos2d-JS程序在iOS/Android原生环境里运行时出现 Error : Invalid Native Object ,那么你有可能遇到了JSB的内存问题。 我们知道, &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="//ajax.useso.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<link href='http://fonts.useso.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2016/01/15/memory-of-jsb">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">Cocos2d-JSB 内存管理</h2>
+    
+  </header>
+
+  <div class="entry_content"><h1>Error : Invalid Native Object</h1>
+
+<p>如果你写的Cocos2d-JS程序在iOS/Android原生环境里运行时出现 <font color='#bd260d'>Error : Invalid Native Object</font> ,那么你有可能遇到了JSB的内存问题。</p>
+
+<p>我们知道,Cocos2d-JS在原生环境里运行的实际上是Cocos2dx引擎而非Cocos2d-HTML5,Javascript程序通过JSB调用Cocos2dx引擎的API,由于 Javascript 本身有一套垃圾回收机制,Cocos2dx也有一套,当两者共同运行时,就会由于沟通问题出现一些差错。</p>
+
+<p>Invalid Native Object 的错误原因是,JS端访问了一个已经释放了相应C++绘制对象的JS对象。</p>
+
+<h1>全局变量不被回收</h1>
+
+<p>官网列举了一个这样的示例。首先,在程序里创建了一个全局变量globalNode:</p>
+
+<pre><code>var globalNode = new cc.Node();
+</code></pre>
+
+<p>当程序运行时,globalNode没有通过 addChild 添加到其他Node上,而是通过设置一个按钮的回调来将自己添加到节点上:</p>
+
+<pre><code>onTouched:function(sender){
+    sender.addChild(globalNode);
+}
+</code></pre>
+
+<p>当按钮点击时,控制台会出现下列错误:</p>
+
+<p><font color='#bd260d'><em>jsb: ERROR: File /Users/sbxfc/Documents/XXX/frameworks/cocos2d-x/cocos/scripting/js-bindings/
+auto/jsb_cocos2dx_auto.cpp: Line: 1973, Function: js_cocos2dx_Node_addChild<br>
+Invalid Native Object</em></font></p>
+
+<p>按照我们一贯的思路,可能察觉不出这个程序的问题。我们通过CCNode.js里一段注释作为引子来解析这段程序错误的原因:</p>
+
+<blockquote><p>If you created an engine object and haven&rsquo;t added it into the scene graph during the same frame.JSB&rsquo;s native autorelease pool will consider this object a useless one and release it directly</p></blockquote>
+
+<p>当程序当前帧绘制完成之后,那些没有被添加到场景上的绘制对象将被删除并进行垃圾回收,所以globalNode在C++端的对象会被移除,按正常逻辑globalNode也将被回收,但是由于globalNode是一个全局对象不能被回收,所以就出现了上述错误。</p>
+
+<h1>cc.Node的生命周期</h1>
+
+<p>为了更清除地了解整个过程,我们看一下Node对象被创建和释放的整个流程。首先,我们使用 cc.Node.create() 来创建对象时会执行以下操作:</p>
+
+<p>首先,在游戏启动的时候(applicationDidFinishLaunching),游戏引擎会通过addRegisterCallback将JS代码往C++的映射:</p>
+
+<pre><code>static JSFunctionSpec st_funcs[] = {
+    JS_FN("create", js_cocos2dx_CCNode_create, 0, JSPROP_PERMANENT | JSPROP_ENUMERATE),
+    JS_FS_END
+};
+
+jsb_CCNode_prototype = JS_InitClass(
+    cx, global,
+    NULL, // parent proto
+    jsb_CCNode_class,
+    js_cocos2dx_CCNode_constructor, 0, // constructor
+    properties,
+    funcs,
+    NULL, // no static properties
+    st_funcs);
+</code></pre>
+
+<p>cc.Node.create() 会被隐射到 C函数 js_cocos2dx_CCNode_create()上,该函数的结构如下:</p>
+
+<pre><code>JSBool js_cocos2dx_CCNode_create(JSContext *cx, uint32_t argc, jsval *vp)
+{
+    if (argc == 0) {
+        cocos2d::CCNode* ret = cocos2d::CCNode::create();
+        jsval jsret;
+        do {
+        if (ret) {
+            js_proxy_t *proxy = js_get_or_create_proxy(cx, ret);
+            jsret = OBJECT_TO_JSVAL(proxy-&gt;obj);
+        } else {
+            jsret = JSVAL_NULL;
+        }
+    } while (0);
+        JS_SET_RVAL(cx, vp, jsret);
+        return JS_TRUE;
+    }
+    JS_ReportError(cx, "wrong number of arguments");
+    return JS_FALSE;
+}
+</code></pre>
+
+<p>在该函数里,通过调用 js_cocos2dx_CCNode_create 来创建了一个js_proxy_t类型的对象 proxy,js_cocos2dx_CCNode_create 是通过下面的SpiderMonkey API 完成调用的:</p>
+
+<pre><code>JS_AddObjectRoot(cx, &amp;proxy-&gt;obj);
+</code></pre>
+
+<p>JS_AddObjectRoot 将 JSObject 添加到垃圾回收中,proxy->obj将JSObject隐射到Javascript中,也就是说,最后proxy得到了JS端对象(cc.Node)的访问权限。</p>
+
+<p>cc.Node.create()创建的对象最终在Cocos2dx端被保存到内存里,并且通过JS_RemoveObjectRoot来移除JS端对象的引用。</p>
+
+<p>当cocos2d::CCNode对象被移除时,会在下一帧自动释放掉,接着CCObject的析构函数会被调用,代码如下:</p>
+
+<pre><code>// if the object is referenced by Lua engine, remove it
+if (m_nLuaID)
+{
+    CCScriptEngineManager::sharedManager()-&gt;getScriptEngine()-&gt;removeScriptObjectByCCObject(this);
+}
+else
+{
+    CCScriptEngineProtocol* pEngine = CCScriptEngineManager::sharedManager()-&gt;getScriptEngine();
+    if (pEngine != NULL &amp;&amp; pEngine-&gt;getScriptType() == kScriptTypeJavascript)
+    {
+        pEngine-&gt;removeScriptObjectByCCObject(this);
+    }
+}
+</code></pre>
+
+<p>析构函数触发了pEngine->removeScriptObjectByCCObject,而该函数做了下面这些事情:</p>
+
+<pre><code>void ScriptingCore::removeScriptObjectByCCObject(CCObject* pObj)
+{
+    js_proxy_t* nproxy;
+    js_proxy_t* jsproxy;
+    void *ptr = (void*)pObj;
+    nproxy = jsb_get_native_proxy(ptr);
+    if (nproxy) {
+        JSContext *cx = ScriptingCore::getInstance()-&gt;getGlobalContext();
+        jsproxy = jsb_get_js_proxy(nproxy-&gt;obj);
+        JS_RemoveObjectRoot(cx, &amp;jsproxy-&gt;obj);
+        jsb_remove_proxy(nproxy, jsproxy);
+    }
+}
+</code></pre>
+
+<p>其中,函数JS_RemoveObjectRoot被调用,JS端对象引用被移除,jsb_remove_proxy将会移除掉哈希表中的映射关系。至此,Cocos2d-x完成了整个对象的垃圾回收管理。</p>
+
+<h1>retain()和release()</h1>
+
+<p>在上面的问题里,cc.Node的引用对象是全局变量所以没有被释放掉,而其绘制对象cocos2d::CCNode却被垃圾回收了。</p>
+
+<p>为了避免出现 Invalid Native Object 的情形,我们可以使用retain()函数来使Cocos2dx端的绘制对象增加引用计数,我们知道C++端是通过引用计算来控制内存管理的。当我们需要释放时,只需要手动调用release()即可。但是需要注意的是,retain和release是一一对应关系,retain之后必须要release一下,不然会造成内存泄露。</p>
+
+<h1>其他</h1>
+
+<p>除了全局变量以外,还有一些情形也会导致JS端的对象无法被释放掉。下面是另一个错误示例,首先,创建了一个node对象,node在当前帧没有被添加到场景里,而是在一秒钟(1000ms)后被添加到场景里:</p>
+
+<pre><code>var self = this;
+this.node = new cc.Node();
+setTimeout(function(){
+    self.node.setLocalZOrder(1);
+},1000);
+</code></pre>
+
+<p>当改程序运行时,会出现 Invalid Native Object 错误:</p>
+
+<p><font color='#bd260d'><em>File /Users/sbxfc/Documents/cocos/projects/demo/frameworks/cocos2d-x/cocos/scripting/js-bindings/auto/jsb_cocos2dx_auto.cpp: Line: 4186, Function: js_cocos2dx_Node_setLocalZOrder js_cocos2dx_Node_setLocalZOrder : Invalid Native Object</em></font></p>
+
+<p>理解该示例错误的关键在于JS里的参数传递和闭包。setTimeout形成的闭包会在程序运行时异步执行,其中self.node通过匿名参数的形式传递到函数内部,而函数参数传递本身是一种值传递,其传递的是对象引用的副本。所以Cocos2dx无法释放setTimeout函数里的self.node,最终也会导致Invalid Native Object错误。</p>
+
+<p>当然,上面的问题也可以使用retain、release对解决。CCNode.js里关于函数retain、release有详细的注释,开发者可以借此了解到有关释放问题和JSB机制不健全的说明,并以此理解引擎开发者的困扰。</p>
+
+<h1>参见</h1>
+
+<ul>
+<li><a href="http://bosn.me/js/js-call-by-sharing/">JS是按值传递还是按引用传递?</a></li>
+<li><a href="http://www.cocos.com/doc/article/index?type=cocos2d-x&amp;url=/doc/cocos-docs-master/manual/framework/cocos2d-js/1-about-cocos2d-js/1-1-a-brief-history/zh.md">Javascript Binding</a></li>
+<li><a href="http://www.cocos.com/doc/article/index?type=wiki&amp;url=/doc/cocos-docs-master/manual/framework/native/wiki/memory-management-of-jsb/zh.md">JSB内存管理</a></li>
+</ul>
+
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2016-01-15 14:42:31 +0800" pubdate>Jan 15<span>th</span>, 2016</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2016 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2016/01/15/memory-of-jsb';
+	var disqus_url = 'http://sbxfc.github.io/blog/2016/01/15/memory-of-jsb';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

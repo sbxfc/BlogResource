@@ -6,10 +6,10 @@
     
 
 <meta charset="utf-8">
-<title>Cocos - 使用自动批绘制 - sbxfc</title>
+<title>cocos2d - 批次绘制 - sbxfc</title>
 <meta name="author" content="sbxfc">
 <meta name="description"
-      content="Cocos - 使用自动批绘制 自动批绘制 在3.0版本以后,Cocos2d-x里的图形渲染实现了自动批绘制(Auto-batching)的优化。引擎的渲染部分对相同材质的连续渲染指令(QuadCommand)进行过滤,如果当前的渲染对象的材质和上一次渲染的材质一样,就不渲染了, &hellip;">
+      content="cocos2d - 批次绘制 自动批绘制 从3.0版本以后,cocos2d的图形渲染模块实现了自动批绘制(Auto-batching)的优化。引擎的渲染部分对相同材质的连续渲染指令(QuadCommand)进行过滤,如果当前的渲染对象的材质和上一次渲染的材质一样,就不渲染了,保存一下所需的信息, &hellip;">
 
 
 <!-- http://t.co/dKP3o1e -->
@@ -74,13 +74,13 @@
 <article class="entry" role="article">
 
   <header>
-    <h2 class="entry_title">Cocos - 使用自动批绘制</h2>
+    <h2 class="entry_title">cocos2d - 批次绘制</h2>
     
   </header>
 
   <div class="entry_content"><h1>自动批绘制</h1>
 
-<p>在3.0版本以后,Cocos2d-x里的图形渲染实现了自动批绘制(Auto-batching)的优化。引擎的渲染部分对相同材质的连续渲染指令(QuadCommand)进行过滤,如果当前的渲染对象的材质和上一次渲染的材质一样,就不渲染了,保存一下所需的信息,继续遍历下一个,直到发现当前材质和上一个材质不一样，才重新开始渲染。</p>
+<p>从3.0版本以后,cocos2d的图形渲染模块实现了自动批绘制(Auto-batching)的优化。引擎的渲染部分对相同材质的连续渲染指令(QuadCommand)进行过滤,如果当前的渲染对象的材质和上一次渲染的材质一样,就不渲染了,保存一下所需的信息,继续遍历下一个,直到发现当前材质和上一个材质不一样，才重新开始渲染。</p>
 
 <p>这样一来,渲染指令里相邻的且材质ID相同的多个draw call就能减少为一个,过程如下图:</p>
 
@@ -234,7 +234,7 @@ batch-&gt;addChild(sprite2, 0, kTagSprite2);
       <footer role="contentinfo">
 	<!-- include footer -->
 	<p>
-  Copyright &copy; 2015 - sbxfc -
+  Copyright &copy; 2016 - sbxfc -
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
 </p>
 

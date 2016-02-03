@@ -6,10 +6,10 @@
     
 
 <meta charset="utf-8">
-<title>TCP套接字服务器 网络通信(四) - sbxfc</title>
+<title>#TCP套接字通信 服务器 - sbxfc</title>
 <meta name="author" content="sbxfc">
 <meta name="description"
-      content="TCP套接字服务器 网络通信(四) TCP套接字服务器 和客户端一样,socket服务器通过调用socket函数创建套接口,指定期望的通信协议和套接字类型。 SOCKET ServerSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP); if ( &hellip;">
+      content="#TCP套接字通信 服务器 和客户端一样,TCP套接字服务器通过调用socket函数创建套接口,指定期望的通信协议和套接字类型。 socket(AF_INET,SOCK_STREAM, IPPROTO_TCP); bind函数 bind函数把一个本地协议地址赋予一个套接字。对于网际网协议, &hellip;">
 
 
 <!-- http://t.co/dKP3o1e -->
@@ -74,31 +74,16 @@
 <article class="entry" role="article">
 
   <header>
-    <h2 class="entry_title">TCP套接字服务器 网络通信(四)</h2>
+    <h2 class="entry_title">#TCP套接字通信 服务器</h2>
     
   </header>
 
-  <div class="entry_content"><h2>TCP套接字服务器</h2>
+  <div class="entry_content"><p>和客户端一样,TCP套接字服务器通过调用socket函数创建套接口,指定期望的通信协议和套接字类型。</p>
 
-<hr />
-
-<p>和客户端一样,socket服务器通过调用socket函数创建套接口,指定期望的通信协议和套接字类型。</p>
-
-<pre><code>SOCKET ServerSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-
-if (ServerSocket == INVALID_SOCKET)
-{
-    cout &lt;&lt; "创建套接字失败!::" &lt;&lt; GetLastError() &lt;&lt; endl;
-    return -1;
-}
+<pre><code>socket(AF_INET,SOCK_STREAM, IPPROTO_TCP);
 </code></pre>
 
-<!--more-->
-
-
-<h2>bind函数</h2>
-
-<hr />
+<h1>bind函数</h1>
 
 <p>bind函数把一个本地协议地址赋予一个套接字。对于网际网协议,协议地址是32位的IPv4地址或128位的IPv6地址与16位的TCP或UDP端口号的组合。</p>
 
@@ -116,9 +101,7 @@ int bind(int sockfd,const struct sockaddr *myaddr,socklen_t addrlen);//返回：
 </ul>
 
 
-<h2>listen函数</h2>
-
-<hr />
+<h1>listen</h1>
 
 <p>listen函数仅由TCP服务器调用,它做两件事情。</p>
 
@@ -132,9 +115,7 @@ int bind(int sockfd,const struct sockaddr *myaddr,socklen_t addrlen);//返回：
 
 <p>本函数通常应该在调用socket和bind这两个函数之后,并在调用accept之前调用。</p>
 
-<h2>accept函数</h2>
-
-<hr />
+<h1>accept</h1>
 
 <p>accept函数由TCP服务器调用,用于从已完成连接队列头返回下一个已完成连接。如果已完成连接为空，那么进程被投入睡眠（假定套接字默认是阻塞方式）。</p>
 
@@ -145,8 +126,9 @@ int bind(int sockfd,const struct sockaddr *myaddr,socklen_t addrlen);//返回：
 
 <p>如果accept成功，那么其返回值是由内核自动生成的一个全新的描述符。</p>
 
-<p>完整代码(vs2013):<br>
-<a href="https://github.com/sbxNetwork/TCPSocketServer">https://github.com/sbxNetwork/TCPSocketServer</a></p>
+<h1>完整代码</h1>
+
+<p><a href="https://github.com/sbxfc/Socket">https://github.com/sbxfc/Socket</a></p>
 </div>
 
   <footer>
@@ -190,7 +172,7 @@ int bind(int sockfd,const struct sockaddr *myaddr,socklen_t addrlen);//返回：
       <footer role="contentinfo">
 	<!-- include footer -->
 	<p>
-  Copyright &copy; 2015 - sbxfc -
+  Copyright &copy; 2016 - sbxfc -
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
 </p>
 

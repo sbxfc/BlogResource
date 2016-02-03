@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "在Xcode上运行Cocos2dx-JS项目"
+title: "在Xcode上运行Cocos2d-JS工程"
 date: 2015-11-23 17:21:14 +0800
 comments: true
 categories: 

@@ -1,0 +1,75 @@
+---
+layout: post
+title: "在Xcode里使用libevent库"
+date: 2015-12-30 17:43:19 +0800
+comments: true
+categories: 
+---
+
+#编译
+
+从官网下载最新的release包[libevent-2.0.22-stable.tar.gz](http://libevent.org/)
+
+解压并进入相应目录后,执行下列编译代码:
+
+	./configure && make  
+	sudo make install
+	
+完成编译后按Command+Shilt+G进入 /usr/local/lib 文件夹就可以看到生成的文件目录 libevent-2.0.22 
+
+#使用示例
+
+新建一个Command Line Tool 的c++项目,首先在Build Phases->Link Binary With Libraries里添加三个.a库文件 libevent_core.a、libevent_extra.a、libevent_phreads.a(这几个库文件的选择视情况而定)。
+
+检查Building Setting里的Library Search Paths是否已添加了libevent库文件目录,如果没有则添加(以下是我本机路径): 
+
+	/usr/local/libevent-2.0.22/lib //库文件目录
+	
+在Header Search Paths里将头文件的目录添加进去(以下是我本机路径): 
+
+	/usr/local/libevent-2.0.22/include //头文件的目录
+
+在main.cpp添加简单定时器代码:
+	
+	#include <stdio.h>
+	#include <iostream>
+	
+	// libevent头文件
+	#include <event.h>
+	using namespace std;
+		
+	struct event evt;
+	struct timeval tv;
+		
+	// 定时事件回调函数
+	void time_cb(int sock, short event, void *arg)
+	{
+		printf("timer wakeup\n");
+		//重新添加定时事件（定时事件触发后默认自动删除）
+		event_add((struct event*)arg, &tv);
+	}
+	
+	int main()
+	{
+		//初始化
+		struct event_base *base = event_init();
+		
+		tv.tv_sec = 1; //1s period
+		tv.tv_usec = 0;
+		
+		//设置定时事件
+		evtimer_set(&evt,time_cb, &evt);
+		
+		// 添加定时事件
+		event_add(&evt, &tv);
+		
+		//事件循环
+		event_base_dispatch(base);
+		
+		return 0;
+	}
+
+
+#参见
+- <http://libevent.org/>
+- libevent源码深度剖析.pdf
