@@ -1,22 +1,42 @@
 ---
 layout: post
-title: "POSIX - signal"
+title: "UNIX - 信号"
 date: 2016-01-04 14:24:14 +0800
 comments: true
 categories: 
 ---
 
+在UNIX系统里,每个进程都有一个独立的工作环境并且专注于做自己的事。然而有些时候,比如发现一个进程在砸墙(发生硬件错误),这时候,内核就会通过信号来让进程意识到这种危险情况。
+
+#常见的信号
+
+- SIGINT   交互式操作产生的信号（如CTRL - C）。
+
+- SIGQUIT  当键盘按下CTRL+\从shell中发出信号，信号被传递给shell中前台运行的进程，对应该信号的默认操作是退出 (QUIT) 该进程。
+
+- SIGTSTP  当键盘按下CTRL+Z从shell中发出信号，信号被传递给shell中前台运行的进程，对应该信号的默认操作是暂停 (STOP) 该进程。
+
+- SIGCONT  用于通知暂停的进程继续。
+
+- SIGALRM  起到定时器的作用，通常是程序在一定的时间之后才生成该信号。
+
+- SIGFPE	浮点错误（0作为除数产生的错误，非法的操作）。 
+
 #信号产生
 
-1,通过 raise 发送信号给当前进程。
+信号的产生有两种方式,一种是由内核(kernel)差生的,比如出现硬件错误(比如出现分母为0的除法运算)。还有一种情况是其他进程产生的,发送给内核,再由内核传递给目标进程。
 
-	#include <signal.h> 
+1,通过 raise 发送信号给当前进程,该函数
 	
 	/**
 	 * 成功返回0,否则返回 -1
 	 * @param signo 信号类型
 	 */
-	int raise(int signo) 
+	if (raise(SIGINT) != 0) {
+        fputs("Error raising the signal.\n", stderr);
+        return EXIT_FAILURE;
+    }
+
 	
 2,在权限允许的情况下通过 kill 发送信号给指定进程。
 
@@ -27,7 +47,7 @@ categories:
 	 * @param pid 进程ID,
 	 * 当pid > 0时,信号发送至ID为pid的进程,
 	 * 当pid = 0时,信号发送至同一进程组的进程,
-	 * 当pid < 0&&pid != -1时,信号发送至进程组ID为(-1*pid)的所有进程
+	 * 当pid < 0 && pid != -1时,信号发送至进程组ID为(-1*pid)的所有进程
 	 * 当pid = -1时,信号发送至除自身进程以外的所有ID大于1的进程
 	 * 
 	 * @param signo 信号类型
@@ -169,10 +189,10 @@ sigqueue系统调用支持发送带参数信号,所以比kill()系统调用的�
 	 * 该系统调用始终返回-1，并将errno设置为EINTR。
 	 */
 	sigsuspend(const sigset_t *mask));
+
 #完整示例
 
- - <https://github.com/sbxfc/signal>	
-
+<https://github.com/sbxfc/unix/tree/master/signal>	
 #参见
 
 - [Unix信号](https://zh.wikipedia.org/wiki/Unix%E4%BF%A1%E5%8F%B7)

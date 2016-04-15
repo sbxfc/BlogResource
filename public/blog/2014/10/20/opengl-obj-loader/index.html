@@ -6,11 +6,10 @@
     
 
 <meta charset="utf-8">
-<title>OpenGL - 绘制OBJ模型 - sbxfc</title>
+<title>OpenGL - 加载Obj文件 - sbxfc</title>
 <meta name="author" content="sbxfc">
 <meta name="description"
-      content="OpenGL - 绘制OBJ模型 obj模型是Alias|Wavefront公司设计并开发的一种3D模型的文件格式。我们可以通过maya等大部分建模工具,将3D模型信息导出并保存到obj文件中。并且通过该文件的格式加载并渲染模型。
-因为是文本格式，我们可以直接查看obj文件。 &hellip;">
+      content="OpenGL - 加载Obj文件 obj是一种3D模型文件的格式,我们可以通过大部分建模工具将绘制的3D模型信息导出并保存成obj文件。因为obj是文本格式,所以我们很容易通过其规则将文件记录的模型信息读取出来,并进行加载和渲染。 以简单的立方体文件为例:(点击下面的连接)http:// &hellip;">
 
 
 <!-- http://t.co/dKP3o1e -->
@@ -75,14 +74,22 @@
 <article class="entry" role="article">
 
   <header>
-    <h2 class="entry_title">OpenGL - 绘制OBJ模型</h2>
+    <h2 class="entry_title">OpenGL - 加载Obj文件</h2>
     
   </header>
 
-  <div class="entry_content"><p>obj模型是Alias|Wavefront公司设计并开发的一种3D模型的文件格式。我们可以通过maya等大部分建模工具,将3D模型信息导出并保存到obj文件中。并且通过该文件的格式加载并渲染模型。<br>
-因为是文本格式，我们可以直接查看obj文件。以简单的立方体文件为例:<br>
-<a href="http://people.sc.fsu.edu/~jburkardt/data/obj/cube.obj">http://people.sc.fsu.edu/~jburkardt/data/obj/cube.obj</a><br>
-#是注释部分,v 表示顶点, vn 表示法线, f 是每个面的信息。</p>
+  <div class="entry_content"><p>obj是一种3D模型文件的格式,我们可以通过大部分建模工具将绘制的3D模型信息导出并保存成obj文件。因为obj是文本格式,所以我们很容易通过其规则将文件记录的模型信息读取出来,并进行加载和渲染。</p>
+
+<p>以简单的立方体文件为例:(点击下面的连接)<br><a href="http://people.sc.fsu.edu/~jburkardt/data/obj/cube.obj">http://people.sc.fsu.edu/~jburkardt/data/obj/cube.obj</a></p>
+
+<p>其中#是注释部分,v表示顶点,vn表示法线,f是每个面的信息。其中每个面有多个顶点组成,一个立方体的一边是由两个三角形面拼成的。在示例中的,每个三角形面有如下信息:</p>
+
+<pre><code>f  1//2  7//2  5//2
+</code></pre>
+
+<p>很显然,除了隐约知道第一个字母f是单词face的缩写以外,对于其他信息则是一脸茫然。这三组数据实际上记录了三个点的信息,obj格式里,每个面的格式 // 代表该标识的两侧,左边是一个顶点索引,右边是一个法线索引。所以,我们就知道了 1//2 标识,这个面的第一个顶点的顶点坐标索引是1,顶点法线的索引是2.该面就是一个由索引值为 1、7、5和法线索引为 2、2、2的值组成的三角形面。</p>
+
+<p>至此,我们大致能读懂这个立方体的信息了。</p>
 
 <pre><code>f v1//vn1 v2//vn2 v3//vn3 ...
 </code></pre>

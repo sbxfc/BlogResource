@@ -1,0 +1,23 @@
+---
+layout: post
+title: "Mac下的网络检测"
+date: 2016-03-21 12:25:45 +0800
+comments: true
+categories: 
+---
+
+通过ifconfig查看本机的网卡信息
+	
+	$ifconfig -l 
+	
+该命令行返回一个列表 lo0 gif0 stf0 en0 en1 en2 fw0 p2p0 bridge0 ,其中lo0为回环接口,通过这个接口可以监听本地client发出的,进入本地server的包
+
+	$sudo tcpdump -i lo0 port 9877
+
+#域名解析
+
+	host rungame.me
+
+#外网IP
+
+	curl ifconfig.me

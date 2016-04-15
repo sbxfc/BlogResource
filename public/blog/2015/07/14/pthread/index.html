@@ -6,10 +6,10 @@
     
 
 <meta charset="utf-8">
-<title>pthread - sbxfc</title>
+<title>pthread & mutex(互斥锁)* - sbxfc</title>
 <meta name="author" content="sbxfc">
 <meta name="description"
-      content="pthread POSIX线程 pthread即POSIX thread,是POSIX标准的线程API。(POSIX是包括Unix、Linux、OS系统等绝大多数操作系统支持的API标准。) 使用pthread创建一个线程非常简单,调用pthread_create函数, &hellip;">
+      content="pthread & mutex(互斥锁)* pthread 是POSIX thread的简称,而POSIX是Unix系统下的接口标准。 通过pthread,我们可以创建一个新的线程。pthread的使用方法非常简单,我们只需要调用pthread_create函数, &hellip;">
 
 
 <!-- http://t.co/dKP3o1e -->
@@ -74,53 +74,54 @@
 <article class="entry" role="article">
 
   <header>
-    <h2 class="entry_title">pthread</h2>
+    <h2 class="entry_title">pthread & mutex(互斥锁)*</h2>
     
   </header>
 
-  <div class="entry_content"><h1>POSIX线程</h1>
+  <div class="entry_content"><p>pthread 是POSIX thread的简称,而<a href="https://zh.wikipedia.org/wiki/POSIX%E7%BA%BF%E7%A8%8B">POSIX</a>是Unix系统下的接口标准。</p>
 
-<p>pthread即POSIX thread,是POSIX标准的线程API。(POSIX是包括Unix、Linux、OS系统等绝大多数操作系统支持的API标准。)</p>
+<p>通过pthread,我们可以创建一个新的线程。pthread的使用方法非常简单,我们只需要调用pthread_create函数,并传入pthread_t类型的线程ID指针以及回调函数指针即可:</p>
 
-<p>使用pthread创建一个线程非常简单,调用pthread_create函数,传入pthread_t类型的线程ID指针和回调的函数指针。</p>
-
-<pre><code>pthread_create(&amp;tid,NULL,func,NULL);
+<pre><code>pthread_t tid;
+if (pthread_create(&amp;tid, NULL, thread_func, NULL) != 0){
+    printf("error creating thread.");
+    return EXIT_FAILURE;
+}
 </code></pre>
 
-<p>线程终止:</p>
+<p>回调函数调用后会在一个新的线程上运行,当该函数结束时(return),线程终止。除此之外,你也可以通过另外两种方式来终止一个线程:</p>
 
-<ul>
-<li><p>线程函数返回(return)时线程终止。</p></li>
-<li><p>被同一进程的另外线程cancel掉。</p></li>
-<li><p>调用pthread_exit函数退出线程。</p></li>
-</ul>
+<ol>
+<li><p>通过同一进程的另外线程cancel掉该线程。</p></li>
+<li><p>调用pthread_exit退出线程。</p></li>
+</ol>
 
-
-<p><a href="https://zh.wikipedia.org/wiki/POSIX%E7%BA%BF%E7%A8%8B">查看POSIX线程支持的操作系统</a></p>
 
 <!-- more -->
 
 
 <h1>互斥锁</h1>
 
-<p>线程之间可以共享内存空间,这意味着不同线程可以读取内存中的同一个变量。但是不同线程在同一时间修改一个内存对象会造成一些不可预知的结果。</p>
+<p>线程之间可以共享内存空间,这意味着不同线程可以访问内存中的同一个变量。然而不同线程在同一时间修改一个内存对象会造成一些不可预知的结果。</p>
 
-<p>为了避免意外发生,我们需要用到pthread里一个非常重要的数据结构 —— 互斥对象(mutex)。互斥对象在使用时结合互斥锁 pthread_mutex_lock() 和 pthread_mutex_unlock()使用。</p>
+<p>为了避免意外,我们需要用到pthread里一个非常重要的数据结构 —— 互斥对象(mutex)。互斥对象在使用时结合互斥锁使用,pthread_mutex_lock 和 pthread_mutex_unlock。</p>
 
-<p>它的工作是这样的:线程B锁定了一个互斥对象(mutex),如果线程A也试图锁定该互斥对象时,线程A就进入睡眠状态。一旦线程B释放了互斥对象（通过 pthread_mutex_unlock(),线程A 就能够锁定这个互斥对象（换句话说，线程A就将从 pthread_mutex_lock() 函数调用中返回,同时互斥对象被重新锁定）。同样地,当线程A正锁定互斥对象时,如果线程C试图锁定互斥对象的话,线程C也将临时进入睡眠状态。</p>
+<p>互斥锁是这样工作的:线程B锁定了一个互斥对象(mymutex),如果线程A也试图锁定该互斥对象(mymutex)时,线程A就进入休眠状态。一旦线程B释放了互斥对象（调用 pthread_mutex_unlock()) ,线程A 就能够锁定这个互斥对象（换句话说,线程A就将从 pthread_mutex_lock() 函数调用中返回,同时互斥对象被重新锁定）。同样地,当线程A正锁定互斥对象时,如果线程C试图锁定互斥对象的话,线程C也将临时进入睡眠状态。</p>
 
 <pre><code>pthread_mutex_lock(&amp;mymutex);
-
- //在这里进行多线程环境下的数据修改工作,
- //因为mymutex被锁定,凡是此时试图锁定mymutex的线程都会进入睡眠,
- //直到函数unlock执行之后才被重新唤醒。
-
+ /*
+   直至解锁后,mymutex会阻止另一个试图访问此区域的线程
+ */
 pthread_mutex_unlock(&amp;mymutex);
 </code></pre>
 
 <p>对已锁定的互斥对象上调用 pthread_mutex_lock() 的所有线程都将进入睡眠状态,这些睡眠的线程将“排队”访问这个互斥对象。</p>
 
-<p>1）互斥对象使用时需要初始化:</p>
+<p><strong>从上述可知,mutex会帮助我们锁定一段逻辑区域的访问。但是,如果一个数据对象有多处调用的情况,我们需要根据实际情况,设计统一的接口。</strong></p>
+
+<h1>互斥锁的使用</h1>
+
+<p>1)互斥对象有两种初始化方式,分为别静态初始化和动态初始化.</p>
 
 <p>静态初始化:</p>
 
@@ -133,13 +134,13 @@ pthread_mutex_unlock(&amp;mymutex);
 pthread_mutex_init(&amp;myLock,NULL);
 </code></pre>
 
-<p>2）销毁互斥对象</p>
+<p>2）销毁</p>
 
-<p>一旦初始化完之后,我们就可以根据实际情况对对象实施加锁和解锁,但需要注意的是如果是动态初始化(使用pthread_mutex_init()初始化)的互斥对象,在释放或废弃条件变量之前,需要清理它:</p>
+<p>一旦初始化完成之后,我们就可以根据实际情况对操作实施加锁和解锁,但需要留意的是如果是动态初始化(使用pthread_mutex_init()的方式)的互斥对象,在释放或废弃条件变量之前,需要清理它:</p>
 
 <pre><code>/*
- * 使用pthread_mutex_init()初始的互斥对象,
- * 应使用 pthread_mutex_destroy() 清理它。
+ * 使用pthread_mutex_init()初始化的互斥对象,
+ * 应当使用 pthread_mutex_destroy() 清理它。
  * pthread_mutex_destroy() 接受一个指向 pthread_mutext_t 的指针作为参数
  * 并释放创建互斥对象时分配给它的任何资源。
  */
@@ -148,43 +149,34 @@ pthread_mutex_destroy(myLock);
 
 <p>3）尝试锁定</p>
 
-<p>使用 pthread_mutex_trylock() 可以尝试锁定互斥对象。如果互斥对象当前处于解锁状态，那么您将获得该锁并且函数将返回零。然而,如果互斥对象已锁定,这个调用也不会阻塞。</p>
+<p>假如,我们不知道互斥对象是否被锁定。当我们使用 pthread_mutex_lock 对互斥对象加锁时,可能互斥对象已经锁定,这时pthread_mutex_lock操作就会进入休眠。为了避免这种情况,我们可以使用 pthread_mutex_trylock 去尝试锁定互斥对象。如果互斥对象当前处于解锁状态，那么您将获得该锁并且函数将返回零。然而,如果互斥对象已锁定,这个调用也不会阻塞。</p>
 
 <h1>条件变量</h1>
 
-<p>如果线程在等待某个特定条件发生,按照上面的方式,就需要对数据结构不停地加锁、解锁进行检测,这样不但浪费时间和资源，而且繁忙查询的效率也非常低。这时,我们可以用pthread_cond_wait()方法。</p>
+<p>如果线程在等待某个特定条件发生,按照上述方式就需要不停地对数据加锁、解锁进行检测。这样不但浪费了时间和资源,而且繁忙的查询效率也非常低。这时,我们可以利用pthread_cond_wait.</p>
 
 <p>以查询特殊条件为例:<br>
 首先,线程A执行对数据的检测并没有找到满足条件的数据。此时,通过pthread_cond_wait()函数将线程A设置为等待休眠状态:</p>
 
-<pre><code> /*
- * 线程A操作
- */
-pthread_mutex_lock(&amp;mymutex);
-//检测数据条件 
+<pre><code>pthread_mutex_lock(&amp;mymutex);
 pthread_cond_wait(&amp;mycond, &amp;mymutex);
 </code></pre>
 
-<p>调用pthread_cond_wait()所做的第一件事就是对互斥对象进行解锁（其他线程可以修改数据条件）,并等待条件mycond发生。</p>
+<p>pthread_cond_wait()被调用后所做的第一件事就是对互斥对象(mymutex)进行解锁,并等待条件mycond发生。</p>
 
-<p>此时,pthread_cond_wait() 调用还未返回,对互斥对象的解锁会立即发生。等待条件mycond通常是一个阻塞操作。这意味着线程将睡眠,在它苏醒之前不会消耗 CPU 周期。这正是我们期待发生的情况。线程将一直睡眠，直到特定条件发生,在这期间不会发生任何浪费 CPU 时间的繁忙查询。从线程的角度来看,它只是在等待 pthread_cond_wait() 调用返回。</p>
+<p>此时,pthread_cond_wait() 调用还未返回,等待条件mycond通常是一个阻塞操作,这意味着线程将睡眠,在它苏醒之前不会消耗 CPU 周期。这正是我们期待发生的情况,线程将一直睡眠，直到特定条件发生,在这期间不会发生任何浪费 CPU 时间的繁忙查询。从线程的角度来看,它只是在等待 pthread_cond_wait() 调用返回。</p>
 
-<p>假如另一个线程B锁定了mymutex并对数据条件做了修改。在对互斥对象解锁之后,线程B会立即调用函数 pthread_cond_broadcast(&amp;mycond)。此操作之后，线程B将使所有等待 mycond 条件变量的线程立即苏醒。这意味着第一个线程（仍处于 pthread_cond_wait() 调用中）现在将苏醒。</p>
+<p>假如另一个线程B锁定了mymutex并对数据条件做了修改。在对互斥对象解锁之后,线程B立即调用了函数 pthread_cond_broadcast(&amp;mycond)。此操作之后,线程B的操作将使所有等待 mycond 条件变量的线程立即苏醒,这意味着第一个线程现在将苏醒。</p>
 
-<pre><code> /*
- * 线程B操作
- */
-pthread_mutex_lock(&amp;mymutex);
-
+<pre><code>pthread_mutex_lock(&amp;mymutex);
 //修改数据条件操作 
-
 pthread_mutex_unlock(&amp;mymutex);
 pthread_cond_broadcast(&amp;mycond);
 </code></pre>
 
-<p>您可能会认为在线程B调用 pthread_cond_broadcast(&amp;mymutex) 之后，线程A的 pthread_cond_wait() 会立即返回。不是那样!实际上，pthread_cond_wait() 将执行最后一个操作:重新锁定 mymutex。一旦 pthread_cond_wait() 锁定了互斥对象,那么它将返回并允许线程A继续执行。</p>
+<p>您可能会认为在线程B调用 pthread_cond_broadcast(&amp;mymutex) 之后,线程A的 pthread_cond_wait() 会立即返回。不是那样!实际上，pthread_cond_wait() 将执行最后一个操作:重新锁定 mymutex。一旦 pthread_cond_wait() 锁定了互斥对象,那么它将返回并允许线程A继续执行。</p>
 
-<p>1）初始化和清除</p>
+<p>1)初始化和清除</p>
 
 <p>和互斥对象一样,条件变量在使用时也需要初始化:</p>
 
@@ -222,15 +214,15 @@ pthread_cond_init(&amp;mycond,NULL);
 
 <h1>参见</h1>
 
-<p>POSIX 线程(WIKI):<a href="https://zh.wikipedia.org/wiki/POSIX%E7%BA%BF%E7%A8%8B">https://zh.wikipedia.org/wiki/POSIX%E7%BA%BF%E7%A8%8B</a></p>
+<p>POSIX 线程[维基百科]:<a href="https://zh.wikipedia.org/wiki/POSIX%E7%BA%BF%E7%A8%8B">https://zh.wikipedia.org/wiki/POSIX%E7%BA%BF%E7%A8%8B</a></p>
 
 <p>POSIX 线程详解:<a href="http://www.ibm.com/developerworks/cn/linux/thread/posix_thread1/#icomments">http://www.ibm.com/developerworks/cn/linux/thread/posix_thread1/#icomments</a></p>
 
 <p>POSIX 线程详解，第 2部分:<a href="https://www.ibm.com/developerworks/cn/linux/thread/posix_thread2/">https://www.ibm.com/developerworks/cn/linux/thread/posix_thread2/</a></p>
 
-<h1>完整代码</h1>
+<h1>示例</h1>
 
-<p><a href="https://github.com/sbxfc/PThreads">https://github.com/sbxfc/PThreads</a></p>
+<p><a href="https://github.com/sbxfc/objc/tree/master/threads/pthread/pthread">https://github.com/sbxfc/objc/tree/master/threads/pthread/pthread</a></p>
 </div>
 
   <footer>
@@ -244,7 +236,7 @@ pthread_cond_init(&amp;mycond,NULL);
 
       
       <span class="categories">
-	
+	<a class='category' href='/blog/categories/thread/'>thread</a>
       </span>
       
 

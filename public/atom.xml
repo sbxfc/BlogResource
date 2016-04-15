@@ -4,7 +4,7 @@
   <title><![CDATA[sbxfc]]></title>
   <link href="http://sbxfc.github.io/atom.xml" rel="self"/>
   <link href="http://sbxfc.github.io/"/>
-  <updated>2016-02-03T11:26:31+08:00</updated>
+  <updated>2016-04-15T12:02:42+08:00</updated>
   <id>http://sbxfc.github.io/</id>
   <author>
     <name><![CDATA[sbxfc]]></name>
@@ -14,37 +14,55 @@
 
   
   <entry>
-    <title type="html"><![CDATA[Cocos2d-JSB 内存管理]]></title>
+    <title type="html"><![CDATA[Mac下的网络检测]]></title>
+    <link href="http://sbxfc.github.io/blog/2016/03/21/tcpdump/"/>
+    <updated>2016-03-21T12:25:45+08:00</updated>
+    <id>http://sbxfc.github.io/blog/2016/03/21/tcpdump</id>
+    <content type="html"><![CDATA[<p>通过ifconfig查看本机的网卡信息</p>
+
+<pre><code>$ifconfig -l 
+</code></pre>
+
+<p>该命令行返回一个列表 lo0 gif0 stf0 en0 en1 en2 fw0 p2p0 bridge0 ,其中lo0为回环接口,通过这个接口可以监听本地client发出的,进入本地server的包</p>
+
+<pre><code>$sudo tcpdump -i lo0 port 9877
+</code></pre>
+
+<h1>域名解析</h1>
+
+<pre><code>host rungame.me
+</code></pre>
+
+<h1>外网IP</h1>
+
+<pre><code>curl ifconfig.me
+</code></pre>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Cocos2d-JS JSB内存管理]]></title>
     <link href="http://sbxfc.github.io/blog/2016/01/15/memory-of-jsb/"/>
     <updated>2016-01-15T14:42:31+08:00</updated>
     <id>http://sbxfc.github.io/blog/2016/01/15/memory-of-jsb</id>
-    <content type="html"><![CDATA[<h1>Error : Invalid Native Object</h1>
+    <content type="html"><![CDATA[<p>如果你写的Cocos2d-JS程序在iOS/Android原生环境里运行时出现 <font color='#bd260d'>Error : Invalid Native Object</font> ,那么你有可能遇到了JSB的内存问题。</p>
 
-<p>如果你写的Cocos2d-JS程序在iOS/Android原生环境里运行时出现 <font color='#bd260d'>Error : Invalid Native Object</font> ,那么你有可能遇到了JSB的内存问题。</p>
+<p>我们知道,Cocos2d-JS在原生环境里运行时,实际上运行的是Cocos2dx引擎而非Cocos2d-HTML5。在程序执行时Javascript通过JSB调用Cocos2dx引擎的API,因为 Javascript 本身有一套垃圾回收机制,Cocos2dx也有一套,当这两者一起运行时,就会由于沟通问题出现一些差错。</p>
 
-<p>我们知道,Cocos2d-JS在原生环境里运行的实际上是Cocos2dx引擎而非Cocos2d-HTML5,Javascript程序通过JSB调用Cocos2dx引擎的API,由于 Javascript 本身有一套垃圾回收机制,Cocos2dx也有一套,当两者共同运行时,就会由于沟通问题出现一些差错。</p>
-
-<p>Invalid Native Object 的错误原因是,JS端访问了一个已经释放了相应C++绘制对象的JS对象。</p>
-
-<h1>全局变量不被回收</h1>
-
-<p>官网列举了一个这样的示例。首先,在程序里创建了一个全局变量globalNode:</p>
+<p>Invalid Native Object 的错误原因是,JS端访问了一个已经释放了相应C++绘制对象的JS对象。官网列举了一个这样的示例。首先,在程序里创建了一个全局变量globalNode:</p>
 
 <pre><code>var globalNode = new cc.Node();
-</code></pre>
-
-<p>当程序运行时,globalNode没有通过 addChild 添加到其他Node上,而是通过设置一个按钮的回调来将自己添加到节点上:</p>
-
-<pre><code>onTouched:function(sender){
+...
+onTouched:function(sender){
     sender.addChild(globalNode);
 }
 </code></pre>
 
-<p>当按钮点击时,控制台会出现下列错误:</p>
+<p>当程序运行时,globalNode没有通过 addChild 函数添加场景上,而是在按钮事件onTouched触发时才被添加到场景上。当按钮点击时出现下列错误:</p>
 
-<p><font color='#bd260d'><em>jsb: ERROR: File /Users/sbxfc/Documents/XXX/frameworks/cocos2d-x/cocos/scripting/js-bindings/
+<blockquote><p><font color='#bd260d'><em>jsb: ERROR: File /Users/sbxfc/Documents/XXX/frameworks/cocos2d-x/cocos/scripting/js-bindings/
 auto/jsb_cocos2dx_auto.cpp: Line: 1973, Function: js_cocos2dx_Node_addChild<br>
-Invalid Native Object</em></font></p>
+Invalid Native Object</em></font></p></blockquote>
 
 <p>按照我们一贯的思路,可能察觉不出这个程序的问题。我们通过CCNode.js里一段注释作为引子来解析这段程序错误的原因:</p>
 
@@ -270,21 +288,38 @@ $ ./a.out
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[POSIX - signal]]></title>
+    <title type="html"><![CDATA[UNIX - 信号]]></title>
     <link href="http://sbxfc.github.io/blog/2016/01/04/unix-signal/"/>
     <updated>2016-01-04T14:24:14+08:00</updated>
     <id>http://sbxfc.github.io/blog/2016/01/04/unix-signal</id>
-    <content type="html"><![CDATA[<h1>信号产生</h1>
+    <content type="html"><![CDATA[<p>在UNIX系统里,每个进程都有一个独立的工作环境并且专注于做自己的事。然而有些时候,比如发现一个进程在砸墙(发生硬件错误),这时候,内核就会通过信号来让进程意识到这种危险情况。</p>
 
-<p>1,通过 raise 发送信号给当前进程。</p>
+<h1>常见的信号</h1>
 
-<pre><code>#include &lt;signal.h&gt; 
+<ul>
+<li><p>SIGINT   交互式操作产生的信号（如CTRL &ndash; C）。</p></li>
+<li><p>SIGQUIT  当键盘按下CTRL+\从shell中发出信号，信号被传递给shell中前台运行的进程，对应该信号的默认操作是退出 (QUIT) 该进程。</p></li>
+<li><p>SIGTSTP  当键盘按下CTRL+Z从shell中发出信号，信号被传递给shell中前台运行的进程，对应该信号的默认操作是暂停 (STOP) 该进程。</p></li>
+<li><p>SIGCONT  用于通知暂停的进程继续。</p></li>
+<li><p>SIGALRM  起到定时器的作用，通常是程序在一定的时间之后才生成该信号。</p></li>
+<li><p>SIGFPE    浮点错误（0作为除数产生的错误，非法的操作）。</p></li>
+</ul>
 
-/**
+
+<h1>信号产生</h1>
+
+<p>信号的产生有两种方式,一种是由内核(kernel)差生的,比如出现硬件错误(比如出现分母为0的除法运算)。还有一种情况是其他进程产生的,发送给内核,再由内核传递给目标进程。</p>
+
+<p>1,通过 raise 发送信号给当前进程,该函数</p>
+
+<pre><code>/**
  * 成功返回0,否则返回 -1
  * @param signo 信号类型
  */
-int raise(int signo) 
+if (raise(SIGINT) != 0) {
+    fputs("Error raising the signal.\n", stderr);
+    return EXIT_FAILURE;
+}
 </code></pre>
 
 <p>2,在权限允许的情况下通过 kill 发送信号给指定进程。</p>
@@ -296,7 +331,7 @@ int raise(int signo)
  * @param pid 进程ID,
  * 当pid &gt; 0时,信号发送至ID为pid的进程,
  * 当pid = 0时,信号发送至同一进程组的进程,
- * 当pid &lt; 0&amp;&amp;pid != -1时,信号发送至进程组ID为(-1*pid)的所有进程
+ * 当pid &lt; 0 &amp;&amp; pid != -1时,信号发送至进程组ID为(-1*pid)的所有进程
  * 当pid = -1时,信号发送至除自身进程以外的所有ID大于1的进程
  * 
  * @param signo 信号类型
@@ -451,10 +486,7 @@ sigsuspend(const sigset_t *mask));
 
 <h1>完整示例</h1>
 
-<ul>
-<li><a href="https://github.com/sbxfc/signal">https://github.com/sbxfc/signal</a></li>
-</ul>
-
+<p><a href="https://github.com/sbxfc/unix/tree/master/signal">https://github.com/sbxfc/unix/tree/master/signal</a></p>
 
 <h1>参见</h1>
 
@@ -473,23 +505,23 @@ sigsuspend(const sigset_t *mask));
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[在Xcode里使用libevent库]]></title>
+    <title type="html"><![CDATA[在Mac OS下使用libevent库]]></title>
     <link href="http://sbxfc.github.io/blog/2015/12/30/libevent/"/>
     <updated>2015-12-30T17:43:19+08:00</updated>
     <id>http://sbxfc.github.io/blog/2015/12/30/libevent</id>
     <content type="html"><![CDATA[<h1>编译</h1>
 
-<p>从官网下载最新的release包<a href="http://libevent.org/">libevent-2.0.22-stable.tar.gz</a></p>
+<p>从官网下载最新的release包 <a href="http://libevent.org/">libevent-2.0.22-stable.tar.gz</a></p>
 
-<p>解压并进入相应目录后,执行下列编译代码:</p>
+<p>解压并进入相应目录后进行编译:</p>
 
 <pre><code>./configure &amp;&amp; make  
 sudo make install
 </code></pre>
 
-<p>完成编译后按Command+Shilt+G进入 /usr/local/lib 文件夹就可以看到生成的文件目录 libevent-2.0.22</p>
+<p>编译完成后,可以按Command+Shilt+G进入目录(/usr/local/lib)查看生成的文件夹 libevent-2.0.22</p>
 
-<h1>使用示例</h1>
+<h1>定时器示例</h1>
 
 <p>新建一个Command Line Tool 的c++项目,首先在Build Phases->Link Binary With Libraries里添加三个.a库文件 libevent_core.a、libevent_extra.a、libevent_phreads.a(这几个库文件的选择视情况而定)。</p>
 
@@ -1251,6 +1283,46 @@ cc.eventManager.dispatchEvent(event);
 <li><a href="http://www.cocos.com/doc/article/index?type=cocos2d-x&amp;url=/doc/cocos-docs-master/manual/framework/html5/v3/eventManager/zh.md">http://www.cocos.com/doc/article/index?type=cocos2d-x&amp;url=/doc/cocos-docs-master/manual/framework/html5/v3/eventManager/zh.md</a></li>
 </ul>
 
+
+<h1>异步</h1>
+
+<p>有时候,在不增加新线程的情况下,可以使用分时处理的方式解决一些游戏里常见的卡顿问题。</p>
+
+<p>卡顿的原因在于一帧时间内处理的事情太多,需要很长时间才能切到下一帧,所以导致画面卡顿。如果我们可以将逻辑放在多帧里处理,这样就会好很多。</p>
+
+<p>ccjs里支持的异步方法:</p>
+
+<pre><code>cc.log("预备!");
+var NEXT_FRAME_TIME = 17;
+cc.async.parallel([
+    function (cb) {
+        setTimeout(function () {
+            cc.log("A说:异步大法好! 当前帧:" + cc.director.getTotalFrames());
+            cb();
+        }, NEXT_FRAME_TIME);
+    },
+    function (cb) {
+        cc.log("B说:异步大法好! 当前帧:" + cc.director.getTotalFrames());
+        cb();
+    }
+], function () {
+    cc.log("大家都说:异步大法好!");
+});
+</code></pre>
+
+<p>使用JSB在iOS设备上有如下输出:</p>
+
+<p><em>预备!<br>
+B说:异步大法好! 当前帧:22<br>
+A说:异步大法好! 当前帧:23<br>
+大家都说:异步大法好!</em></p>
+
+<p>在JS语言里有两个函数可以实现异步操作 setInterval 和 setTimeout</p>
+
+<ul>
+<li><a href="http://www.cocos.com/doc/article/index?type=cocos2d-x&amp;url=/doc/cocos-docs-master/manual/framework/html5/v3/cc-async/zh.md">http://www.cocos.com/doc/article/index?type=cocos2d-x&amp;url=/doc/cocos-docs-master/manual/framework/html5/v3/cc-async/zh.md</a></li>
+</ul>
+
 ]]></content>
   </entry>
   
@@ -1533,53 +1605,54 @@ Zhan中&#8221;扩&#8221;字的首字母)。所以这一关系其实是大陆把U
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[pthread]]></title>
+    <title type="html"><![CDATA[pthread & mutex(互斥锁)*]]></title>
     <link href="http://sbxfc.github.io/blog/2015/07/14/pthread/"/>
     <updated>2015-07-14T10:28:45+08:00</updated>
     <id>http://sbxfc.github.io/blog/2015/07/14/pthread</id>
-    <content type="html"><![CDATA[<h1>POSIX线程</h1>
+    <content type="html"><![CDATA[<p>pthread 是POSIX thread的简称,而<a href="https://zh.wikipedia.org/wiki/POSIX%E7%BA%BF%E7%A8%8B">POSIX</a>是Unix系统下的接口标准。</p>
 
-<p>pthread即POSIX thread,是POSIX标准的线程API。(POSIX是包括Unix、Linux、OS系统等绝大多数操作系统支持的API标准。)</p>
+<p>通过pthread,我们可以创建一个新的线程。pthread的使用方法非常简单,我们只需要调用pthread_create函数,并传入pthread_t类型的线程ID指针以及回调函数指针即可:</p>
 
-<p>使用pthread创建一个线程非常简单,调用pthread_create函数,传入pthread_t类型的线程ID指针和回调的函数指针。</p>
-
-<pre><code>pthread_create(&amp;tid,NULL,func,NULL);
+<pre><code>pthread_t tid;
+if (pthread_create(&amp;tid, NULL, thread_func, NULL) != 0){
+    printf("error creating thread.");
+    return EXIT_FAILURE;
+}
 </code></pre>
 
-<p>线程终止:</p>
+<p>回调函数调用后会在一个新的线程上运行,当该函数结束时(return),线程终止。除此之外,你也可以通过另外两种方式来终止一个线程:</p>
 
-<ul>
-<li><p>线程函数返回(return)时线程终止。</p></li>
-<li><p>被同一进程的另外线程cancel掉。</p></li>
-<li><p>调用pthread_exit函数退出线程。</p></li>
-</ul>
+<ol>
+<li><p>通过同一进程的另外线程cancel掉该线程。</p></li>
+<li><p>调用pthread_exit退出线程。</p></li>
+</ol>
 
-
-<p><a href="https://zh.wikipedia.org/wiki/POSIX%E7%BA%BF%E7%A8%8B">查看POSIX线程支持的操作系统</a></p>
 
 <!-- more -->
 
 
 <h1>互斥锁</h1>
 
-<p>线程之间可以共享内存空间,这意味着不同线程可以读取内存中的同一个变量。但是不同线程在同一时间修改一个内存对象会造成一些不可预知的结果。</p>
+<p>线程之间可以共享内存空间,这意味着不同线程可以访问内存中的同一个变量。然而不同线程在同一时间修改一个内存对象会造成一些不可预知的结果。</p>
 
-<p>为了避免意外发生,我们需要用到pthread里一个非常重要的数据结构 —— 互斥对象(mutex)。互斥对象在使用时结合互斥锁 pthread_mutex_lock() 和 pthread_mutex_unlock()使用。</p>
+<p>为了避免意外,我们需要用到pthread里一个非常重要的数据结构 —— 互斥对象(mutex)。互斥对象在使用时结合互斥锁使用,pthread_mutex_lock 和 pthread_mutex_unlock。</p>
 
-<p>它的工作是这样的:线程B锁定了一个互斥对象(mutex),如果线程A也试图锁定该互斥对象时,线程A就进入睡眠状态。一旦线程B释放了互斥对象（通过 pthread_mutex_unlock(),线程A 就能够锁定这个互斥对象（换句话说，线程A就将从 pthread_mutex_lock() 函数调用中返回,同时互斥对象被重新锁定）。同样地,当线程A正锁定互斥对象时,如果线程C试图锁定互斥对象的话,线程C也将临时进入睡眠状态。</p>
+<p>互斥锁是这样工作的:线程B锁定了一个互斥对象(mymutex),如果线程A也试图锁定该互斥对象(mymutex)时,线程A就进入休眠状态。一旦线程B释放了互斥对象（调用 pthread_mutex_unlock()) ,线程A 就能够锁定这个互斥对象（换句话说,线程A就将从 pthread_mutex_lock() 函数调用中返回,同时互斥对象被重新锁定）。同样地,当线程A正锁定互斥对象时,如果线程C试图锁定互斥对象的话,线程C也将临时进入睡眠状态。</p>
 
 <pre><code>pthread_mutex_lock(&amp;mymutex);
-
- //在这里进行多线程环境下的数据修改工作,
- //因为mymutex被锁定,凡是此时试图锁定mymutex的线程都会进入睡眠,
- //直到函数unlock执行之后才被重新唤醒。
-
+ /*
+   直至解锁后,mymutex会阻止另一个试图访问此区域的线程
+ */
 pthread_mutex_unlock(&amp;mymutex);
 </code></pre>
 
 <p>对已锁定的互斥对象上调用 pthread_mutex_lock() 的所有线程都将进入睡眠状态,这些睡眠的线程将“排队”访问这个互斥对象。</p>
 
-<p>1）互斥对象使用时需要初始化:</p>
+<p><strong>从上述可知,mutex会帮助我们锁定一段逻辑区域的访问。但是,如果一个数据对象有多处调用的情况,我们需要根据实际情况,设计统一的接口。</strong></p>
+
+<h1>互斥锁的使用</h1>
+
+<p>1)互斥对象有两种初始化方式,分为别静态初始化和动态初始化.</p>
 
 <p>静态初始化:</p>
 
@@ -1592,13 +1665,13 @@ pthread_mutex_unlock(&amp;mymutex);
 pthread_mutex_init(&amp;myLock,NULL);
 </code></pre>
 
-<p>2）销毁互斥对象</p>
+<p>2）销毁</p>
 
-<p>一旦初始化完之后,我们就可以根据实际情况对对象实施加锁和解锁,但需要注意的是如果是动态初始化(使用pthread_mutex_init()初始化)的互斥对象,在释放或废弃条件变量之前,需要清理它:</p>
+<p>一旦初始化完成之后,我们就可以根据实际情况对操作实施加锁和解锁,但需要留意的是如果是动态初始化(使用pthread_mutex_init()的方式)的互斥对象,在释放或废弃条件变量之前,需要清理它:</p>
 
 <pre><code>/*
- * 使用pthread_mutex_init()初始的互斥对象,
- * 应使用 pthread_mutex_destroy() 清理它。
+ * 使用pthread_mutex_init()初始化的互斥对象,
+ * 应当使用 pthread_mutex_destroy() 清理它。
  * pthread_mutex_destroy() 接受一个指向 pthread_mutext_t 的指针作为参数
  * 并释放创建互斥对象时分配给它的任何资源。
  */
@@ -1607,43 +1680,34 @@ pthread_mutex_destroy(myLock);
 
 <p>3）尝试锁定</p>
 
-<p>使用 pthread_mutex_trylock() 可以尝试锁定互斥对象。如果互斥对象当前处于解锁状态，那么您将获得该锁并且函数将返回零。然而,如果互斥对象已锁定,这个调用也不会阻塞。</p>
+<p>假如,我们不知道互斥对象是否被锁定。当我们使用 pthread_mutex_lock 对互斥对象加锁时,可能互斥对象已经锁定,这时pthread_mutex_lock操作就会进入休眠。为了避免这种情况,我们可以使用 pthread_mutex_trylock 去尝试锁定互斥对象。如果互斥对象当前处于解锁状态，那么您将获得该锁并且函数将返回零。然而,如果互斥对象已锁定,这个调用也不会阻塞。</p>
 
 <h1>条件变量</h1>
 
-<p>如果线程在等待某个特定条件发生,按照上面的方式,就需要对数据结构不停地加锁、解锁进行检测,这样不但浪费时间和资源，而且繁忙查询的效率也非常低。这时,我们可以用pthread_cond_wait()方法。</p>
+<p>如果线程在等待某个特定条件发生,按照上述方式就需要不停地对数据加锁、解锁进行检测。这样不但浪费了时间和资源,而且繁忙的查询效率也非常低。这时,我们可以利用pthread_cond_wait.</p>
 
 <p>以查询特殊条件为例:<br>
 首先,线程A执行对数据的检测并没有找到满足条件的数据。此时,通过pthread_cond_wait()函数将线程A设置为等待休眠状态:</p>
 
-<pre><code> /*
- * 线程A操作
- */
-pthread_mutex_lock(&amp;mymutex);
-//检测数据条件 
+<pre><code>pthread_mutex_lock(&amp;mymutex);
 pthread_cond_wait(&amp;mycond, &amp;mymutex);
 </code></pre>
 
-<p>调用pthread_cond_wait()所做的第一件事就是对互斥对象进行解锁（其他线程可以修改数据条件）,并等待条件mycond发生。</p>
+<p>pthread_cond_wait()被调用后所做的第一件事就是对互斥对象(mymutex)进行解锁,并等待条件mycond发生。</p>
 
-<p>此时,pthread_cond_wait() 调用还未返回,对互斥对象的解锁会立即发生。等待条件mycond通常是一个阻塞操作。这意味着线程将睡眠,在它苏醒之前不会消耗 CPU 周期。这正是我们期待发生的情况。线程将一直睡眠，直到特定条件发生,在这期间不会发生任何浪费 CPU 时间的繁忙查询。从线程的角度来看,它只是在等待 pthread_cond_wait() 调用返回。</p>
+<p>此时,pthread_cond_wait() 调用还未返回,等待条件mycond通常是一个阻塞操作,这意味着线程将睡眠,在它苏醒之前不会消耗 CPU 周期。这正是我们期待发生的情况,线程将一直睡眠，直到特定条件发生,在这期间不会发生任何浪费 CPU 时间的繁忙查询。从线程的角度来看,它只是在等待 pthread_cond_wait() 调用返回。</p>
 
-<p>假如另一个线程B锁定了mymutex并对数据条件做了修改。在对互斥对象解锁之后,线程B会立即调用函数 pthread_cond_broadcast(&amp;mycond)。此操作之后，线程B将使所有等待 mycond 条件变量的线程立即苏醒。这意味着第一个线程（仍处于 pthread_cond_wait() 调用中）现在将苏醒。</p>
+<p>假如另一个线程B锁定了mymutex并对数据条件做了修改。在对互斥对象解锁之后,线程B立即调用了函数 pthread_cond_broadcast(&amp;mycond)。此操作之后,线程B的操作将使所有等待 mycond 条件变量的线程立即苏醒,这意味着第一个线程现在将苏醒。</p>
 
-<pre><code> /*
- * 线程B操作
- */
-pthread_mutex_lock(&amp;mymutex);
-
+<pre><code>pthread_mutex_lock(&amp;mymutex);
 //修改数据条件操作 
-
 pthread_mutex_unlock(&amp;mymutex);
 pthread_cond_broadcast(&amp;mycond);
 </code></pre>
 
-<p>您可能会认为在线程B调用 pthread_cond_broadcast(&amp;mymutex) 之后，线程A的 pthread_cond_wait() 会立即返回。不是那样!实际上，pthread_cond_wait() 将执行最后一个操作:重新锁定 mymutex。一旦 pthread_cond_wait() 锁定了互斥对象,那么它将返回并允许线程A继续执行。</p>
+<p>您可能会认为在线程B调用 pthread_cond_broadcast(&amp;mymutex) 之后,线程A的 pthread_cond_wait() 会立即返回。不是那样!实际上，pthread_cond_wait() 将执行最后一个操作:重新锁定 mymutex。一旦 pthread_cond_wait() 锁定了互斥对象,那么它将返回并允许线程A继续执行。</p>
 
-<p>1）初始化和清除</p>
+<p>1)初始化和清除</p>
 
 <p>和互斥对象一样,条件变量在使用时也需要初始化:</p>
 
@@ -1681,15 +1745,15 @@ pthread_cond_init(&amp;mycond,NULL);
 
 <h1>参见</h1>
 
-<p>POSIX 线程(WIKI):<a href="https://zh.wikipedia.org/wiki/POSIX%E7%BA%BF%E7%A8%8B">https://zh.wikipedia.org/wiki/POSIX%E7%BA%BF%E7%A8%8B</a></p>
+<p>POSIX 线程[维基百科]:<a href="https://zh.wikipedia.org/wiki/POSIX%E7%BA%BF%E7%A8%8B">https://zh.wikipedia.org/wiki/POSIX%E7%BA%BF%E7%A8%8B</a></p>
 
 <p>POSIX 线程详解:<a href="http://www.ibm.com/developerworks/cn/linux/thread/posix_thread1/#icomments">http://www.ibm.com/developerworks/cn/linux/thread/posix_thread1/#icomments</a></p>
 
 <p>POSIX 线程详解，第 2部分:<a href="https://www.ibm.com/developerworks/cn/linux/thread/posix_thread2/">https://www.ibm.com/developerworks/cn/linux/thread/posix_thread2/</a></p>
 
-<h1>完整代码</h1>
+<h1>示例</h1>
 
-<p><a href="https://github.com/sbxfc/PThreads">https://github.com/sbxfc/PThreads</a></p>
+<p><a href="https://github.com/sbxfc/objc/tree/master/threads/pthread/pthread">https://github.com/sbxfc/objc/tree/master/threads/pthread/pthread</a></p>
 ]]></content>
   </entry>
   
@@ -2031,157 +2095,6 @@ operation创建好以后很容易加入operation queue中
 使用Operation Queue对ScrollView里的项进行异步绘制:<br>
 <https://github.com/sbxIOS/lazyViewExample>&#8211;>
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[跨平台的TCP通信客户端]]></title>
-    <link href="http://sbxfc.github.io/blog/2015/05/12/cross-platform-tcpip-socket/"/>
-    <updated>2015-05-12T14:05:45+08:00</updated>
-    <id>http://sbxfc.github.io/blog/2015/05/12/cross-platform-tcpip-socket</id>
-    <content type="html"><![CDATA[<p>TCP/IP 是 TCP/IP协议族的简称,是互联网的基础通讯架构,事实上也是计算机网络通信的国际标准。TCP/IP的前身是NCP(网络控制协议),是S.克罗克及其小组在加州大学制定的最初的主机间通信协议。NCP协议的缺点是,它没有为每台电脑设置一个唯一地址,导致在越来越庞大的网络中难以准确定位。另一方面,NCP缺乏纠错功能,导致数据传输不稳定。</p>
-
-<p>TCP/IP将网络通信的可靠性改为由主机保证而不是像NCP那样由网络保证。TCP/IP使用一个成为网关（后来改为路由器以免与网关混淆）的计算机为每个网络提供一个接口并且在它们之间来回传输数据包。</p>
-
-<p>在1985年时,因特网架构理事会举行一个三天有250家厂商代表参加的关于计算产业使用TCP/IP的工作会议，帮助推广并且引领它日渐增长的商业应用。</p>
-
-<p>如今,绝大多数商业操作系统都实现了TCP/IP协议,这其中包括所有的商业Unix、Linux发布包，以及Mac OS X和微软的Windows操作系统。</p>
-
-<h1>TCP/IP模型</h1>
-
-<p>两个因特网主机(Host)通过两个路由器（Router）和对象的层连接。</p>
-
-<p><img src="http://sbxfc.github.io/images/2015/5/tcp_ip_stack_connections.png" alt="" /></p>
-
-<!-- more -->
-
-
-<p>在TCP/IP模型是一个抽象的分层模型，这个模型中,所有的TCP/IP系列网络协议都被归类为4个抽象层,应用层、运输层、网络层、链路层。每一层建立在低一层的服务上,并为高一层提供服务。</p>
-
-<ul>
-<li><p>数据链路层:在TCP/IP协议族中,链路层又称为网络接口层。通常包括操作系统中的设备驱动和计算机中的对应网络接口卡。它们一起处理与电缆的物理接口细节。</p></li>
-<li><p><a href="http://zh.wikipedia.org/wiki/%E7%BD%91%E7%BB%9C%E5%B1%82">网络层</a>:网络层提供路由和寻址的功能，使两终端系统能够互连且决定最佳路径，并具有一定的拥塞控制和流量控制的能力。TCP/IP协议体系中的网络层功能由IP协议规定和实现，故又称IP层。</p></li>
-<li><p>运输层:运输层主要为两台计算机上的应用程序提供端到端的通信。在TCP/IP协议族中,有两个不相同的传输协议:TCP和UDP。TCP为两台主机提供高可靠性的数据通信。它所做的工作包括把应用程序交给它的数据分成合适的小块交给下面的网络层,确认接收到的分组,设置发送最后确认分组的超时时钟 等。由于运输层提供了高可靠性的端到端的通信,因此应用层可以忽略所有这些细节。而另一方面,UDP则为应用层提供一种非常简单的服务。它只是把称做数据报的分组从一台主机发送到另一台主机,但并不保证该数据报能到达另一端。任何必须的可靠性由应用层来提供。</p></li>
-<li><p>应用层:应用层是指我们的应用程序。</p></li>
-</ul>
-
-
-<p><img src="http://sbxfc.github.io/images/2015/5/ip_stack_connections.png" alt="" /></p>
-
-<h1>POSIX</h1>
-
-<p>可移植操作系统接口（英语：Portable Operating System Interface of UNIX，缩写为POSIX），是IEEE为要在各种UNIX操作系统上运行软件，而定义API的一系列互相关联的标准的总称。</p>
-
-<p>在OS和Linux在内的所有Unix系统里,我们都可以使用Posix接口来创建socket。在Windows系统里,我们可以使用WinSock来操作socket,WinSock实际上是对POSIX socket的一个封装。</p>
-
-<h1>WinSock和POSIX socket接口的异同</h1>
-
-<p>一,头文件</p>
-
-<p>在windows中需要引入头文件</p>
-
-<pre><code>#include &lt;winsock.h&gt;
-</code></pre>
-
-<p>在其他遵从POSIX规则的系统里需要引入</p>
-
-<pre><code>#include &lt;sys/types.h&gt;
-#include &lt;sys/socket.h&gt;
-#include &lt;netinet/in.h&gt;
-</code></pre>
-
-<p>二,链接库</p>
-
-<p>在windows下面需要主动连接ws2_32.lib库</p>
-
-<pre><code>#ifdef WIN32
-#include "StdAfx.h"
-#pragma comment(lib, "wsock32")
-#endif
-</code></pre>
-
-<p>三,初始化</p>
-
-<p>在windows下面需要初始化,windows下面是通过动态链接的方式调用socket的,所以需要你告诉调用的链接库的版本,操作系统会帮你加载并初始化dll。</p>
-
-<pre><code>WORD wVersionRequested;
-WSADATA wsaData;
-int err;
-wVersionRequested = MAKEWORD(2, 0);
-err = WSAStartup(wVersionRequested, &amp;wsaData);
-if(0 != err) //检查Socket初始化是否成功
-{
-    cout&lt;&lt;"Socket2.0初始化失败，Exit!";
-    return -1;
-}
-</code></pre>
-
-<p>四,函数</p>
-
-<p>在Windows和POSIX里,socket的函数是一致的。只是windows里面宏定义了一个socket描述符。</p>
-
-<h1>创建TCP套接字</h1>
-
-<p>一,创建一个TCP套接字</p>
-
-<p>该函数返回一个整数描述符,以后所有socket调用(如随后的connect和write)就用该描述符来标识这个套接字</p>
-
-<pre><code>int sockfd = socket(AF_INET,     //internetwork: UDP, TCP, etc
-                    SOCK_STREAM, //SOCK_STREAM说明是TCP类型
-                    0);          //protocol
-</code></pre>
-
-<p>二,与TCP服务器建立连接</p>
-
-<pre><code>    /**
-     * 设置发往的地址
-     */
-    struct sockaddr_in addrto;
-    addrto.sin_family = AF_INET;//地址类型为internetwork
-    addrto.sin_addr.s_addr = inet_addr(ip);
-    addrto.sin_port = htons(port);
-
-    int connect(int sockfd,          //sockfd是由socket函数返回的套接字描述符
-    const struct sockaddr* servaddr,//套接字地址
-    socklen_t addrlen);              //套接字地址结构大小
-</code></pre>
-
-<p>三,发送信息:</p>
-
-<p>使用<font color="#bd260d"><strong>send</strong></font>函数向TCP连接的另一端(服务器端)发送数据:</p>
-
-<pre><code>int send(SOCKET s,     //指定接收端的套接字描述符
-          char *buf,   //指定一个存放应用程序要发送数据的缓冲区            int len,     //指明buf的长度
-          int flags);  //这个参数一般置为0
-</code></pre>
-
-<p>四,数据接收</p>
-
-<p>使用<font color="#bd260d"><strong>recv</strong></font>函数从TCP连接的另一端接收数据:</p>
-
-<pre><code>int recv(SOCKET s,  //指定接收端的套接字描述符
-         char *buf, //指明一个缓冲区,该缓冲区用来存放recv接收到的数据
-         int len,    //指明buf的长度
-         int flags); //这个参数一般设置为0
-</code></pre>
-
-<h1>完整代码</h1>
-
-<p><a href="https://github.com/sbxfc/CrossPlatformSocket">https://github.com/sbxfc/CrossPlatformSocket</a></p>
-
-<h1>参考</h1>
-
-<p>网络传输协议(Wiki):<br><a href="http://zh.wikipedia.org/zh-cn/%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE">http://zh.wikipedia.org/zh-cn/%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE</a></p>
-
-<p>TCP/IP协议族(Wiki):<br><a href="http://zh.wikipedia.org/wiki/TCP/IP%E5%8D%8F%E8%AE%AE%E6%97%8F">http://zh.wikipedia.org/wiki/TCP/IP%E5%8D%8F%E8%AE%AE%E6%97%8F</a></p>
-
-<p>TCP/IP 详解</p>
-
-<p>Unix 网络编程</p>
-
-<p>sockimp.pdf:<br><a href="http://www.openss7.org/papers/strsock/sockimp.pdf">http://www.openss7.org/papers/strsock/sockimp.pdf</a></p>
-
-<p>windows/linux socket接口的异同:<br><a href="http://blog.chinaunix.net/uid-28323465-id-3876368.html">http://blog.chinaunix.net/uid-28323465-id-3876368.html</a></p>
 ]]></content>
   </entry>
   

@@ -6,10 +6,10 @@
     
 
 <meta charset="utf-8">
-<title>Xib下的自动布局 - ScrollView(二) - sbxfc</title>
+<title>Mac下的网络检测 - sbxfc</title>
 <meta name="author" content="sbxfc">
 <meta name="description"
-      content="Xib下的自动布局 - ScrollView(二) 在ScrollView上布局时,有一些区域不能确定大小。我们可以为这些区域设置一个UIView并通过修改intrinsic size里的占位符来完成约束。利用这个还有用的技巧,我们可以在这块区域上动态填充期望的内容。 &hellip;">
+      content="Mac下的网络检测 通过ifconfig查看本机的网卡信息 $ifconfig -l 该命令行返回一个列表 lo0 gif0 stf0 en0 en1 en2 fw0 p2p0 bridge0 ,其中lo0为回环接口,通过这个接口可以监听本地client发出的,进入本地server的包 $ &hellip;">
 
 
 <!-- http://t.co/dKP3o1e -->
@@ -24,7 +24,7 @@
 <script>hljs.initHighlightingOnLoad();</script>
 <!---->
 
-<link rel="canonical" href="http://sbxfc.github.io/blog/2015/03/02/ios-autolayout-scrollview2">
+<link rel="canonical" href="http://sbxfc.github.io/blog/2016/03/21/tcpdump">
 <link href="/favicon.png" rel="icon">
 <link href="/stylesheets/screen.css"
       media="screen, projection"
@@ -74,46 +74,29 @@
 <article class="entry" role="article">
 
   <header>
-    <h2 class="entry_title">Xib下的自动布局 - ScrollView(二)</h2>
+    <h2 class="entry_title">Mac下的网络检测</h2>
     
   </header>
 
-  <div class="entry_content"><p>在ScrollView上布局时,有一些区域不能确定大小。我们可以为这些区域设置一个UIView并通过修改<strong>intrinsic size</strong>里的占位符来完成约束。利用这个还有用的技巧,我们可以在这块区域上动态填充期望的内容。比如在上面动态加载一个xib文件。当填充的内容超过UIView的大小时,只要设置好xib和UIView之间的布局,内容区就会自动被扩充。</p>
+  <div class="entry_content"><p>通过ifconfig查看本机的网卡信息</p>
 
-<p>这些操作一般会在<code>awakeFromNib</code>函数里进行设置,<code>awakeFromNib</code>在布局生效前被执行。</p>
+<pre><code>$ifconfig -l 
+</code></pre>
 
-<p>下图中,红色区域设置了占位符高度:</p>
+<p>该命令行返回一个列表 lo0 gif0 stf0 en0 en1 en2 fw0 p2p0 bridge0 ,其中lo0为回环接口,通过这个接口可以监听本地client发出的,进入本地server的包</p>
 
-<p><img src="/images/2015/3/autolayout-scrollview-before.png" alt="" /></p>
+<pre><code>$sudo tcpdump -i lo0 port 9877
+</code></pre>
 
-<!--more-->
+<h1>域名解析</h1>
 
+<pre><code>host rungame.me
+</code></pre>
 
-<p>运行时,因为UIView没有添加内容,红色区域不显示,如下图:</p>
+<h1>外网IP</h1>
 
-<p><img src="/images/2015/3/autolayout-scrollview-after.png" alt="" /></p>
-
-<p>在上一部分,我们提到UIView的默认<strong>intrinsic size</strong>值为0。但对于其他组件,如UILabel,UIButton这些有内容的组件内置大小不为0。将红色区域换成一个UIButton,无需设置<strong>intrinsic size</strong>的值,我们发现ScrollView也不会报错。</p>
-
-<p>运行时一下,我们看到UIButton显示出来了:</p>
-
-<p><img src="/images/2015/3/autolayout-button-after.png" alt="" /></p>
-
-<hr />
-
-<h2>动态加载xib</h2>
-
-<p>在ScrollView里,我们可以使用一个UIView作为占位容器,设置<strong>intrinsic size</strong>值。<br>
-在运行时,往UIView上动态添加Xib,并设置布局。</p>
-
-<p>下图中绿色区域动态加载了一个包含UILabel的xib文件:</p>
-
-<p><img src="/images/2015/3/autolayout-xib-after.png" alt="" /></p>
-
-<hr />
-
-<p>完整代码:<a href="https://github.com/sbxIOS/AutoLayoutScrollView2">https://github.com/sbxIOS/AutoLayoutScrollView2</a>
- <!--more--></p>
+<pre><code>curl ifconfig.me
+</code></pre>
 </div>
 
   <footer>
@@ -122,7 +105,7 @@
       
 
       
-      <time datetime="2015-03-02 11:45:34 +0800" pubdate>Mar 2<span>nd</span>, 2015</time>
+      <time datetime="2016-03-21 12:25:45 +0800" pubdate>Mar 21<span>st</span>, 2016</time>
       
 
       
@@ -172,8 +155,8 @@
       
 	
 	// var disqus_developer = 1;
-	var disqus_identifier = 'http://sbxfc.github.io/blog/2015/03/02/ios-autolayout-scrollview2';
-	var disqus_url = 'http://sbxfc.github.io/blog/2015/03/02/ios-autolayout-scrollview2';
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2016/03/21/tcpdump';
+	var disqus_url = 'http://sbxfc.github.io/blog/2016/03/21/tcpdump';
 	var disqus_script = 'embed.js';
       
     (function () {

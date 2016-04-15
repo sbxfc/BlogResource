@@ -1,33 +1,26 @@
 ---
 layout: post
-title: "Cocos2d-JSB 内存管理"
+title: "Cocos2d-JS JSB内存管理"
 date: 2016-01-15 14:42:31 +0800
 comments: true
 categories: 
 ---
 
-#Error : Invalid Native Object
 如果你写的Cocos2d-JS程序在iOS/Android原生环境里运行时出现 <font color='#bd260d'>Error : Invalid Native Object</font> ,那么你有可能遇到了JSB的内存问题。
 
-我们知道,Cocos2d-JS在原生环境里运行的实际上是Cocos2dx引擎而非Cocos2d-HTML5,Javascript程序通过JSB调用Cocos2dx引擎的API,由于 Javascript 本身有一套垃圾回收机制,Cocos2dx也有一套,当两者共同运行时,就会由于沟通问题出现一些差错。
+我们知道,Cocos2d-JS在原生环境里运行时,实际上运行的是Cocos2dx引擎而非Cocos2d-HTML5。在程序执行时Javascript通过JSB调用Cocos2dx引擎的API,因为 Javascript 本身有一套垃圾回收机制,Cocos2dx也有一套,当这两者一起运行时,就会由于沟通问题出现一些差错。
 
-Invalid Native Object 的错误原因是,JS端访问了一个已经释放了相应C++绘制对象的JS对象。
-
-#全局变量不被回收
-
-官网列举了一个这样的示例。首先,在程序里创建了一个全局变量globalNode:
+Invalid Native Object 的错误原因是,JS端访问了一个已经释放了相应C++绘制对象的JS对象。官网列举了一个这样的示例。首先,在程序里创建了一个全局变量globalNode:
 	
 	var globalNode = new cc.Node();
-
-当程序运行时,globalNode没有通过 addChild 添加到其他Node上,而是通过设置一个按钮的回调来将自己添加到节点上:
-
+	...
 	onTouched:function(sender){
 		sender.addChild(globalNode);
 	}
 
-当按钮点击时,控制台会出现下列错误:
+当程序运行时,globalNode没有通过 addChild 函数添加场景上,而是在按钮事件onTouched触发时才被添加到场景上。当按钮点击时出现下列错误:
 	
-<font color='#bd260d'>*jsb: ERROR: File /Users/sbxfc/Documents/XXX/frameworks/cocos2d-x/cocos/scripting/js-bindings/
+><font color='#bd260d'>*jsb: ERROR: File /Users/sbxfc/Documents/XXX/frameworks/cocos2d-x/cocos/scripting/js-bindings/
 auto/jsb_cocos2dx_auto.cpp: Line: 1973, Function: js_cocos2dx_Node_addChild<br>
 Invalid Native Object*</font> 
 

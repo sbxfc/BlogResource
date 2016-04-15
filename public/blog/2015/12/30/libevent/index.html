@@ -6,10 +6,10 @@
     
 
 <meta charset="utf-8">
-<title>在Xcode里使用libevent库 - sbxfc</title>
+<title>在Mac OS下使用libevent库 - sbxfc</title>
 <meta name="author" content="sbxfc">
 <meta name="description"
-      content="在Xcode里使用libevent库 编译 从官网下载最新的release包libevent-2.0.22-stable.tar.gz 解压并进入相应目录后,执行下列编译代码: ./configure &amp;&amp; make sudo make install 完成编译后按Command &hellip;">
+      content="在Mac OS下使用libevent库 编译 从官网下载最新的release包 libevent-2.0.22-stable.tar.gz 解压并进入相应目录后进行编译: ./configure &amp;&amp; make sudo make install 编译完成后,可以按Command &hellip;">
 
 
 <!-- http://t.co/dKP3o1e -->
@@ -74,23 +74,23 @@
 <article class="entry" role="article">
 
   <header>
-    <h2 class="entry_title">在Xcode里使用libevent库</h2>
+    <h2 class="entry_title">在Mac OS下使用libevent库</h2>
     
   </header>
 
   <div class="entry_content"><h1>编译</h1>
 
-<p>从官网下载最新的release包<a href="http://libevent.org/">libevent-2.0.22-stable.tar.gz</a></p>
+<p>从官网下载最新的release包 <a href="http://libevent.org/">libevent-2.0.22-stable.tar.gz</a></p>
 
-<p>解压并进入相应目录后,执行下列编译代码:</p>
+<p>解压并进入相应目录后进行编译:</p>
 
 <pre><code>./configure &amp;&amp; make  
 sudo make install
 </code></pre>
 
-<p>完成编译后按Command+Shilt+G进入 /usr/local/lib 文件夹就可以看到生成的文件目录 libevent-2.0.22</p>
+<p>编译完成后,可以按Command+Shilt+G进入目录(/usr/local/lib)查看生成的文件夹 libevent-2.0.22</p>
 
-<h1>使用示例</h1>
+<h1>定时器示例</h1>
 
 <p>新建一个Command Line Tool 的c++项目,首先在Build Phases->Link Binary With Libraries里添加三个.a库文件 libevent_core.a、libevent_extra.a、libevent_phreads.a(这几个库文件的选择视情况而定)。</p>
 

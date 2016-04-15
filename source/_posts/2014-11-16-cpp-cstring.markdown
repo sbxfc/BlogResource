@@ -1,54 +1,65 @@
 ---
 layout: post
-title: "C/C++ string.h"
+title: "C/C++ 字符操作"
 date: 2014-11-16 20:04:24 +0800
 comments: true
 categories: 
 ---
+#strcpy
 
-char\* strcpy (char \*s1, const char \*s2);
----
-
----
-将字符串s2复制到字符数组s1中去。<br>字符数组s1的长度应不小于"字符串"s2的长度,"字符串"s2 可以为字符数组名,也可以是一个字符串常量。<br>
-
-	char s1[15];
-    char s2[50] = "John Lennon";//字符串长度为12
-    strcpy(s1, s2);
-    printf(s1);
-    
-输出:*John Lennon* 
+将字符串 source 复制到字符数组 destination 中去。<br>
+destination的长度应不小于source的长度,source可以为字符数组名,也可以为字符串常量:
 	
-	char s1[15];
-    const char* s2 = "John Lennon";//字符串长度为12
-    strcpy(s1, s2);
-    printf(s1);
-    
-输出:*John Lennon* 
+	/**
+	 * strcpy example 
+	 * char * strcpy ( char * destination, const char * source );
+	*/
+	#include <stdio.h>
+	#include <string.h>
+	
+	int main ()
+	{
+	  char str1[]="Sample string";
+	  char str2[40];
+	  char str3[40];
+	  strcpy (str2,str1);
+	  strcpy (str3,"copy successful");
+	  printf ("str1: %s\nstr2: %s\nstr3: %s\n",str1,str2,str3);
+	  return 0;
+	}
 
-<br>
-char\* strncpy (char \*s1, const char \*s2, size_t len);
----
+#strncpy
 
----
-将s2的前len个字符复制到s1中指定的地址, 不加 '\0'
+将 source 的前 num 个字符复制到destination中指定的地址, 不加 '\0'
 
-	char s1[12] = "";
-    char s2[50] = "John Lennon";
-    strncpy(s1, s2,4);
-    printf(s1);
-    
-输出:*John* 
-
+	/* 
+	 *	strncpy example 
+	 *  char * strncpy ( char * destination, const char * source, size_t num );
+	*/
+	#include <stdio.h>
+	#include <string.h>
+	
+	int main ()
+	{
+	  	char s1[12] = "";
+    	char s2[50] = "John Lennon";
+    	strncpy(s1,s2,4);
+    	printf(s1);/*输出:John */
+	
+	  return 0;
+	}
+	
+- <http://www.cplusplus.com/reference/cstring/strncpy/>
 
 #memcpy
 
-	void * memcpy ( void * destination, const void * source, size_t num );
-
 c和c++使用的内存拷贝函数，memcpy函数的功能是从源src所指的内存地址的起始位置开始拷贝n个字节到目标dest所指的内存地址的起始位置中。
 
-
-	/* memcpy example */
+	/**
+	 *	memcpy example 
+	 *	void * memcpy ( void * destination, const void * source, size_t num );
+	*/
+	
 	#include <stdio.h>
 	#include <string.h>
 	
@@ -73,35 +84,37 @@ c和c++使用的内存拷贝函数，memcpy函数的功能是从源src所指的�
 	  return 0;
 	}
     
+#memmove
 
-void\* memmove (void \*s1, const void \*s2, size_t len);
----
-
----
 当源单元和目的单元缓冲区交迭时使用。源和目的可以是同一块内存区域(例如数组某个元素在数组存储器内部移动数据)
 
-<br>
-char\* strcat (char \*s1, const char \*s2);
----
+	void* memmove (void *s1, const void *s2, size_t len);
 
----
+
+
+#strcat
+
 把字符串 2 接到字符串 1 后面（字符串 1 要足够大）。连接前两个字符串都有 "/0" ,连接时将字符串1后 "/0" 丢弃,只在新字符串后保留 '/0'
+
+	/*
+	char* strcat (char *s1, const char *s2);
+	*/
 
 	char s1[50] = "John";
     char s2[50] = "Lennon";
     strcat(s1," ");
     strcat(s1,s2);
     
-    printf(s1);
+    printf(s1);/*输出:John Lennon*/
     
-输出:*John Lennon* 
 
-<br>
-int strcmp (const char \*s1, const char \*s2);
----
+#strcmp
 
----
 两个字符串自左至右逐个字符相比(按 ASCII 码值大小比较)直到出现不同的字符或者遇到 "/0" 为止,如果全部字符相同,则认为相等,若出现不同字符,则以第一个不相同的字符为准
+
+	/*
+	int strcmp (const char *s1, const char *s2);
+	*/
 
 	const char* s1 = "John Lennon";
     const char* s2 = "John Smith";
@@ -112,12 +125,11 @@ int strcmp (const char \*s1, const char \*s2);
 - 如果字符串 1>字符串 2，函数返回值为正数
 - 如果字符串1<字符串 2，函数返回值为负数
 
-<br>
-int strncmp (const char \*s1, const char \*s2, size_t len);
----
+#strncmp
 
----
 对 s1 和 s2 的前len个字符作比较
+
+	int strncmp (const char *s1, const char *s2, size_t len);
 
 #memcpy
 

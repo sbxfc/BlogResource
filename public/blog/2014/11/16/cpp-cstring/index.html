@@ -6,10 +6,11 @@
     
 
 <meta charset="utf-8">
-<title>C/C++ string.h - sbxfc</title>
+<title>C/C++ 字符操作 - sbxfc</title>
 <meta name="author" content="sbxfc">
 <meta name="description"
-      content="C/C++ string.h char* strcpy (char *s1, const char *s2); 将字符串s2复制到字符数组s1中去。字符数组s1的长度应不小于&#8221;字符串&#8221;s2的长度,&ldquo;字符串&#8221;s2 可以为字符数组名, &hellip;">
+      content="C/C++ 字符操作 strcpy 将字符串 source 复制到字符数组 destination 中去。
+destination的长度应不小于source的长度,source可以为字符数组名,也可以为字符串常量: /** * strcpy example * char * strcpy ( &hellip;">
 
 
 <!-- http://t.co/dKP3o1e -->
@@ -74,57 +75,70 @@
 <article class="entry" role="article">
 
   <header>
-    <h2 class="entry_title">C/C++ string.h</h2>
+    <h2 class="entry_title">C/C++ 字符操作</h2>
     
   </header>
 
-  <div class="entry_content"><h2>char* strcpy (char *s1, const char *s2);</h2>
+  <div class="entry_content"><h1>strcpy</h1>
 
-<hr />
+<p>将字符串 source 复制到字符数组 destination 中去。<br>
+destination的长度应不小于source的长度,source可以为字符数组名,也可以为字符串常量:</p>
 
-<p>将字符串s2复制到字符数组s1中去。<br>字符数组s1的长度应不小于&#8221;字符串&#8221;s2的长度,&ldquo;字符串&#8221;s2 可以为字符数组名,也可以是一个字符串常量。<br></p>
+<pre><code>/**
+ * strcpy example 
+ * char * strcpy ( char * destination, const char * source );
+*/
+#include &lt;stdio.h&gt;
+#include &lt;string.h&gt;
 
-<pre><code>char s1[15];
-char s2[50] = "John Lennon";//字符串长度为12
-strcpy(s1, s2);
-printf(s1);
+int main ()
+{
+  char str1[]="Sample string";
+  char str2[40];
+  char str3[40];
+  strcpy (str2,str1);
+  strcpy (str3,"copy successful");
+  printf ("str1: %s\nstr2: %s\nstr3: %s\n",str1,str2,str3);
+  return 0;
+}
 </code></pre>
 
-<p>输出:<em>John Lennon</em></p>
+<h1>strncpy</h1>
 
-<pre><code>char s1[15];
-const char* s2 = "John Lennon";//字符串长度为12
-strcpy(s1, s2);
-printf(s1);
+<p>将 source 的前 num 个字符复制到destination中指定的地址, 不加 &lsquo;\0&rsquo;</p>
+
+<pre><code>/* 
+ *  strncpy example 
+ *  char * strncpy ( char * destination, const char * source, size_t num );
+*/
+#include &lt;stdio.h&gt;
+#include &lt;string.h&gt;
+
+int main ()
+{
+    char s1[12] = "";
+    char s2[50] = "John Lennon";
+    strncpy(s1,s2,4);
+    printf(s1);/*输出:John */
+
+  return 0;
+}
 </code></pre>
 
-<p>输出:<em>John Lennon</em></p>
+<ul>
+<li><a href="http://www.cplusplus.com/reference/cstring/strncpy/">http://www.cplusplus.com/reference/cstring/strncpy/</a></li>
+</ul>
 
-<br>
-
-
-<h2>char* strncpy (char *s1, const char *s2, size_t len);</h2>
-
-<hr />
-
-<p>将s2的前len个字符复制到s1中指定的地址, 不加 &lsquo;\0&rsquo;</p>
-
-<pre><code>char s1[12] = "";
-char s2[50] = "John Lennon";
-strncpy(s1, s2,4);
-printf(s1);
-</code></pre>
-
-<p>输出:<em>John</em></p>
 
 <h1>memcpy</h1>
 
-<pre><code>void * memcpy ( void * destination, const void * source, size_t num );
-</code></pre>
-
 <p>c和c++使用的内存拷贝函数，memcpy函数的功能是从源src所指的内存地址的起始位置开始拷贝n个字节到目标dest所指的内存地址的起始位置中。</p>
 
-<pre><code>/* memcpy example */
+<pre><code>/**
+ *  memcpy example 
+ *  void * memcpy ( void * destination, const void * source, size_t num );
+*/
+
 #include &lt;stdio.h&gt;
 #include &lt;string.h&gt;
 
@@ -150,41 +164,38 @@ int main ()
 }
 </code></pre>
 
-<h2>void* memmove (void *s1, const void *s2, size_t len);</h2>
-
-<hr />
+<h1>memmove</h1>
 
 <p>当源单元和目的单元缓冲区交迭时使用。源和目的可以是同一块内存区域(例如数组某个元素在数组存储器内部移动数据)</p>
 
-<br>
+<pre><code>void* memmove (void *s1, const void *s2, size_t len);
+</code></pre>
 
-
-<h2>char* strcat (char *s1, const char *s2);</h2>
-
-<hr />
+<h1>strcat</h1>
 
 <p>把字符串 2 接到字符串 1 后面（字符串 1 要足够大）。连接前两个字符串都有 &ldquo;/0&rdquo; ,连接时将字符串1后 &ldquo;/0&rdquo; 丢弃,只在新字符串后保留 &lsquo;/0&rsquo;</p>
 
-<pre><code>char s1[50] = "John";
+<pre><code>/*
+char* strcat (char *s1, const char *s2);
+*/
+
+char s1[50] = "John";
 char s2[50] = "Lennon";
 strcat(s1," ");
 strcat(s1,s2);
 
-printf(s1);
+printf(s1);/*输出:John Lennon*/
 </code></pre>
 
-<p>输出:<em>John Lennon</em></p>
-
-<br>
-
-
-<h2>int strcmp (const char *s1, const char *s2);</h2>
-
-<hr />
+<h1>strcmp</h1>
 
 <p>两个字符串自左至右逐个字符相比(按 ASCII 码值大小比较)直到出现不同的字符或者遇到 &ldquo;/0&rdquo; 为止,如果全部字符相同,则认为相等,若出现不同字符,则以第一个不相同的字符为准</p>
 
-<pre><code>const char* s1 = "John Lennon";
+<pre><code>/*
+int strcmp (const char *s1, const char *s2);
+*/
+
+const char* s1 = "John Lennon";
 const char* s2 = "John Smith";
 int len = strcmp(s1, s2);
 printf("%d",len);//输出:-7
@@ -197,14 +208,12 @@ printf("%d",len);//输出:-7
 </ul>
 
 
-<br>
-
-
-<h2>int strncmp (const char *s1, const char *s2, size_t len);</h2>
-
-<hr />
+<h1>strncmp</h1>
 
 <p>对 s1 和 s2 的前len个字符作比较</p>
+
+<pre><code>int strncmp (const char *s1, const char *s2, size_t len);
+</code></pre>
 
 <h1>memcpy</h1>
 

@@ -6,11 +6,11 @@
     
 
 <meta charset="utf-8">
-<title>POSIX - signal - sbxfc</title>
+<title>UNIX - 信号 - sbxfc</title>
 <meta name="author" content="sbxfc">
 <meta name="description"
-      content="POSIX - signal 信号产生 1,通过 raise 发送信号给当前进程。 #include &lt;signal.h&gt; /** * 成功返回0,否则返回 -1 * @param signo 信号类型 */
-int raise(int signo) 2,在权限允许的情况下通过 &hellip;">
+      content="UNIX - 信号 在UNIX系统里,每个进程都有一个独立的工作环境并且专注于做自己的事。然而有些时候,比如发现一个进程在砸墙(发生硬件错误),这时候,内核就会通过信号来让进程意识到这种危险情况。 常见的信号 SIGINT 交互式操作产生的信号（如CTRL &ndash; C）。
+SIGQUIT &hellip;">
 
 
 <!-- http://t.co/dKP3o1e -->
@@ -75,21 +75,38 @@ int raise(int signo) 2,在权限允许的情况下通过 &hellip;">
 <article class="entry" role="article">
 
   <header>
-    <h2 class="entry_title">POSIX - signal</h2>
+    <h2 class="entry_title">UNIX - 信号</h2>
     
   </header>
 
-  <div class="entry_content"><h1>信号产生</h1>
+  <div class="entry_content"><p>在UNIX系统里,每个进程都有一个独立的工作环境并且专注于做自己的事。然而有些时候,比如发现一个进程在砸墙(发生硬件错误),这时候,内核就会通过信号来让进程意识到这种危险情况。</p>
 
-<p>1,通过 raise 发送信号给当前进程。</p>
+<h1>常见的信号</h1>
 
-<pre><code>#include &lt;signal.h&gt; 
+<ul>
+<li><p>SIGINT   交互式操作产生的信号（如CTRL &ndash; C）。</p></li>
+<li><p>SIGQUIT  当键盘按下CTRL+\从shell中发出信号，信号被传递给shell中前台运行的进程，对应该信号的默认操作是退出 (QUIT) 该进程。</p></li>
+<li><p>SIGTSTP  当键盘按下CTRL+Z从shell中发出信号，信号被传递给shell中前台运行的进程，对应该信号的默认操作是暂停 (STOP) 该进程。</p></li>
+<li><p>SIGCONT  用于通知暂停的进程继续。</p></li>
+<li><p>SIGALRM  起到定时器的作用，通常是程序在一定的时间之后才生成该信号。</p></li>
+<li><p>SIGFPE    浮点错误（0作为除数产生的错误，非法的操作）。</p></li>
+</ul>
 
-/**
+
+<h1>信号产生</h1>
+
+<p>信号的产生有两种方式,一种是由内核(kernel)差生的,比如出现硬件错误(比如出现分母为0的除法运算)。还有一种情况是其他进程产生的,发送给内核,再由内核传递给目标进程。</p>
+
+<p>1,通过 raise 发送信号给当前进程,该函数</p>
+
+<pre><code>/**
  * 成功返回0,否则返回 -1
  * @param signo 信号类型
  */
-int raise(int signo) 
+if (raise(SIGINT) != 0) {
+    fputs("Error raising the signal.\n", stderr);
+    return EXIT_FAILURE;
+}
 </code></pre>
 
 <p>2,在权限允许的情况下通过 kill 发送信号给指定进程。</p>
@@ -101,7 +118,7 @@ int raise(int signo)
  * @param pid 进程ID,
  * 当pid &gt; 0时,信号发送至ID为pid的进程,
  * 当pid = 0时,信号发送至同一进程组的进程,
- * 当pid &lt; 0&amp;&amp;pid != -1时,信号发送至进程组ID为(-1*pid)的所有进程
+ * 当pid &lt; 0 &amp;&amp; pid != -1时,信号发送至进程组ID为(-1*pid)的所有进程
  * 当pid = -1时,信号发送至除自身进程以外的所有ID大于1的进程
  * 
  * @param signo 信号类型
@@ -256,10 +273,7 @@ sigsuspend(const sigset_t *mask));
 
 <h1>完整示例</h1>
 
-<ul>
-<li><a href="https://github.com/sbxfc/signal">https://github.com/sbxfc/signal</a></li>
-</ul>
-
+<p><a href="https://github.com/sbxfc/unix/tree/master/signal">https://github.com/sbxfc/unix/tree/master/signal</a></p>
 
 <h1>参见</h1>
 

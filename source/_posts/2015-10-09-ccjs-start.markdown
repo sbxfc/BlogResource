@@ -54,5 +54,41 @@ cc.winSize表示游戏窗口大小,而cc.visibleRect表示游戏的可视区域�
 - http://www.cocos.com/doc/article/index?type=cocos2d-x&url=/doc/cocos-docs-master/manual/framework/html5/v3/eventManager/zh.md
 
 
+#异步
 
+有时候,在不增加新线程的情况下,可以使用分时处理的方式解决一些游戏里常见的卡顿问题。
+
+卡顿的原因在于一帧时间内处理的事情太多,需要很长时间才能切到下一帧,所以导致画面卡顿。如果我们可以将逻辑放在多帧里处理,这样就会好很多。
+
+ccjs里支持的异步方法:
+	
+	cc.log("预备!");
+    var NEXT_FRAME_TIME = 17;
+    cc.async.parallel([
+        function (cb) {
+            setTimeout(function () {
+                cc.log("A说:异步大法好! 当前帧:" + cc.director.getTotalFrames());
+                cb();
+            }, NEXT_FRAME_TIME);
+        },
+        function (cb) {
+            cc.log("B说:异步大法好! 当前帧:" + cc.director.getTotalFrames());
+            cb();
+        }
+    ], function () {
+        cc.log("大家都说:异步大法好!");
+    });
+
+
+使用JSB在iOS设备上有如下输出:
+
+*预备!<br>
+B说:异步大法好! 当前帧:22<br>
+A说:异步大法好! 当前帧:23<br>
+大家都说:异步大法好!*
+
+
+在JS语言里有两个函数可以实现异步操作 setInterval 和 setTimeout
+	
+- <http://www.cocos.com/doc/article/index?type=cocos2d-x&url=/doc/cocos-docs-master/manual/framework/html5/v3/cc-async/zh.md>
 
