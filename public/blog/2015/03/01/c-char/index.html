@@ -6,10 +6,12 @@
     
 
 <meta charset="utf-8">
-<title>Mac下的网络检测 - sbxfc</title>
+<title>字符串与字符数组 - sbxfc</title>
 <meta name="author" content="sbxfc">
 <meta name="description"
-      content="Mac下的网络检测 通过ifconfig查看本机的网卡信息 $ifconfig -l 该命令行返回一个列表 lo0 gif0 stf0 en0 en1 en2 fw0 p2p0 bridge0 ,其中lo0为回环接口,通过这个接口可以监听本地client发出的,进入本地server的包 $ &hellip;">
+      content="字符串与字符数组 在C语言里,字符串是以&#8221;\0&#8221;结束的,程序通过检测&#8221;\0&#8221;来判断字符串是否结束. char* str1 = "abc";
+char str2[] = "abc";
+char str3[10] = "abc"; // sizeof( &hellip;">
 
 
 <!-- http://t.co/dKP3o1e -->
@@ -24,7 +26,7 @@
 <script>hljs.initHighlightingOnLoad();</script>
 <!---->
 
-<link rel="canonical" href="http://sbxfc.github.io/blog/2016/03/21/tcpdump">
+<link rel="canonical" href="http://sbxfc.github.io/blog/2015/03/01/c-char">
 <link href="/favicon.png" rel="icon">
 <link href="/stylesheets/screen.css"
       media="screen, projection"
@@ -74,28 +76,19 @@
 <article class="entry" role="article">
 
   <header>
-    <h2 class="entry_title">Mac下的网络检测</h2>
+    <h2 class="entry_title">字符串与字符数组</h2>
     
   </header>
 
-  <div class="entry_content"><p>通过ifconfig查看本机的网卡信息</p>
+  <div class="entry_content"><p>在C语言里,字符串是以&#8221;\0&#8221;结束的,程序通过检测&#8221;\0&#8221;来判断字符串是否结束.</p>
 
-<pre><code>$ifconfig -l 
-</code></pre>
+<pre><code>char* str1 = "abc";
+char str2[] = "abc";
+char str3[10] = "abc";
 
-<p>该命令行返回一个列表 lo0 gif0 stf0 en0 en1 en2 fw0 p2p0 bridge0 ,其中lo0为回环接口,通过这个接口可以监听本地client发出的,进入本地server的包</p>
-
-<pre><code>$sudo tcpdump -i lo0 port 9877
-</code></pre>
-
-<h1>域名解析</h1>
-
-<pre><code>host rungame.me
-</code></pre>
-
-<h1>外网IP</h1>
-
-<pre><code>curl ifconfig.me
+// sizeof(str1) = 8 //(gcc + 64位系统)sizeof的所有指针长度为8
+// sizeof(str2) = 4 
+// strlen(str3) = 3 /*strlen在计算字符串长度值,不包括\0*/
 </code></pre>
 </div>
 
@@ -105,7 +98,7 @@
       
 
       
-      <time datetime="2016-03-21 12:25:45 +0800" pubdate>Mar 21<span>st</span>, 2016</time>
+      <time datetime="2015-03-01 15:47:25 +0800" pubdate>Mar 1<span>st</span>, 2015</time>
       
 
       
@@ -155,8 +148,8 @@
       
 	
 	// var disqus_developer = 1;
-	var disqus_identifier = 'http://sbxfc.github.io/blog/2016/03/21/tcpdump';
-	var disqus_url = 'http://sbxfc.github.io/blog/2016/03/21/tcpdump';
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2015/03/01/c-char';
+	var disqus_url = 'http://sbxfc.github.io/blog/2015/03/01/c-char';
 	var disqus_script = 'embed.js';
       
     (function () {

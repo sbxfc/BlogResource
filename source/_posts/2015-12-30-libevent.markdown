@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "在Mac OS下使用libevent库"
+title: "使用libevent库"
 date: 2015-12-30 17:43:19 +0800
 comments: true
 categories: 

@@ -5,8 +5,8 @@
         <lastmod>2015-10-20T10:41:36+08:00</lastmod>
     </url>
     <url>
-        <loc>http://sbxfc.github.io/blog/2014/02/12/ios-gcd/</loc>
-        <lastmod>2016-04-11T20:34:01+08:00</lastmod>
+        <loc>http://sbxfc.github.io/blog/2014/02/12/gcd/</loc>
+        <lastmod>2016-04-29T09:54:07+08:00</lastmod>
     </url>
     <url>
         <loc>http://sbxfc.github.io/blog/2014/02/14/ios-notification-delegate/</loc>
@@ -114,11 +114,11 @@
     </url>
     <url>
         <loc>http://sbxfc.github.io/blog/2014/08/22/opengl-first-window/</loc>
-        <lastmod>2015-11-25T21:19:23+08:00</lastmod>
+        <lastmod>2016-06-01T19:03:41+08:00</lastmod>
     </url>
     <url>
         <loc>http://sbxfc.github.io/blog/2014/09/01/opengl-draw-thriangle/</loc>
-        <lastmod>2015-12-02T10:47:45+08:00</lastmod>
+        <lastmod>2016-06-02T14:41:21+08:00</lastmod>
     </url>
     <url>
         <loc>http://sbxfc.github.io/blog/2014/09/03/opengl-shader/</loc>
@@ -201,8 +201,16 @@
         <lastmod>2015-12-31T16:40:16+08:00</lastmod>
     </url>
     <url>
-        <loc>http://sbxfc.github.io/blog/2015/02/28/cpp-pointer/</loc>
-        <lastmod>2015-10-20T10:41:36+08:00</lastmod>
+        <loc>http://sbxfc.github.io/blog/2015/02/27/c-memory/</loc>
+        <lastmod>2016-04-22T10:40:09+08:00</lastmod>
+    </url>
+    <url>
+        <loc>http://sbxfc.github.io/blog/2015/02/28/c-pointer/</loc>
+        <lastmod>2016-04-22T10:45:18+08:00</lastmod>
+    </url>
+    <url>
+        <loc>http://sbxfc.github.io/blog/2015/03/01/c-char/</loc>
+        <lastmod>2016-04-22T11:36:44+08:00</lastmod>
     </url>
     <url>
         <loc>http://sbxfc.github.io/blog/2015/03/01/ios-autolayout-scrollview/</loc>
@@ -306,11 +314,11 @@
     </url>
     <url>
         <loc>http://sbxfc.github.io/blog/2015/12/01/cocos-scheduler/</loc>
-        <lastmod>2015-12-28T19:56:16+08:00</lastmod>
+        <lastmod>2016-04-20T16:24:56+08:00</lastmod>
     </url>
     <url>
         <loc>http://sbxfc.github.io/blog/2015/12/03/js-prototype/</loc>
-        <lastmod>2015-12-28T18:31:48+08:00</lastmod>
+        <lastmod>2016-04-20T16:25:15+08:00</lastmod>
     </url>
     <url>
         <loc>http://sbxfc.github.io/blog/2015/12/04/cocos2d-texture/</loc>
@@ -318,23 +326,19 @@
     </url>
     <url>
         <loc>http://sbxfc.github.io/blog/2015/12/30/libevent/</loc>
-        <lastmod>2016-02-29T18:12:34+08:00</lastmod>
+        <lastmod>2016-04-20T16:24:43+08:00</lastmod>
     </url>
     <url>
         <loc>http://sbxfc.github.io/blog/2016/01/04/unix-signal/</loc>
-        <lastmod>2016-04-15T12:02:41+08:00</lastmod>
+        <lastmod>2016-04-20T16:24:26+08:00</lastmod>
     </url>
     <url>
         <loc>http://sbxfc.github.io/blog/2016/01/11/unix-select/</loc>
-        <lastmod>2016-01-16T15:16:46+08:00</lastmod>
+        <lastmod>2016-04-20T16:24:05+08:00</lastmod>
     </url>
     <url>
         <loc>http://sbxfc.github.io/blog/2016/01/15/memory-of-jsb/</loc>
-        <lastmod>2016-02-16T16:01:06+08:00</lastmod>
-    </url>
-    <url>
-        <loc>http://sbxfc.github.io/blog/2016/03/21/tcpdump/</loc>
-        <lastmod>2016-04-09T17:14:36+08:00</lastmod>
+        <lastmod>2016-04-20T16:23:54+08:00</lastmod>
     </url>
     <url>
         <loc>http://sbxfc.github.io/about/</loc>
@@ -342,11 +346,11 @@
     </url>
     <url>
         <loc>http://sbxfc.github.io/blog/archives/</loc>
-        <lastmod>2016-04-15T12:02:41+08:00</lastmod>
+        <lastmod>2016-06-02T14:41:21+08:00</lastmod>
     </url>
     <url>
         <loc>http://sbxfc.github.io/</loc>
-        <lastmod>2016-04-15T12:02:41+08:00</lastmod>
+        <lastmod>2016-06-02T14:41:21+08:00</lastmod>
     </url>
     <url>
         <loc>http://sbxfc.github.io/robots.txt</loc>

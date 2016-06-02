@@ -6,10 +6,10 @@
     
 
 <meta charset="utf-8">
-<title>使用libevent库 - sbxfc</title>
+<title>C语言中的内存管理 - sbxfc</title>
 <meta name="author" content="sbxfc">
 <meta name="description"
-      content="使用libevent库 编译 从官网下载最新的release包 libevent-2.0.22-stable.tar.gz 解压并进入相应目录后进行编译: ./configure &amp;&amp; make sudo make install 编译完成后,可以按Command+Shilt+ &hellip;">
+      content="C语言中的内存管理 与其他语言相比,C语言最大的特点是可以直接操作内存。但是,也因如此让部分程序员对其避而远之。 实际上,C语言里的内存管理是有章可循的。 一个由C语言编译的程序占用的内存可为以下几个部分: 1、栈区（stack）— 存放函数的参数值,局部变量的值等,由编译器自动分配释放内存。 &hellip;">
 
 
 <!-- http://t.co/dKP3o1e -->
@@ -24,7 +24,7 @@
 <script>hljs.initHighlightingOnLoad();</script>
 <!---->
 
-<link rel="canonical" href="http://sbxfc.github.io/blog/2015/12/30/libevent">
+<link rel="canonical" href="http://sbxfc.github.io/blog/2015/02/27/c-memory">
 <link href="/favicon.png" rel="icon">
 <link href="/stylesheets/screen.css"
       media="screen, projection"
@@ -74,84 +74,39 @@
 <article class="entry" role="article">
 
   <header>
-    <h2 class="entry_title">使用libevent库</h2>
+    <h2 class="entry_title">C语言中的内存管理</h2>
     
   </header>
 
-  <div class="entry_content"><h1>编译</h1>
+  <div class="entry_content"><p>与其他语言相比,C语言最大的特点是可以直接操作内存。但是,也因如此让部分程序员对其避而远之。</p>
 
-<p>从官网下载最新的release包 <a href="http://libevent.org/">libevent-2.0.22-stable.tar.gz</a></p>
+<p>实际上,C语言里的内存管理是有章可循的。</p>
 
-<p>解压并进入相应目录后进行编译:</p>
-
-<pre><code>./configure &amp;&amp; make  
-sudo make install
-</code></pre>
-
-<p>编译完成后,可以按Command+Shilt+G进入目录(/usr/local/lib)查看生成的文件夹 libevent-2.0.22</p>
-
-<h1>定时器示例</h1>
-
-<p>新建一个Command Line Tool 的c++项目,首先在Build Phases->Link Binary With Libraries里添加三个.a库文件 libevent_core.a、libevent_extra.a、libevent_phreads.a(这几个库文件的选择视情况而定)。</p>
-
-<p>检查Building Setting里的Library Search Paths是否已添加了libevent库文件目录,如果没有则添加(以下是我本机路径):</p>
-
-<pre><code>/usr/local/libevent-2.0.22/lib //库文件目录
-</code></pre>
-
-<p>在Header Search Paths里将头文件的目录添加进去(以下是我本机路径):</p>
-
-<pre><code>/usr/local/libevent-2.0.22/include //头文件的目录
-</code></pre>
-
-<p>在main.cpp添加简单定时器代码:</p>
-
-<pre><code>#include &lt;stdio.h&gt;
-#include &lt;iostream&gt;
-
-// libevent头文件
-#include &lt;event.h&gt;
-using namespace std;
-
-struct event evt;
-struct timeval tv;
-
-// 定时事件回调函数
-void time_cb(int sock, short event, void *arg)
-{
-    printf("timer wakeup\n");
-    //重新添加定时事件（定时事件触发后默认自动删除）
-    event_add((struct event*)arg, &amp;tv);
-}
-
-int main()
-{
-    //初始化
-    struct event_base *base = event_init();
-
-    tv.tv_sec = 1; //1s period
-    tv.tv_usec = 0;
-
-    //设置定时事件
-    evtimer_set(&amp;evt,time_cb, &amp;evt);
-
-    // 添加定时事件
-    event_add(&amp;evt, &amp;tv);
-
-    //事件循环
-    event_base_dispatch(base);
-
-    return 0;
-}
-</code></pre>
-
-<h1>参见</h1>
+<p>一个由C语言编译的程序占用的内存可为以下几个部分:</p>
 
 <ul>
-<li><a href="http://libevent.org/">http://libevent.org/</a></li>
-<li>libevent源码深度剖析.pdf</li>
+<li>1、栈区（stack）— 存放函数的参数值,局部变量的值等,由编译器自动分配释放内存。</li>
+<li>2、堆区（heap）— 这一部分由程序员主动分配,需要程序员手动去释放。</li>
+<li>3、全局区（静态区）（static）— 全局变量和静态变量的存储是放在这里。程序结束后由系统释放。</li>
+<li>4、文字常量区 — 常量字符串就是放在这里的。程序结束后由系统释放。</li>
 </ul>
 
+
+<p>由上可知,实际由我们分配和释放的部分只有heap区。<font color="#bd260d"><strong>而heap区的内存创建主要有两种函数malloc和new,前者来源于C,后者是C++特有的。</strong></font>而我们只需要保证,由这两种函数创建的内存在结束时调用free和delete释放即可。</p>
+
+<pre><code>int a=0;    //全局初始化区
+char *p1;   //全局未初始化区
+main(){
+    int b;//栈
+    char s[]="abc";//栈
+    char *p2;//栈
+    char *p3="123456";//123456\0在常量区，p3在栈上。
+    static int c=0；//全局（静态）初始化区
+    p1 = (char*)malloc(10);
+    p2 = (char*)malloc(20);//分配得来得10和20字节的区域就在堆区。
+    strcpy(p1,"123456");//123456\0放在常量区，编译器可能会将它与p3所向"123456"优化成一个地方。
+}
+</code></pre>
 </div>
 
   <footer>
@@ -160,7 +115,7 @@ int main()
       
 
       
-      <time datetime="2015-12-30 17:43:19 +0800" pubdate>Dec 30<span>th</span>, 2015</time>
+      <time datetime="2015-02-27 13:47:25 +0800" pubdate>Feb 27<span>th</span>, 2015</time>
       
 
       
@@ -210,8 +165,8 @@ int main()
       
 	
 	// var disqus_developer = 1;
-	var disqus_identifier = 'http://sbxfc.github.io/blog/2015/12/30/libevent';
-	var disqus_url = 'http://sbxfc.github.io/blog/2015/12/30/libevent';
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2015/02/27/c-memory';
+	var disqus_url = 'http://sbxfc.github.io/blog/2015/02/27/c-memory';
 	var disqus_script = 'embed.js';
       
     (function () {

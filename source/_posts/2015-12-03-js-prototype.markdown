@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Javascript - 基于Prototype的对象结构"
+title: "基于Prototype的JS对象"
 date: 2015-12-03 18:11:18 +0800
 comments: true
 categories: 

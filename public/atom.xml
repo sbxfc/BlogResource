@@ -4,7 +4,7 @@
   <title><![CDATA[sbxfc]]></title>
   <link href="http://sbxfc.github.io/atom.xml" rel="self"/>
   <link href="http://sbxfc.github.io/"/>
-  <updated>2016-04-15T12:02:42+08:00</updated>
+  <updated>2016-06-02T14:51:47+08:00</updated>
   <id>http://sbxfc.github.io/</id>
   <author>
     <name><![CDATA[sbxfc]]></name>
@@ -14,34 +14,7 @@
 
   
   <entry>
-    <title type="html"><![CDATA[Mac下的网络检测]]></title>
-    <link href="http://sbxfc.github.io/blog/2016/03/21/tcpdump/"/>
-    <updated>2016-03-21T12:25:45+08:00</updated>
-    <id>http://sbxfc.github.io/blog/2016/03/21/tcpdump</id>
-    <content type="html"><![CDATA[<p>通过ifconfig查看本机的网卡信息</p>
-
-<pre><code>$ifconfig -l 
-</code></pre>
-
-<p>该命令行返回一个列表 lo0 gif0 stf0 en0 en1 en2 fw0 p2p0 bridge0 ,其中lo0为回环接口,通过这个接口可以监听本地client发出的,进入本地server的包</p>
-
-<pre><code>$sudo tcpdump -i lo0 port 9877
-</code></pre>
-
-<h1>域名解析</h1>
-
-<pre><code>host rungame.me
-</code></pre>
-
-<h1>外网IP</h1>
-
-<pre><code>curl ifconfig.me
-</code></pre>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Cocos2d-JS JSB内存管理]]></title>
+    <title type="html"><![CDATA[Cocos2d-JSB 内存管理]]></title>
     <link href="http://sbxfc.github.io/blog/2016/01/15/memory-of-jsb/"/>
     <updated>2016-01-15T14:42:31+08:00</updated>
     <id>http://sbxfc.github.io/blog/2016/01/15/memory-of-jsb</id>
@@ -197,23 +170,25 @@ setTimeout(function(){
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[POSIX - select]]></title>
+    <title type="html"><![CDATA[IO复用]]></title>
     <link href="http://sbxfc.github.io/blog/2016/01/11/unix-select/"/>
     <updated>2016-01-11T11:01:41+08:00</updated>
     <id>http://sbxfc.github.io/blog/2016/01/11/unix-select</id>
     <content type="html"><![CDATA[<h1>I/O 复用 和 select函数</h1>
 
-<p>在《UNIX网络编程》里描述了这样一个例子,当客户端通过TCP协议正常连接服务端之后,紧接着,客户端进入标准输入的阻塞状态。此时,服务器突然重启,因为正处于输入状态所以客户端无法通过read函数读取对端返回EOF状态,直到输入结束,客户端恢复read为止(可能已久过去了许多时间)。</p>
+<p>在《UNIX网络编程》里描述了这样一个例子,当客户端通过TCP协议正常连接服务端之后,紧接着客户端进入标准输入的阻塞状态。此时,若服务器突然重启,由于客户端正处于输入状态所以无法通过read函数读取对端返回EOF状态,直到输入结束,客户端恢复read为止(可能已久过去了许多时间)。</p>
 
-<p>这种情况不是我们预期的结果。我们想让程序有一种预先设置内核通知的能力,当内核一旦发现进程指定的一个或多个I/O条件已就绪(比如输入完成,或可以进行读取数据时),它就告知进程。这个能力称为I/O复用,是由select和poll函数支持的,还有前者较新的POSIX变种pselect。</p>
+<p>这种情况不是我们预期的结果。我们想让程序有一种预先设置内核通知的能力,当内核一旦发现进程指定的一个或多个I/O条件已就绪(比如输入完成,或可以进行读取数据时),它就告知进程。这个能力称为I/O复用。</p>
+
+<p>I/O复用由select和poll函数支持的,还有前者较新的POSIX变种pselect。</p>
 
 <p><img src="http://sbxfc.github.io/images/2016/1/io_multiplexing.png" alt="IO multiplexing" /></p>
 
 <p>上图显示了IO复用的一般流程,首先,在图示集流阀(select)的位置,我们设置了许多需要监听的事件,然后select进入睡眠状态,当这些事件的其中一个或多个事件条件满足时,唤醒select函数,接着来执行相应的操作。</p>
 
-<p>关于IO复用有一个很形象比喻:</p>
+<p>关于IO复用的一个很形象比喻:</p>
 
-<p><a href="http://www.zhihu.com/question/32163005/answer/55687802">一个酒吧服务员（一个线程），前面趴了一群醉汉，突然一个吼一声“倒酒”（事件），你小跑过去给他倒一杯，然后随他去吧，突然又一个要倒酒，你又过去倒上，就这样一个服务员服务好多人，有时没人喝酒，服务员处于空闲状态，可以干点别的玩玩手机。至于epoll与select，poll的区别在于后两者的场景中醉汉不说话，你要挨个问要不要酒，没时间玩手机了。io多路复用大概就是指这几个醉汉共用一个服务员。</a></p>
+<p>一个酒吧服务员（一个线程），前面趴了一群醉汉，突然一个吼一声“倒酒”（事件），你小跑过去给他倒一杯，然后随他去吧，突然又一个要倒酒，你又过去倒上，就这样一个服务员服务好多人，有时没人喝酒，服务员处于空闲状态，可以干点别的玩玩手机。至于epoll与select，poll的区别在于后两者的场景中醉汉不说话，你要挨个问要不要酒，没时间玩手机了。io多路复用大概就是指这几个醉汉共用一个服务员。</p>
 
 <h1>select函数</h1>
 
@@ -253,7 +228,7 @@ int select(int maxfd, fd_set* readfds, fd_set* writefds, fd_set* errorfds, struc
 
 <h1>示例代码</h1>
 
-<p><a href="https://github.com/sbxfc/POSIX-select">https://github.com/sbxfc/POSIX-select</a></p>
+<p><a href="https://github.com/sbxfc/unix/tree/master/select">https://github.com/sbxfc/unix/tree/master/select</a></p>
 
 <h1>运行</h1>
 
@@ -288,7 +263,7 @@ $ ./a.out
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[UNIX - 信号]]></title>
+    <title type="html"><![CDATA[signal]]></title>
     <link href="http://sbxfc.github.io/blog/2016/01/04/unix-signal/"/>
     <updated>2016-01-04T14:24:14+08:00</updated>
     <id>http://sbxfc.github.io/blog/2016/01/04/unix-signal</id>
@@ -505,7 +480,7 @@ sigsuspend(const sigset_t *mask));
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[在Mac OS下使用libevent库]]></title>
+    <title type="html"><![CDATA[使用libevent库]]></title>
     <link href="http://sbxfc.github.io/blog/2015/12/30/libevent/"/>
     <updated>2015-12-30T17:43:19+08:00</updated>
     <id>http://sbxfc.github.io/blog/2015/12/30/libevent</id>
@@ -760,7 +735,7 @@ Sprite *s2 = [Sprite spriteWithFile:@"rgba8888.png"];
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Javascript - 基于Prototype的对象结构]]></title>
+    <title type="html"><![CDATA[基于Prototype的JS对象]]></title>
     <link href="http://sbxfc.github.io/blog/2015/12/03/js-prototype/"/>
     <updated>2015-12-03T18:11:18+08:00</updated>
     <id>http://sbxfc.github.io/blog/2015/12/03/js-prototype</id>
@@ -793,7 +768,7 @@ console.log(p.name);
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[cocos2d - scheduler(调度器)]]></title>
+    <title type="html"><![CDATA[cocos2d - scheduler]]></title>
     <link href="http://sbxfc.github.io/blog/2015/12/01/cocos-scheduler/"/>
     <updated>2015-12-01T12:12:18+08:00</updated>
     <id>http://sbxfc.github.io/blog/2015/12/01/cocos-scheduler</id>
@@ -2095,6 +2070,157 @@ operation创建好以后很容易加入operation queue中
 使用Operation Queue对ScrollView里的项进行异步绘制:<br>
 <https://github.com/sbxIOS/lazyViewExample>&#8211;>
 
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[跨平台的TCP通信客户端]]></title>
+    <link href="http://sbxfc.github.io/blog/2015/05/12/cross-platform-tcpip-socket/"/>
+    <updated>2015-05-12T14:05:45+08:00</updated>
+    <id>http://sbxfc.github.io/blog/2015/05/12/cross-platform-tcpip-socket</id>
+    <content type="html"><![CDATA[<p>TCP/IP 是 TCP/IP协议族的简称,是互联网的基础通讯架构,事实上也是计算机网络通信的国际标准。TCP/IP的前身是NCP(网络控制协议),是S.克罗克及其小组在加州大学制定的最初的主机间通信协议。NCP协议的缺点是,它没有为每台电脑设置一个唯一地址,导致在越来越庞大的网络中难以准确定位。另一方面,NCP缺乏纠错功能,导致数据传输不稳定。</p>
+
+<p>TCP/IP将网络通信的可靠性改为由主机保证而不是像NCP那样由网络保证。TCP/IP使用一个成为网关（后来改为路由器以免与网关混淆）的计算机为每个网络提供一个接口并且在它们之间来回传输数据包。</p>
+
+<p>在1985年时,因特网架构理事会举行一个三天有250家厂商代表参加的关于计算产业使用TCP/IP的工作会议，帮助推广并且引领它日渐增长的商业应用。</p>
+
+<p>如今,绝大多数商业操作系统都实现了TCP/IP协议,这其中包括所有的商业Unix、Linux发布包，以及Mac OS X和微软的Windows操作系统。</p>
+
+<h1>TCP/IP模型</h1>
+
+<p>两个因特网主机(Host)通过两个路由器（Router）和对象的层连接。</p>
+
+<p><img src="http://sbxfc.github.io/images/2015/5/tcp_ip_stack_connections.png" alt="" /></p>
+
+<!-- more -->
+
+
+<p>在TCP/IP模型是一个抽象的分层模型，这个模型中,所有的TCP/IP系列网络协议都被归类为4个抽象层,应用层、运输层、网络层、链路层。每一层建立在低一层的服务上,并为高一层提供服务。</p>
+
+<ul>
+<li><p>数据链路层:在TCP/IP协议族中,链路层又称为网络接口层。通常包括操作系统中的设备驱动和计算机中的对应网络接口卡。它们一起处理与电缆的物理接口细节。</p></li>
+<li><p><a href="http://zh.wikipedia.org/wiki/%E7%BD%91%E7%BB%9C%E5%B1%82">网络层</a>:网络层提供路由和寻址的功能，使两终端系统能够互连且决定最佳路径，并具有一定的拥塞控制和流量控制的能力。TCP/IP协议体系中的网络层功能由IP协议规定和实现，故又称IP层。</p></li>
+<li><p>运输层:运输层主要为两台计算机上的应用程序提供端到端的通信。在TCP/IP协议族中,有两个不相同的传输协议:TCP和UDP。TCP为两台主机提供高可靠性的数据通信。它所做的工作包括把应用程序交给它的数据分成合适的小块交给下面的网络层,确认接收到的分组,设置发送最后确认分组的超时时钟 等。由于运输层提供了高可靠性的端到端的通信,因此应用层可以忽略所有这些细节。而另一方面,UDP则为应用层提供一种非常简单的服务。它只是把称做数据报的分组从一台主机发送到另一台主机,但并不保证该数据报能到达另一端。任何必须的可靠性由应用层来提供。</p></li>
+<li><p>应用层:应用层是指我们的应用程序。</p></li>
+</ul>
+
+
+<p><img src="http://sbxfc.github.io/images/2015/5/ip_stack_connections.png" alt="" /></p>
+
+<h1>POSIX</h1>
+
+<p>可移植操作系统接口（英语：Portable Operating System Interface of UNIX，缩写为POSIX），是IEEE为要在各种UNIX操作系统上运行软件，而定义API的一系列互相关联的标准的总称。</p>
+
+<p>在OS和Linux在内的所有Unix系统里,我们都可以使用Posix接口来创建socket。在Windows系统里,我们可以使用WinSock来操作socket,WinSock实际上是对POSIX socket的一个封装。</p>
+
+<h1>WinSock和POSIX socket接口的异同</h1>
+
+<p>一,头文件</p>
+
+<p>在windows中需要引入头文件</p>
+
+<pre><code>#include &lt;winsock.h&gt;
+</code></pre>
+
+<p>在其他遵从POSIX规则的系统里需要引入</p>
+
+<pre><code>#include &lt;sys/types.h&gt;
+#include &lt;sys/socket.h&gt;
+#include &lt;netinet/in.h&gt;
+</code></pre>
+
+<p>二,链接库</p>
+
+<p>在windows下面需要主动连接ws2_32.lib库</p>
+
+<pre><code>#ifdef WIN32
+#include "StdAfx.h"
+#pragma comment(lib, "wsock32")
+#endif
+</code></pre>
+
+<p>三,初始化</p>
+
+<p>在windows下面需要初始化,windows下面是通过动态链接的方式调用socket的,所以需要你告诉调用的链接库的版本,操作系统会帮你加载并初始化dll。</p>
+
+<pre><code>WORD wVersionRequested;
+WSADATA wsaData;
+int err;
+wVersionRequested = MAKEWORD(2, 0);
+err = WSAStartup(wVersionRequested, &amp;wsaData);
+if(0 != err) //检查Socket初始化是否成功
+{
+    cout&lt;&lt;"Socket2.0初始化失败，Exit!";
+    return -1;
+}
+</code></pre>
+
+<p>四,函数</p>
+
+<p>在Windows和POSIX里,socket的函数是一致的。只是windows里面宏定义了一个socket描述符。</p>
+
+<h1>创建TCP套接字</h1>
+
+<p>一,创建一个TCP套接字</p>
+
+<p>该函数返回一个整数描述符,以后所有socket调用(如随后的connect和write)就用该描述符来标识这个套接字</p>
+
+<pre><code>int sockfd = socket(AF_INET,     //internetwork: UDP, TCP, etc
+                    SOCK_STREAM, //SOCK_STREAM说明是TCP类型
+                    0);          //protocol
+</code></pre>
+
+<p>二,与TCP服务器建立连接</p>
+
+<pre><code>    /**
+     * 设置发往的地址
+     */
+    struct sockaddr_in addrto;
+    addrto.sin_family = AF_INET;//地址类型为internetwork
+    addrto.sin_addr.s_addr = inet_addr(ip);
+    addrto.sin_port = htons(port);
+
+    int connect(int sockfd,          //sockfd是由socket函数返回的套接字描述符
+    const struct sockaddr* servaddr,//套接字地址
+    socklen_t addrlen);              //套接字地址结构大小
+</code></pre>
+
+<p>三,发送信息:</p>
+
+<p>使用<font color="#bd260d"><strong>send</strong></font>函数向TCP连接的另一端(服务器端)发送数据:</p>
+
+<pre><code>int send(SOCKET s,     //指定接收端的套接字描述符
+          char *buf,   //指定一个存放应用程序要发送数据的缓冲区            int len,     //指明buf的长度
+          int flags);  //这个参数一般置为0
+</code></pre>
+
+<p>四,数据接收</p>
+
+<p>使用<font color="#bd260d"><strong>recv</strong></font>函数从TCP连接的另一端接收数据:</p>
+
+<pre><code>int recv(SOCKET s,  //指定接收端的套接字描述符
+         char *buf, //指明一个缓冲区,该缓冲区用来存放recv接收到的数据
+         int len,    //指明buf的长度
+         int flags); //这个参数一般设置为0
+</code></pre>
+
+<h1>完整代码</h1>
+
+<p><a href="https://github.com/sbxfc/CrossPlatformSocket">https://github.com/sbxfc/CrossPlatformSocket</a></p>
+
+<h1>参考</h1>
+
+<p>网络传输协议(Wiki):<br><a href="http://zh.wikipedia.org/zh-cn/%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE">http://zh.wikipedia.org/zh-cn/%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE</a></p>
+
+<p>TCP/IP协议族(Wiki):<br><a href="http://zh.wikipedia.org/wiki/TCP/IP%E5%8D%8F%E8%AE%AE%E6%97%8F">http://zh.wikipedia.org/wiki/TCP/IP%E5%8D%8F%E8%AE%AE%E6%97%8F</a></p>
+
+<p>TCP/IP 详解</p>
+
+<p>Unix 网络编程</p>
+
+<p>sockimp.pdf:<br><a href="http://www.openss7.org/papers/strsock/sockimp.pdf">http://www.openss7.org/papers/strsock/sockimp.pdf</a></p>
+
+<p>windows/linux socket接口的异同:<br><a href="http://blog.chinaunix.net/uid-28323465-id-3876368.html">http://blog.chinaunix.net/uid-28323465-id-3876368.html</a></p>
 ]]></content>
   </entry>
   

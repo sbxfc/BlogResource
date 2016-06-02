@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "cocos2d - scheduler(调度器)"
+title: "cocos2d - scheduler"
 date: 2015-12-01 12:12:18 +0800
 comments: true
 categories: 

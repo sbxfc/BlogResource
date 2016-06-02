@@ -1,39 +1,39 @@
 ---
 layout: post
-title: "OpenGL - 在Xcode里使用GLFW"
+title: "OpenGL - 使用glfw库创建窗口"
 date: 2014-08-22 17:39:39 +0800
 comments: true
 categories: 
 ---
 
-#下载
+#下载glfw库
 
-
-当前版本是3.0.4: 
+当前版本3.0.4: 
 
 - <http://www.glfw.org/download.html>
 
-#安装
-
-	$ cd /下载路径/Downloads/glfw-master
+#Mac下安装
+	
+	$ cd /下载目录/glfw-master
 	$ cmake .
 	$ sudo make install
 
-编译完成后,前往(Cmd+Shift+G)<font color="#bd260d">**/usr/local/**</font>查看生成的lib和include文件内容<br>
+在完成编译之后,(CMD+Shift+G)前往目录 /usr/local/,查看生成的 lib 和 include 文件内容
 
-#新建GLFW
+
+#新建glfw窗口
 
 1. 用Xcode新建一个Command Line Tool项目
 
-2. 在Build Phases->Link Binary With Libraries里添加 Cocoa.framework 、 CoreVideo.framework、IOKit.framework 、OpenGL.framework,在其他里按Cmd+Shift+G添加/usr/local/lib目录下的libglfw3.a
+2. 在Build Phases里的Link Binary With Libraries添加 Cocoa.framework 、 CoreVideo.framework 、IOKit.framework 、OpenGL.framework,在添加其他里按CMD+Shift+G 添加 /usr/local/lib 目录下的 libglfw3.a
 
-3. 在Build Settings里设置头文件路径,点Header Search Path 添加 /usr/local/include,然后设置库路径,在Library Search Path里添加 /usr/local/lib
-
-
-#运行
+3. 在 Build Settings 里设置头文件的搜索路径,点 Header Search Path 添加 /usr/local/include,接着设置lib文件路径,在 Library Search Path 里添加 /usr/local/lib
 
 
-下面的代码是从GLFW官网复制的,将代码copy到main.m文件里,直接Command + R运行
+#运行测试示例
+
+
+下面的代码是从glfw官网复制来的代码,将下面代码copy到main.m文件里,直接Command + R运行
 
 	#include <GLFW/glfw3.h>
 
@@ -72,6 +72,6 @@ categories:
 	    return 0;
 	}
 	
-#完整工程
+#完整示例
 
-<https://github.com/sbxfc/GLFWDemo>
+- <https://github.com/sbxfc/glfw-window>

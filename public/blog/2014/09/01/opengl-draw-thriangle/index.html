@@ -9,7 +9,8 @@
 <title>OpenGL - 绘制三角形 - sbxfc</title>
 <meta name="author" content="sbxfc">
 <meta name="description"
-      content="OpenGL - 绘制三角形 OpenGL是一个跨平台的图形绘制接口。通过它,开发者可以使用GPU的高速处理能力来绘制图像。 在OpenGL里,三角形是最基本的图形单元。我们将通过绘制三角形来了解OpenGL的工作流程,并利用GLFW库的跨平台环境将三角形显示在窗口上。 VBO &hellip;">
+      content="OpenGL - 绘制三角形 glfw窗口创建之后,我们就可以利用它,将要渲染的三角形显示在屏幕上。 绘制三角形 首先,创建本地的顶点坐标和顶点颜色数据。 //三角形的顶点坐标
+GLfloat vertexPosition[] = { -1.0f,-1.0f,0.0f, //第一个顶点坐标 1. &hellip;">
 
 
 <!-- http://t.co/dKP3o1e -->
@@ -78,13 +79,11 @@
     
   </header>
 
-  <div class="entry_content"><p>OpenGL是一个跨平台的图形绘制接口。通过它,开发者可以使用GPU的高速处理能力来绘制图像。</p>
+  <div class="entry_content"><p><a href="http://rungame.me/blog/2014/08/22/opengl-first-window/">glfw窗口创建之后</a>,我们就可以利用它,将要渲染的三角形显示在屏幕上。</p>
 
-<p>在OpenGL里,三角形是最基本的图形单元。我们将通过绘制三角形来了解OpenGL的工作流程,并利用<a href="http://rungame.me/blog/2014/08/22/opengl-first-window/">GLFW库</a>的跨平台环境将三角形显示在窗口上。</p>
+<h1>绘制三角形</h1>
 
-<h1>VBO</h1>
-
-<p>CPU和GPU处在两个不同的内存单元。在通过GPU绘制之前,我们首先在本地创建一份顶点数据:</p>
+<p>首先,创建本地的顶点坐标和顶点颜色数据。</p>
 
 <pre><code>//三角形的顶点坐标
 GLfloat vertexPosition[] = {
@@ -101,42 +100,43 @@ GLfloat vertexColor[] = {
 };
 </code></pre>
 
-<p>在这两条数据里,我们设置了三角形的顶点坐标和颜色。这两份数据最终会通过OpenGL接口传递到显卡上,并在显卡上生成一份成为VBO(顶点缓冲对象)的副本,实际上就是一块二进制内存。着色器在渲染时才需要为GPU指定VBO的具体格式,所以我们只是简单地创建相应的VBO对象并上传顶点数据到VBO对象上:</p>
+<p>接着,创建这两份数据的在显卡上的副本(VBO)。</p>
 
 <pre><code>glGenBuffers(2, vbo);
 glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
-glBufferData(GL_ARRAY_BUFFER, sizeof(vertexPosition), vertexPosition, GL_STATIC_DRAW); 
+glBufferData(GL_ARRAY_BUFFER, sizeof(vertexPosition), vertexPosition, GL_STATIC_DRAW);
 </code></pre>
 
-<p>OpenGL和其他语言的习惯不同,OpenGL使用一个无符号的整数作为对象的唯一标识,每个对象都对应一个唯一标识。该标识可以通过<a href="https://www.khronos.org/opengles/sdk/docs/man32/html/glGenBuffers.xhtml/">glGenBuffers</a>函数由系统自动生成,也可以自己手动随便指定一个无符号的整数值,这两者的区别是前者能保证唯一性。</p>
+<p>glGemBuffers函数用来生成一个唯一的无符号整数作为VBO标识,我们每次操作VBO都要通过该标识。你可以自己指定一个VBO标识,但手动指定的标识无法保证唯一性。</p>
 
-<p>通过glBindBuffer函数,我们为缓冲对象标识初始化一个GL_ARRAY_BUFFER类型的缓冲对象,即顶点缓冲对象VBO。如果该唯一标识对应的顶点缓冲对象已经存在,glBindBuffer还有选择或激活该缓冲区的意思,即在绑定之后未来的操作将会影响该缓冲区。</p>
+<p>顶点坐标和颜色通过 glBufferData 函数上传至显卡。在此之前,你需要通过 glBindBuffer 函数绑定你想要操作的VBO对象。如果 glBindBuffer 指定的标识是第一次被绑定,该函数还有初始化缓存对象的作用。</p>
 
-<p>最后,使用glBufferData将本地的顶点数据提交至顶点缓冲区。</p>
+<p>绑定之后,我们就可以使用glBufferData函数将顶点数据提交至顶点缓冲区。glBufferData 要比以上两个函数要复杂一点。</p>
 
-<p>glBufferData的结构:</p>
-
-<pre><code>void glBufferData(  GLenum target,
-                    GLsizeiptr size,
-                    const GLvoid * data,
-                    GLenum usage);
+<pre><code>void glBufferData(  
+            GLenum target,
+            GLsizeiptr size,
+            const GLvoid * data,
+            GLenum usage);
 </code></pre>
 
 <ul>
 <li>target : 对象类型</li>
 <li>size : 对象的字节长度</li>
 <li>data : 数据 (<font color="#bd260d"><strong>这里设置的是本地顶点数据的指针,并且上传到显卡内存的是该数据的副本(copy的形式)</strong></font>)</li>
-<li>usage : 使用方式。在我们的程序中顶点数组数据都是常量,不需要改变,因此我们给glBufferData一个GL_STATIC_DRAW的参数。其中STATIC部分表明我们不会想去改变数据,也可以设置为DYNAMIC,表明我们频繁地写到这个缓冲里,或者STREAM,表明我们将周期性地替换掉缓冲的内容。DRAW部分表明我们希望缓冲只会被GPU读取。与DRAW相对的是READ,表明一个缓冲还要被CPU读回去。还有COPY,表明这个缓冲是CPU和GPU之间的一个管道,不应该偏重于任一方。顶点数组几乎总是使用GL<em>*</em>DRAW表示。</li>
+<li>usage : 使用方式。在我们的程序中,顶点数组数据都是常量,不需要改变,因此我们设置了一个 GL_STATIC_DRAW 类型。其中STATIC部分表明我们不会去改变数据,也可以设置为DYNAMIC,表明我们频繁地写到这个缓冲里,或者STREAM,表明我们将周期性地替换掉缓冲的内容。DRAW部分表明我们希望缓冲只会被GPU读取。与DRAW相对的是READ,表明一个缓冲还要被CPU读回去。还有COPY,表明这个缓冲是CPU和GPU之间的一个管道,不应该偏重于任一方。顶点数组几乎总是使用GL<em>*</em>DRAW表示。</li>
 </ul>
 
 
-<p>调用glBufferData函数为VBO指定数据时,你可以为该对象指明相应的数据格式、大小和使用方式。如果你设置的使用方式和你在之后的处理方式不同也不会出错,但会造成效率低下。glBufferData处理数据的方式很类似memcpy,仅仅是一串没有特别意义的字节流。直到我们渲染它之前，我们不会告诉OpenGL我们数组的结构。这允许缓冲以几乎任何格式存储顶点属性以及其它数据，或者同一份数据给不同的渲染任务以不同的方式去处理。</p>
+<p>调用glBufferData函数为VBO指定数据时,你可以为该对象指明相应的数据格式、大小和使用方式。假如你设置的使用方式和你在之后的处理方式不同也不会出错,但会造成效率低下。</p>
+
+<p>glBufferData处理数据的方式很类似memcpy,仅仅是一串没有特别意义的字节流。直到我们渲染它之前，我们不会告诉OpenGL我们数组的结构。这允许缓冲以几乎任何格式存储顶点属性以及其它数据，或者同一份数据给不同的渲染任务以不同的方式去处理。</p>
 
 <p>在glBufferData函数调用之后，数据会上传到显卡缓存里。如果你不再需要对顶点做修改、重新上传的话，在这里可以将本地内存里的该顶点数据释放掉。</p>
 
 <h1>VAO</h1>
 
-<p>从本质说,VBO相当于显卡上一块记录顶点数据的Buffer,要想绘制一个三角形除了顶点数据以外,在渲染时我们还要告诉GPU顶点的格式和使用情况以及vertex-shader里的属性对应的顶点数据位置。以上的这些就是VAO包含的内容,VAO记录了一次绘制所需的所有顶点信息。</p>
+<p>要想绘制一个三角形除了顶点数据以外,在渲染时我们还要告诉GPU顶点的格式和使用情况以及vertex-shader里的属性对应的顶点数据位置。以上的这些就是VAO包含的内容,VAO包含了一次绘制所需的全部顶点信息。</p>
 
 <p>使用VAO的好处是,我们可以在初始化时一次性讲GPU所需要的绘制信息(包括顶点数据和使用情况)上传至显卡,在每帧绘制时不必重复传递顶点数据和设置顶点的数据结构等,减少了CPU和GPU之间的交互。</p>
 
@@ -211,16 +211,21 @@ glVertexAttribPointer(ATTRIB_LOCATION_VERTEX,3,GL_FLOAT,GL_FALSE,0,0);
 
 <p>指定绘制的顶点数量。</p>
 
-<h1>完整代码:</h1>
+<h1>完整示例</h1>
 
-<p>完整工程:<br>
-<a href="https://github.com/sbxfc/OpenGLDrawTriangle">https://github.com/sbxfc/OpenGLDrawTriangle</a></p>
+<ul>
+<li><a href="https://github.com/sbxfc/opengl/tree/master/opengl-draw-thriangle/demo">https://github.com/sbxfc/opengl/tree/master/opengl-draw-thriangle/demo</a></li>
+</ul>
 
-<h1>参考:</h1>
 
-<p><a href="http://stackoverflow.com/questions/18368914/gldrawarrays-behaving-weirdly-on-mac-os-x">http://stackoverflow.com/questions/18368914/gldrawarrays-behaving-weirdly-on-mac-os-x</a></p>
+<h1>参见</h1>
 
-<p><a href="http://www.cnblogs.com/mikewolf2002/archive/2012/10/27/2742137.html">http://www.cnblogs.com/mikewolf2002/archive/2012/10/27/2742137.html</a></p>
+<ul>
+<li><p><a href="https://www.khronos.org/opengles/sdk/docs/man32/html/glGenBuffers.xhtml/">https://www.khronos.org/opengles/sdk/docs/man32/html/glGenBuffers.xhtml/</a></p></li>
+<li><p><a href="http://stackoverflow.com/questions/18368914/gldrawarrays-behaving-weirdly-on-mac-os-x">http://stackoverflow.com/questions/18368914/gldrawarrays-behaving-weirdly-on-mac-os-x</a></p></li>
+<li><p><a href="http://www.cnblogs.com/mikewolf2002/archive/2012/10/27/2742137.html">http://www.cnblogs.com/mikewolf2002/archive/2012/10/27/2742137.html</a></p></li>
+</ul>
+
 </div>
 
   <footer>

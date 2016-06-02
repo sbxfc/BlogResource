@@ -1,0 +1,22 @@
+---
+layout: post
+title: "字符串与字符数组"
+date: 2015-02-29 15:47:25 +0800
+comments: true
+categories: 
+---
+
+在C语言里,字符串是以"\0"结束的,程序通过检测"\0"来判断字符串是否结束.
+
+	char* str1 = "abc";
+	char str2[] = "abc";
+	char str3[10] = "abc";
+
+	// sizeof(str1) = 8 //(gcc + 64位系统)sizeof的所有指针长度为8
+	// sizeof(str2) = 4 
+	// strlen(str3) = 3 /*strlen在计算字符串长度值,不包括\0*/
+
+
+
+
+ 

@@ -1,0 +1,236 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>C语言中的指针使用 - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="C语言中的指针使用 在C语言中,操作内存是通过指针来实现的。指针可以看做是一种特殊的数据结构,它不但记录了目标对象的首字节地址,还保存了对象的类型。由于,我们知道一个对象的首字节地址和对象类型(对象大小),也就确定了对象的值。 指针通常是这样表示的int *p,*左侧是指针的类型: int &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="//ajax.useso.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<link href='http://fonts.useso.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2015/02/28/c-pointer">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">C语言中的指针使用</h2>
+    
+  </header>
+
+  <div class="entry_content"><p>在C语言中,操作内存是通过指针来实现的。指针可以看做是一种特殊的数据结构,它不但记录了目标对象的首字节地址,还保存了对象的类型。由于,我们知道一个对象的首字节地址和对象类型(对象大小),也就确定了对象的值。</p>
+
+<p>指针通常是这样表示的<font color='#bd260d'>int *p</font>,*左侧是指针的类型:</p>
+
+<pre><code>int val = 123;
+int* p = &amp;val;
+printf("%d %d\n",p,*p); 
+</code></pre>
+
+<p>在上面的示例中,&amp;val用来对目标对象取地址操作,并赋值给指针p. %d用来输出一个整数值,地址本身就是一个整数值,*p解引用得到该目标对象的值。</p>
+
+<h1>作为参数传递</h1>
+
+<p>在C语言里,参数传递是挺让人困扰的地方。因为涉及到了指针,参数可能说变就变。:&ndash;(</p>
+
+<p>尽管如此,有一些规则还是有迹可循的。首先,参数是以copy的形式传递到函数内部的。也就是说,传入函数内部的是一个副本,无论我们如何修改这个副本,都不会影响外部值。</p>
+
+<pre><code>void sw(int x, int y) {
+    int tmp;
+    tmp = x;
+    x = y;
+    y = tmp;
+}
+
+int x = 1;
+int y = 2;
+sw(x,y);
+
+x  // 1
+y  // 2
+</code></pre>
+
+<p>接下来是指针作为参数的情况。对我们这些初学者来说,尽管读了很多关于指针的大道理,但是面对实际情况时依然会不知所措。这大概就是因为不熟吧~</p>
+
+<p>指针作为参数,说白了就是向函数内部传递目标对象的地址。尽管是以copy的形式把地址传递进去的,但是地址的值是唯一的,也就是说这个地址指向的目标都是货真价实的同一个。<font color="#bd260d"><strong>并且,凡是参数形式是 func (type* p) 的函数,都是指针传参函数。</strong></font></p>
+
+<pre><code>void incrementor(int* p)
+{
+    (*p) ++;
+}
+
+int a = 10;
+incrementor(&amp;a);
+
+a // 11
+</code></pre>
+
+<p>在此基础上,有时你可能会会遇到另一种形式的指针参数。<font color="#bd260d"><strong> func (type**fuck) </strong> </font>当你遇到它的时候,你可能会问这是什么鬼!!!这东西按行里的话说,叫二级指针. 什么意思呢,我们知道一个对象对应一个内存地址,而地址本身是一个对象结构(目标的地址+类型),它也有一个地址。而 <font color="#bd260d"><strong> ** </strong> </font> 就是指针的指针。当然,顺藤摸瓜你可能联想到三星、四星&hellip;子子孙孙无穷尽的情况,这里就不详述了~</p>
+
+<p>二级指针和一级指针的情况类似,一级指针是通过地址来改变目标对象,而二级指针是通过改变地址的指针修修改目标对象的地址,也就是为了修改目标对象的指针。</p>
+
+<pre><code>void my_malloc(int** p){
+    //申请一块内存,并赋值给指针对象*p
+    *p = malloc(sizeof(int));
+}
+
+int *p = 0;
+my_malloc(&amp;p);
+</code></pre>
+
+<h1>引用</h1>
+
+<p>引用实际上是一个常量指针。表达式 <font color='#bd260d'><strong>int &amp;i = j;</strong></font>在编译时会被 <font color='#bd260d'><strong>int *const i = &j;</strong></font> 替换掉。所以,引用在初始化时必须为其赋值。</p>
+
+<pre><code>int&amp; ref = val;
+</code></pre>
+
+<h1>参见</h1>
+
+<ul>
+<li><a href="http://zh.wikipedia.org/wiki/%E6%8C%87%E6%A8%99_(%E9%9B%BB%E8%85%A6%E7%A7%91%E5%AD%B8)">指针(Wiki)</a></li>
+</ul>
+
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2015-02-28 13:47:25 +0800" pubdate>Feb 28<span>th</span>, 2015</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2016 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2015/02/28/c-pointer';
+	var disqus_url = 'http://sbxfc.github.io/blog/2015/02/28/c-pointer';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>
