@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Cocos2d-JSB 内存管理"
+title: "JSB 内存管理"
 date: 2016-01-15 14:42:31 +0800
 comments: true
 categories: 

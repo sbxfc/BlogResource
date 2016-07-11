@@ -1,0 +1,248 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>编译一个C语言程序 - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="编译一个C语言程序 gcc是类Unix下的标准编译器,在 Linux 和 以FreeBSD为基础的 macOS下可以直接使用。 编译一个简单的C程序 以下代码被包含在一个名为 &ldquo;test.c&#8221;的文本文件里: #include &lt;stdio.h&gt;
+int &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="//ajax.useso.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<link href='http://fonts.useso.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2016/07/07/compile">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">编译一个C语言程序</h2>
+    
+  </header>
+
+  <div class="entry_content"><p>gcc是类Unix下的标准编译器,在 Linux 和 以FreeBSD为基础的 macOS下可以直接使用。</p>
+
+<h1>编译一个简单的C程序</h1>
+
+<p>以下代码被包含在一个名为 &ldquo;test.c&#8221;的文本文件里:</p>
+
+<pre><code>#include &lt;stdio.h&gt;
+int main(){
+    printf("Hello World!\n");
+}
+</code></pre>
+
+<p>在命令行里,你可以通过标准gcc命令来编译该文件</p>
+
+<pre><code>$gcc test.c -o test
+</code></pre>
+
+<p>该命令将test.c编译成一个名为test的可执行程序,你可以在命令行里输入 <font color='#bd260d'><strong>./test</strong></font> 来运行该程序。程序运行时屏幕上会输出 &ldquo;Hello World!&rdquo;</p>
+
+<p>除次以外,你也可以通过下面两条命令分两步来编译程序test</p>
+
+<pre><code>$gcc -c test.c
+$gcc test.o -o test
+</code></pre>
+
+<p>这两种方式的结果一样,都会生成test程序。但是第二种方式,编译器会首先将源文件 test.c 编译成名为hello.o的机器语言程序,然后再将hello.o和一些用于输出&#8221;Hello World&#8221;的系统库链接在一起,并合成最终的可执行程序test。</p>
+
+<p>实际上,第一种方式也同样执行了这两步,只不过编译器在后台悄悄运行,并删除了中间文件test.o</p>
+
+<h1>编译参数</h1>
+
+<p>在编译时,我们可以指定一些参数来告诉编译器如何编译我们的程序</p>
+
+<p>在编译命令里加入<font color='#bd260d'><strong>-g</strong></font>选项,可以开启 gdb 对程序进行调试,通过输入命令 <font color='#bd260d'><strong>gdb ./test</strong></font>进入调试模式</p>
+
+<pre><code>$gcc -g test.c -o test
+</code></pre>
+
+<p>在编译命令里加入<font color='#bd260d'><strong>-Wall</strong></font>选项会打印出程序编译时的警告信息,包括一些语法问题。</p>
+
+<pre><code>$gcc -Wall test.c -o test
+</code></pre>
+
+<p>加入 <font color='#bd260d'><strong>-O</strong></font>选项,开启默认优化。</p>
+
+<pre><code>$gcc -O test.c -o test
+</code></pre>
+
+<p>加入 <font color='#bd260d'><strong>-shared</strong></font> ,用来生成共享文件<font color='#bd260d'><strong>*.so</strong></font>(Shared Object)</p>
+
+<pre><code>$gcc -shadred test.c -o libtest.so
+</code></pre>
+
+<h1>链接库（-l&amp;-L）</h1>
+
+<p>当程序需要一些系统库或我们自己生成的类库时,并且这个库文件是在以下三个目录之中时,<font color='#bd260d'><strong>/lib、/usr/lib和/usr/local/lib</strong></font>,我们就可以在编译指令里加入<font color='#bd260d'><strong>-l</strong></font>参数来指定编译时需要链接的库文件。</p>
+
+<p>-l参数和其他参数的用法有所不同,-l后面不加空格并直接跟要链接的库名,比如说我们要连接的库为libm.dylib数学库,那么我们要写成<font color='#bd260d'><strong>-lm</strong></font>的形式,即库名去掉lib和.dylib后的库名。这样,编译器在链接时就会自动在目录<font color='#bd260d'><strong>/lib、/usr/lib和/usr/local/lib</strong></font>下寻找要链接的库文件</p>
+
+<pre><code>gcc test.c -o test -lm
+</code></pre>
+
+<p>但是,如果要链接的库不在这三个目录之列时,通过-l链接就会出错。这时可以用到<font color='#bd260d'><strong>-L</strong></font>参数。-L参数用来指定库的目录位置。比如我们用到当前项目下的lib文件夹里的库文件(<font color='#bd260d'><strong>../lib</strong></font>),我们可以写成如下格式:</p>
+
+<pre><code>gcc test.c -o test -L../lib
+</code></pre>
+
+<h1>指定头文件目录(-I)</h1>
+
+<p>有时,我们会将头文件放在一个统一的目录里,比如<font color='#bd260d'><strong>include</strong></font>文件夹。
+这时候,我们可以在编译指令里加入<font color='#bd260d'><strong>-I</strong></font>参数来指定头文件的目录</p>
+
+<pre><code>gcc test.c -o test -I./include
+</code></pre>
+
+<p>当然你也可以在引用头文件的时写成完整路径的形式<font color='#bd260d'><strong>./include/header.h</strong></font></p>
+
+<h1>参见</h1>
+
+<ul>
+<li><a href="https://zh.wikipedia.org/wiki/GCC">https://zh.wikipedia.org/wiki/GCC</a></li>
+<li><a href="http://www.cnblogs.com/vamei/archive/2013/04/03/2998652.html">http://www.cnblogs.com/vamei/archive/2013/04/03/2998652.html</a></li>
+</ul>
+
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2016-07-07 15:37:57 +0800" pubdate>Jul 7<span>th</span>, 2016</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2016 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2016/07/07/compile';
+	var disqus_url = 'http://sbxfc.github.io/blog/2016/07/07/compile';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

@@ -1,0 +1,78 @@
+---
+layout: post
+title: "自动化编译之make"
+date: 2016-07-01 11:36:32 +0800
+comments: true
+categories: 
+---
+
+*注1：本文使用的make为GNU Make*
+
+---
+
+#程序的编译
+
+通常,我们将源代码编译成可执行程序,首先要将源代码文件编译成中间文件,在Windows下为.obj文件,在Unix下为.o文件,这个过程叫做编译（compile）。然后,将大量的中间文件合成执行文件,这个过程称为链接（link）。
+
+链接主要是链接函数和全局变量,链接器不关心函数所在的源文件,只关心函数的中间文件。有时候生成的中间目标文件太多,而链接时需要明显指出中间目标名,这对于编译很不方便。所以,我们要给中间文件打个包,在Windows下这种包叫“库文件”（Library File),也就是 .lib 文件,在UNIX下,是Archive File,也就是 .a 文件。 
+
+#Makefile的使用
+
+当编译一个大型项目时,往往需要许多次调用编译器,并根据依赖关系,逐步编译整个项目。而通过make工具来处理这些复杂的依赖关系时,我们不需要频繁输入 gcc 命令,而只需要执行一次make就可以完成整个编译过程。所有的依赖关系都被记录在Makefile文本中
+
+	target ... : prerequisites ... 
+		command 
+		... 
+		... 
+
+上面是一个基本的Makefile结构,target 用来指定一个目标文件，可以是中间文件，也可以是执行文件。 prerequisites 就是,要生成那个target所依赖的文件或目标。command 也就是生成目标文件make需要执行的命令
+
+![make.png](/images/2016/6/make_01.png)
+
+上面是一个简单的make示例,test.c程序输出hello world,这个makefile的工作流程如下:
+
+1,当make命令执行时,程序会搜索当前目录下的makefile,Makefile或者GNUmakefile。
+
+2,如果找到,它会找文件中的第一个目标文件(target),在上面的例子中,他会找helloworld这个目标文件,并把这个文件作为最终的目标文件。
+
+3,如果helloworld不存在,或是edit所依赖的后面的.o文件比helloworld这个文件新,那么他就会执行后面的命令来生成这个文件。
+
+4,如果helloworld所依赖的.o文件也存在,那么make会在当前文件夹中找目标.o文件的依赖性,如果找到则再根据那一个规则生成.o。(直到所有的依赖关系都找到,类似于堆栈的过程。)
+
+5,当所有的中间文件.o都存在的时候,make就会执行终极任务,生成helloworld。
+ 
+这就是整个make的依赖性，make会一层又一层地去找文件的依赖关系，直到最终编译出第一个目标文件。
+
+#宏
+
+当我们往生成最终目标helloworld的依赖里添加了一个用于输出时间的工具类时,这时我们需要在依赖目标里,添加一个print_time.o,然后在command里添加print_time.o,由于我们的makefile并不复杂,所以在这两处修改并不麻烦。但是,如果makefile变得复杂,我们可能会漏掉一个需要加入的地方而导致编译失败。为了维护方便,这时,我们可以在makefile使用宏,类似于文本类型的变量。
+
+![make.png](/images/2016/6/make_02.png)
+
+#make自动推导
+
+
+GNU Make可以说是体贴入微,有些command不需要我们写出,make可以自动推导出该命令,比如生成目标test.o时,可以省略为  <font color='#bd260d'>test.o:</font>
+
+只要make看见一个.o目标文件,它就会自动的把.c文件加到依赖关系中,如果make找到一个test.o,那么test.c,就会是test.o的依赖文件。并且 <font color='#bd260d'>gcc -c test.c -o test.o</font> 也会被推导出来
+
+![make.png](/images/2016/6/make_03.png)
+
+如果觉得这样写看着不太舒服,也可以直接改为下面的终极格式:
+
+![make.png](/images/2016/6/make_04.png)
+
+#清理
+
+每个Makefile中都应该写一个清空目标文件（.o和执行文件）的功能,这不仅便于重编译,也很利于保持文件的清洁。
+
+	clean :
+	-rm helloworld $(objects) 
+
+#示例
+
+- <https://github.com/sbxfc/gnu-make>
+
+
+
+

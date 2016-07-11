@@ -4,7 +4,7 @@
   <title><![CDATA[sbxfc]]></title>
   <link href="http://sbxfc.github.io/atom.xml" rel="self"/>
   <link href="http://sbxfc.github.io/"/>
-  <updated>2016-06-14T16:23:41+08:00</updated>
+  <updated>2016-07-11T15:09:00+08:00</updated>
   <id>http://sbxfc.github.io/</id>
   <author>
     <name><![CDATA[sbxfc]]></name>
@@ -14,7 +14,590 @@
 
   
   <entry>
-    <title type="html"><![CDATA[Cocos2d-JSB 内存管理]]></title>
+    <title type="html"><![CDATA[编译一个C语言程序]]></title>
+    <link href="http://sbxfc.github.io/blog/2016/07/07/compile/"/>
+    <updated>2016-07-07T15:37:57+08:00</updated>
+    <id>http://sbxfc.github.io/blog/2016/07/07/compile</id>
+    <content type="html"><![CDATA[<p>gcc是类Unix下的标准编译器,在 Linux 和 以FreeBSD为基础的 macOS下可以直接使用。</p>
+
+<h1>编译一个简单的C程序</h1>
+
+<p>以下代码被包含在一个名为 &ldquo;test.c&#8221;的文本文件里:</p>
+
+<pre><code>#include &lt;stdio.h&gt;
+int main(){
+    printf("Hello World!\n");
+}
+</code></pre>
+
+<p>在命令行里,你可以通过标准gcc命令来编译该文件</p>
+
+<pre><code>$gcc test.c -o test
+</code></pre>
+
+<p>该命令将test.c编译成一个名为test的可执行程序,你可以在命令行里输入 <font color='#bd260d'><strong>./test</strong></font> 来运行该程序。程序运行时屏幕上会输出 &ldquo;Hello World!&rdquo;</p>
+
+<p>除次以外,你也可以通过下面两条命令分两步来编译程序test</p>
+
+<pre><code>$gcc -c test.c
+$gcc test.o -o test
+</code></pre>
+
+<p>这两种方式的结果一样,都会生成test程序。但是第二种方式,编译器会首先将源文件 test.c 编译成名为hello.o的机器语言程序,然后再将hello.o和一些用于输出&#8221;Hello World&#8221;的系统库链接在一起,并合成最终的可执行程序test。</p>
+
+<p>实际上,第一种方式也同样执行了这两步,只不过编译器在后台悄悄运行,并删除了中间文件test.o</p>
+
+<h1>编译参数</h1>
+
+<p>在编译时,我们可以指定一些参数来告诉编译器如何编译我们的程序</p>
+
+<p>在编译命令里加入<font color='#bd260d'><strong>-g</strong></font>选项,可以开启 gdb 对程序进行调试,通过输入命令 <font color='#bd260d'><strong>gdb ./test</strong></font>进入调试模式</p>
+
+<pre><code>$gcc -g test.c -o test
+</code></pre>
+
+<p>在编译命令里加入<font color='#bd260d'><strong>-Wall</strong></font>选项会打印出程序编译时的警告信息,包括一些语法问题。</p>
+
+<pre><code>$gcc -Wall test.c -o test
+</code></pre>
+
+<p>加入 <font color='#bd260d'><strong>-O</strong></font>选项,开启默认优化。</p>
+
+<pre><code>$gcc -O test.c -o test
+</code></pre>
+
+<p>加入 <font color='#bd260d'><strong>-shared</strong></font> ,用来生成共享文件<font color='#bd260d'><strong>*.so</strong></font>(Shared Object)</p>
+
+<pre><code>$gcc -shadred test.c -o libtest.so
+</code></pre>
+
+<h1>链接库（-l&amp;-L）</h1>
+
+<p>当程序需要一些系统库或我们自己生成的类库时,并且这个库文件是在以下三个目录之中时,<font color='#bd260d'><strong>/lib、/usr/lib和/usr/local/lib</strong></font>,我们就可以在编译指令里加入<font color='#bd260d'><strong>-l</strong></font>参数来指定编译时需要链接的库文件。</p>
+
+<p>-l参数和其他参数的用法有所不同,-l后面不加空格并直接跟要链接的库名,比如说我们要连接的库为libm.dylib数学库,那么我们要写成<font color='#bd260d'><strong>-lm</strong></font>的形式,即库名去掉lib和.dylib后的库名。这样,编译器在链接时就会自动在目录<font color='#bd260d'><strong>/lib、/usr/lib和/usr/local/lib</strong></font>下寻找要链接的库文件</p>
+
+<pre><code>gcc test.c -o test -lm
+</code></pre>
+
+<p>但是,如果要链接的库不在这三个目录之列时,通过-l链接就会出错。这时可以用到<font color='#bd260d'><strong>-L</strong></font>参数。-L参数用来指定库的目录位置。比如我们用到当前项目下的lib文件夹里的库文件(<font color='#bd260d'><strong>../lib</strong></font>),我们可以写成如下格式:</p>
+
+<pre><code>gcc test.c -o test -L../lib
+</code></pre>
+
+<h1>指定头文件目录(-I)</h1>
+
+<p>有时,我们会将头文件放在一个统一的目录里,比如<font color='#bd260d'><strong>include</strong></font>文件夹。
+这时候,我们可以在编译指令里加入<font color='#bd260d'><strong>-I</strong></font>参数来指定头文件的目录</p>
+
+<pre><code>gcc test.c -o test -I./include
+</code></pre>
+
+<p>当然你也可以在引用头文件的时写成完整路径的形式<font color='#bd260d'><strong>./include/header.h</strong></font></p>
+
+<h1>参见</h1>
+
+<ul>
+<li><a href="https://zh.wikipedia.org/wiki/GCC">https://zh.wikipedia.org/wiki/GCC</a></li>
+<li><a href="http://www.cnblogs.com/vamei/archive/2013/04/03/2998652.html">http://www.cnblogs.com/vamei/archive/2013/04/03/2998652.html</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[自动化编译之make]]></title>
+    <link href="http://sbxfc.github.io/blog/2016/07/01/makefile/"/>
+    <updated>2016-07-01T11:36:32+08:00</updated>
+    <id>http://sbxfc.github.io/blog/2016/07/01/makefile</id>
+    <content type="html"><![CDATA[<p><em>注1：本文使用的make为GNU Make</em></p>
+
+<hr />
+
+<h1>程序的编译</h1>
+
+<p>通常,我们将源代码编译成可执行程序,首先要将源代码文件编译成中间文件,在Windows下为.obj文件,在Unix下为.o文件,这个过程叫做编译（compile）。然后,将大量的中间文件合成执行文件,这个过程称为链接（link）。</p>
+
+<p>链接主要是链接函数和全局变量,链接器不关心函数所在的源文件,只关心函数的中间文件。有时候生成的中间目标文件太多,而链接时需要明显指出中间目标名,这对于编译很不方便。所以,我们要给中间文件打个包,在Windows下这种包叫“库文件”（Library File),也就是 .lib 文件,在UNIX下,是Archive File,也就是 .a 文件。</p>
+
+<h1>Makefile的使用</h1>
+
+<p>当编译一个大型项目时,往往需要许多次调用编译器,并根据依赖关系,逐步编译整个项目。而通过make工具来处理这些复杂的依赖关系时,我们不需要频繁输入 gcc 命令,而只需要执行一次make就可以完成整个编译过程。所有的依赖关系都被记录在Makefile文本中</p>
+
+<pre><code>target ... : prerequisites ... 
+    command 
+    ... 
+    ... 
+</code></pre>
+
+<p>上面是一个基本的Makefile结构,target 用来指定一个目标文件，可以是中间文件，也可以是执行文件。 prerequisites 就是,要生成那个target所依赖的文件或目标。command 也就是生成目标文件make需要执行的命令</p>
+
+<p><img src="http://sbxfc.github.io/images/2016/6/make_01.png" alt="make.png" /></p>
+
+<p>上面是一个简单的make示例,test.c程序输出hello world,这个makefile的工作流程如下:</p>
+
+<p>1,当make命令执行时,程序会搜索当前目录下的makefile,Makefile或者GNUmakefile。</p>
+
+<p>2,如果找到,它会找文件中的第一个目标文件(target),在上面的例子中,他会找helloworld这个目标文件,并把这个文件作为最终的目标文件。</p>
+
+<p>3,如果helloworld不存在,或是edit所依赖的后面的.o文件比helloworld这个文件新,那么他就会执行后面的命令来生成这个文件。</p>
+
+<p>4,如果helloworld所依赖的.o文件也存在,那么make会在当前文件夹中找目标.o文件的依赖性,如果找到则再根据那一个规则生成.o。(直到所有的依赖关系都找到,类似于堆栈的过程。)</p>
+
+<p>5,当所有的中间文件.o都存在的时候,make就会执行终极任务,生成helloworld。</p>
+
+<p>这就是整个make的依赖性，make会一层又一层地去找文件的依赖关系，直到最终编译出第一个目标文件。</p>
+
+<h1>宏</h1>
+
+<p>当我们往生成最终目标helloworld的依赖里添加了一个用于输出时间的工具类时,这时我们需要在依赖目标里,添加一个print_time.o,然后在command里添加print_time.o,由于我们的makefile并不复杂,所以在这两处修改并不麻烦。但是,如果makefile变得复杂,我们可能会漏掉一个需要加入的地方而导致编译失败。为了维护方便,这时,我们可以在makefile使用宏,类似于文本类型的变量。</p>
+
+<p><img src="http://sbxfc.github.io/images/2016/6/make_02.png" alt="make.png" /></p>
+
+<h1>make自动推导</h1>
+
+<p>GNU Make可以说是体贴入微,有些command不需要我们写出,make可以自动推导出该命令,比如生成目标test.o时,可以省略为  <font color='#bd260d'>test.o:</font></p>
+
+<p>只要make看见一个.o目标文件,它就会自动的把.c文件加到依赖关系中,如果make找到一个test.o,那么test.c,就会是test.o的依赖文件。并且 <font color='#bd260d'>gcc -c test.c -o test.o</font> 也会被推导出来</p>
+
+<p><img src="http://sbxfc.github.io/images/2016/6/make_03.png" alt="make.png" /></p>
+
+<p>如果觉得这样写看着不太舒服,也可以直接改为下面的终极格式:</p>
+
+<p><img src="http://sbxfc.github.io/images/2016/6/make_04.png" alt="make.png" /></p>
+
+<h1>清理</h1>
+
+<p>每个Makefile中都应该写一个清空目标文件（.o和执行文件）的功能,这不仅便于重编译,也很利于保持文件的清洁。</p>
+
+<pre><code>clean :
+-rm helloworld $(objects) 
+</code></pre>
+
+<h1>示例</h1>
+
+<ul>
+<li><a href="https://github.com/sbxfc/gnu-make">https://github.com/sbxfc/gnu-make</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[IEEE 802.11 WLAN]]></title>
+    <link href="http://sbxfc.github.io/blog/2016/06/23/wireless-lan/"/>
+    <updated>2016-06-23T15:27:41+08:00</updated>
+    <id>http://sbxfc.github.io/blog/2016/06/23/wireless-lan</id>
+    <content type="html"><![CDATA[<h1>IEEE 802.11</h1>
+
+<p>IEEE 802.11 是现今无线局域网的通讯标准,该标准包括物理层和数据链路层中的媒体访问控制层（MAC层）的两部分规范。</p>
+
+<h1>物理层</h1>
+
+<p>IEEE 802.11 中的物理层由 PLCP Sublayer、PMD Sublayer 以及 Physical-Layer Management 三部分组成。PLCP主要进行载波的分析和针对不同的物理层形成的相应格式分组。PMD层用于识别相关介质传输的信息所使用的调制和编码技术。物理管理层为不同的物理层进行信道选择和协调。</p>
+
+<h1>MAC层</h1>
+
+<p><img src="http://sbxfc.github.io/images/2016/6/ieee80211.png" alt="IEEE_802_11" /></p>
+
+<p>MPDU(Mac protocal data unit)即IEEE 802.11在MAC层数据帧格式。802.11在MAC层的数据帧分为三大类,类型由Frame control里的Type决定,每个大类又会根据Subtype的不同分为许多子类。首先是三大类:</p>
+
+<ul>
+<li><p>00,管理帧 这类数据帧主要用来进行身份验证,发送热点信号(Beacon)等。</p></li>
+<li><p>01,控制帧 发送RTS/CTS,ACK等一些查询和控制响应帧。</p></li>
+<li><p>10,数据帧 携带更高层的数据(如IP数据包，ISO7层协议)。</p></li>
+</ul>
+
+
+<h2>1,管理帧</h2>
+
+<p>管理帧根据Subtype类型不同,分为如下类型:</p>
+
+<table>
+<thead>
+<tr>
+<th>管理类掩码</th>
+<th> 子类型掩码  </th>
+<th> 帧描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>00 </td>
+<td>0000 </td>
+<td>Association request (连接请求) </td>
+</tr>
+<tr>
+<td>00 </td>
+<td>0001 </td>
+<td>  Association response (连接响应)  </td>
+</tr>
+<tr>
+<td>00 </td>
+<td>0010 </td>
+<td> Reassociation request（重连接请求）</td>
+</tr>
+<tr>
+<td>00 </td>
+<td>0011 </td>
+<td> Reassociation response（重连接联响应）</td>
+</tr>
+<tr>
+<td>00 </td>
+<td>0100 </td>
+<td> Probe request（探测请求）</td>
+</tr>
+<tr>
+<td>00 </td>
+<td>0101 </td>
+<td> Probe response（探测响应）</td>
+</tr>
+<tr>
+<td>00 </td>
+<td>1000 </td>
+<td> Beacon（信标，被动扫描时AP 发出，notify）</td>
+</tr>
+<tr>
+<td>00 </td>
+<td>1001 </td>
+<td> ATIM（通知传输指示消息）</td>
+</tr>
+<tr>
+<td>00 </td>
+<td>1010 </td>
+<td> Disassociation（解除连接，notify）</td>
+</tr>
+<tr>
+<td>00 </td>
+<td>1011 </td>
+<td> Authentication（身份验证）</td>
+</tr>
+<tr>
+<td>00 </td>
+<td>1100 </td>
+<td>Deauthentication（解除认证，notify）</td>
+</tr>
+</tbody>
+</table>
+
+
+<p>1000 Beacon(信标)的帧格式:</p>
+
+<p><img src="http://sbxfc.github.io/images/2016/6/ieee80211_beacon.jpeg" alt="IEEE_802_11" /></p>
+
+<h2>2,控制帧</h2>
+
+<table>
+<thead>
+<tr>
+<th>类型信息</th>
+<th> 子类型信息  </th>
+<th> 帧描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>01 </td>
+<td>1010 </td>
+<td>Power Save（PS）- Poll（省电－轮询）</td>
+</tr>
+<tr>
+<td>01 </td>
+<td>1011 </td>
+<td>RTS（请求发送，即: Request To Send ，预约信道，帧长20字节）</td>
+</tr>
+<tr>
+<td>01 </td>
+<td>1100 </td>
+<td>CTS（清除发送，即:Clear To Send ，同意预约，帧长14字节）</td>
+</tr>
+<tr>
+<td>01 </td>
+<td>1101 </td>
+<td>ACK（确认）</td>
+</tr>
+<tr>
+<td>01 </td>
+<td>1110 </td>
+<td>CF-End（无竞争周期结束）</td>
+</tr>
+<tr>
+<td>01 </td>
+<td>1111 </td>
+<td>CF-End（无竞争周期结束）＋CF-ACK（无竞争周期确认）</td>
+</tr>
+</tbody>
+</table>
+
+
+<h2>3,数据帧</h2>
+
+<table>
+<thead>
+<tr>
+<th>类型信息</th>
+<th> 子类型信息  </th>
+<th> 帧描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>10 </td>
+<td> 0000 </td>
+<td> Data（数据）</td>
+</tr>
+<tr>
+<td>10 </td>
+<td> 0001 </td>
+<td> Data+CF-ACK</td>
+</tr>
+<tr>
+<td>10 </td>
+<td> 0010 </td>
+<td> Data+CF-Poll</td>
+</tr>
+<tr>
+<td>10 </td>
+<td> 0011 </td>
+<td> Data+CF-ACK+CF-Poll</td>
+</tr>
+<tr>
+<td>10 </td>
+<td> 0100 </td>
+<td> Null data（无数据：未传送数据）</td>
+</tr>
+<tr>
+<td>10 </td>
+<td> 0101 </td>
+<td> CF-ACK（未传送数据）</td>
+</tr>
+<tr>
+<td>10 </td>
+<td> 0110 </td>
+<td> CF-Poll（未传送数据）</td>
+</tr>
+<tr>
+<td>10 </td>
+<td> 0111 </td>
+<td> Data+CF-ACK+CF-Poll</td>
+</tr>
+<tr>
+<td>10 </td>
+<td> 1000 </td>
+<td> Qos Data</td>
+</tr>
+<tr>
+<td>10 </td>
+<td> 1001 </td>
+<td> Qos Data + CF-ACK</td>
+</tr>
+<tr>
+<td>10 </td>
+<td> 1010 </td>
+<td> Qos Data + CF-Poll</td>
+</tr>
+<tr>
+<td>10 </td>
+<td> 1011 </td>
+<td> Qos Data + CF-ACK+ CF-Poll</td>
+</tr>
+<tr>
+<td>10 </td>
+<td> 1100 </td>
+<td> QoS Null（未传送数据）</td>
+</tr>
+<tr>
+<td>10 </td>
+<td> 1101 </td>
+<td> QoS CF-ACK（未传送数据）</td>
+</tr>
+<tr>
+<td>10 </td>
+<td> 1110 </td>
+<td> QoS CF-Poll（未传送数据）</td>
+</tr>
+<tr>
+<td>10 </td>
+<td> 1111 </td>
+<td> QoS CF-ACK+ CF-Poll（未传送数据）</td>
+</tr>
+</tbody>
+</table>
+
+
+<h1>RadioTap</h1>
+
+<p>当网络接口处于monitor模式时,内核会生成一个RadioTap数据头添加在MPDU前面,Radiotap记录了热点的信息,如信号强度、MPDU帧信息等信息。</p>
+
+<p>RadioTap包括 Header 和 Data两部分数据,其中Header的结构如下:</p>
+
+<pre><code>struct ieee80211_radiotap_header {
+    u_int8_t        it_version;     /* set to 0 */
+    u_int8_t        it_pad;
+    u_int16_t       it_len;         /* entire length */
+    u_int32_t       it_present;     /* fields present */
+} __attribute__((__packed__));
+</code></pre>
+
+<ul>
+<li>it_version 版本号,始终为0.</li>
+<li>it_pad 未使用,只作字段对齐使用。</li>
+<li>it_len 整个Radiotap的长度,如果你不关心Radiotap里包含的信息,可以通过这个值跳过Radiotap部分。</li>
+<li>it_present 是Data数据部分的掩码,标识哪些数据出现在接下来的Data里。</li>
+</ul>
+
+
+<p>it_present里的每一位代表一种类型的数据是否出现在接下来的Data数据里,并且这些数据的出现的顺序是与掩码的位次依次相关的。其中前22位为标准掩码,其位置和对应的数据结构信息可以在这里查看:</p>
+
+<ul>
+<li><a href="http://www.radiotap.org/defined-fields">http://www.radiotap.org/defined-fields</a></li>
+</ul>
+
+
+<p>通常it_present的最后一位Ext为0,此时Data紧随it_present之后出现。如果Ext为1,表明开发者增加了it_present字段,每个增加的it_present大小为32bit,直到最后一个Ext为0的it_present出现时,Data才会紧接着出现。除Ext之外Present中倒数第2、3位是设备厂商的保留位，不能作为Data掩码使用。</p>
+
+<pre><code>.... .... .... .... .... .... .... ...1 = TSFT : True
+.... .... .... .... .... .... .... ..1. = Flags: True
+.... .... .... .... .... .... .... .1.. = Rate : True
+.... .... .... .... .... .... .... 1... = Channel : True
+.... .... .... .... .... .... ...0 .... = FHSS : False
+.... .... .... .... .... .... ..1. .... = Antenna signal  : False
+.... .... .... .... .... .... .0.. .... = Antenna noise : False 
+.... .... .... .... .... .... 0... .... = Lock quality : False
+.... .... .... .... .... ...0 .... .... = TX attenuation : False 
+.... .... .... .... .... ..0. .... .... = dB TX attenuation : False 
+.... .... .... .... .... .0.. .... .... = dBm TX power : False  
+.... .... .... .... .... 1... .... .... = Antenna  : True
+.... .... .... .... ...0 .... .... .... = dB antenna signal : False
+.... .... .... .... ..0. .... .... .... = dB antenna noise : False
+.... .... .... .... .1.. .... .... .... = RX flags : False
+.... .... .... .... 0... .... .... .... = MCS : False
+.... .... .... ...0 .... .... .... .... = A-MPDU status : False
+.... .... .... ..0. .... .... .... .... = VHT : False
+.... .... .... .0.. .... .... .... .... = ... 
+0... .... .... .... .... .... .... .... = Ext:False
+</code></pre>
+
+<p>掩码对应的数据信息</p>
+
+<table>
+<thead>
+<tr>
+<th> 位置编码</th>
+<th> 大小 </th>
+<th>名称</th>
+<th> 描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0  </td>
+<td>  8byte   </td>
+<td> TSFT </td>
+<td> 只对接收帧有效,表示MPDU第一个bit到达MAC时的时间,单位是微秒</td>
+</tr>
+<tr>
+<td>1  </td>
+<td>  1byte   </td>
+<td> Flags</td>
+<td> 发送或接收帧属性,包括一些有用信息,比如FCS是否符合 </td>
+</tr>
+<tr>
+<td>2  </td>
+<td>  1byte   </td>
+<td> Rate </td>
+<td> 传输或接收速率,单位500kbs</td>
+</tr>
+<tr>
+<td>3  </td>
+<td>  2byte   </td>
+<td>  Channel </td>
+<td> 发送接收信号的频率，单位是MHz</td>
+</tr>
+<tr>
+<td>4  </td>
+<td>  1byte   </td>
+<td>  FHSS </td>
+<td> 跳频技术，是无线通讯最常用的扩频方式之一</td>
+</tr>
+<tr>
+<td>5  </td>
+<td>  1byte   </td>
+<td> Antenna signal </td>
+<td> 天线的射频信号强度，单位是dBm</td>
+</tr>
+<tr>
+<td>6  </td>
+<td>  1byte   </td>
+<td> Antenna noise  </td>
+<td> 天线的射频噪声强度，单位是dBm；</td>
+</tr>
+<tr>
+<td>7  </td>
+<td>  2byte   </td>
+<td> Lock quality </td>
+<td> 信号质量</td>
+</tr>
+<tr>
+<td>8  </td>
+<td>  2byte   </td>
+<td> TX attenuation </td>
+<td> 与出厂标准最大功率相比的功率衰减，0为最大功率</td>
+</tr>
+<tr>
+<td>9  </td>
+<td>  2byte   </td>
+<td> dB TX attenuation </td>
+<td> 与出厂标准最大功率相比的功率衰减dB值，0为最大功率</td>
+</tr>
+<tr>
+<td>10 </td>
+<td>  1byte   </td>
+<td> dBm TX power </td>
+<td> 传输功率的dBm值，这是在天线端口测量的功率绝对值</td>
+</tr>
+<tr>
+<td>11 </td>
+<td>  1byte   </td>
+<td> Antenna </td>
+<td> 发送或接收该帧的天线索引编号（硬件编号从0开始）；</td>
+</tr>
+<tr>
+<td>12 </td>
+<td>  1byte   </td>
+<td> dB antenna signal </td>
+<td> 天线的射频信号的相对功率强度dB值；</td>
+</tr>
+<tr>
+<td>13 </td>
+<td>  1byte   </td>
+<td> dB antenna noise </td>
+<td> 天线的射频噪音的相对功率强度dB值；</td>
+</tr>
+</tbody>
+</table>
+
+
+<h1>示例</h1>
+
+<ul>
+<li><a href="https://github.com/sbxfc/wlan-sniffer/">https://github.com/sbxfc/wlan-sniffer/</a></li>
+</ul>
+
+
+<h1>参考</h1>
+
+<ul>
+<li><a href="https://zh.wikipedia.org/wiki/IEEE_802.11">https://zh.wikipedia.org/wiki/IEEE_802.11</a></li>
+<li><a href="http://www.radiotap.org/">http://www.radiotap.org/</a></li>
+<li><a href="http://www.radiotap.org/defined-fields">http://www.radiotap.org/defined-fields</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[JSB 内存管理]]></title>
     <link href="http://sbxfc.github.io/blog/2016/01/15/memory-of-jsb/"/>
     <updated>2016-01-15T14:42:31+08:00</updated>
     <id>http://sbxfc.github.io/blog/2016/01/15/memory-of-jsb</id>
@@ -170,7 +753,7 @@ setTimeout(function(){
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[IO复用]]></title>
+    <title type="html"><![CDATA[IO-select]]></title>
     <link href="http://sbxfc.github.io/blog/2016/01/11/unix-select/"/>
     <updated>2016-01-11T11:01:41+08:00</updated>
     <id>http://sbxfc.github.io/blog/2016/01/11/unix-select</id>
@@ -1729,498 +2312,6 @@ pthread_cond_init(&amp;mycond,NULL);
 <h1>示例</h1>
 
 <p><a href="https://github.com/sbxfc/objc/tree/master/threads/pthread/pthread">https://github.com/sbxfc/objc/tree/master/threads/pthread/pthread</a></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[iOS - 帧时长可控的逐帧动画]]></title>
-    <link href="http://sbxfc.github.io/blog/2015/06/03/ios-frame-by-frame-animation/"/>
-    <updated>2015-06-03T10:12:57+08:00</updated>
-    <id>http://sbxfc.github.io/blog/2015/06/03/ios-frame-by-frame-animation</id>
-    <content type="html"><![CDATA[<p>UIImageView组件可以通过设置 animationImages、anmiamtionDurations 等参数来实现逐帧动画。 但是,如果我们想单独改变某一帧的播放时间,通过UIImageView现有的API却不能实现。那么,我们就会考虑自己定义一个这样的逐帧动画。</p>
-
-<p>当你选择诸如 <font color="#bd260d"><strong>CADisplayLink</strong></font> 、 <font color="#bd260d"><strong>NSTimer</strong></font>等时间驱动来绘制这样的的动画时,很可能会遇到一个问题。当这样的动画在同一个界面被大量使用时,会带来不小的CPU消耗、甚至是帧阻塞问题。通常情况下 UIView动画 或者 CAAnimation 驱动的动画任务几乎不受系统影响。所以,我们可以选择用 UIView 或 CAAnimation 等来封装我们的自定义动画。</p>
-
-<p>实际上,UIImageView动画本身就是一个封装了传统动画API的image view。其实现方式是通过修改image view在layer上的contents属性来完成动画播放的:</p>
-
-<!-- more -->
-
-
-<pre><code>&lt;CAKeyframeAnimation:0x8e5b020; 
-    removedOnCompletion = 0; 
-    delegate = &lt;_UIImageViewExtendedStorage: 0x8e49230&gt;; 
-    duration = 2.5; 
-    repeatCount = 2.14748e+09; 
-    calculationMode = discrete; 
-    values = (
-        "&lt;CGImage 0x8d6ce80&gt;",
-        "&lt;CGImage 0x8d6d2d0&gt;",
-        "&lt;CGImage 0x8d5cd30&gt;"
-    ); 
-    keyPath = contents
-&gt;
-</code></pre>
-
-<p>所以,我们可以通过修改contents来实现自定义动画。创建一个CAKeyframeAnimation动画,设置 keyTimes 来控制每帧时长。keyTimes里的元素表示每帧图片出现在动画总时长duration里的相对位置,其取值为区间[0,1]上的比例值。且 keyTimes 里元素个数要比values值多1个,使循环播放时首尾帧动画可以衔接起来。</p>
-
-<pre><code>CAKeyframeAnimation *animation = [CAKeyframeAnimation animationWithKeyPath:@"contents"];
-animation.calculationMode = kCAAnimationDiscrete;
-animation.keyTimes = keyTimes;
-animation.values = images;
-animation.duration = 7.0f;
-animation.repeatCount = HUGE_VAL;
-[imageView.layer addAnimation:animation forKey:nil];   
-</code></pre>
-
-<h1>代码</h1>
-
-<p><a href="https://github.com/sbxfc/FrameByFrameAnimation">https://github.com/sbxfc/FrameByFrameAnimation</a></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[iOS - 操作队列]]></title>
-    <link href="http://sbxfc.github.io/blog/2015/06/02/ios-nsoperation/"/>
-    <updated>2015-06-02T11:27:11+08:00</updated>
-    <id>http://sbxfc.github.io/blog/2015/06/02/ios-nsoperation</id>
-    <content type="html"><![CDATA[<p>操作队列(NSOperationQueue)是一个可以方便实现后台操作的工作队列,它是在GCD的基础上使用Cocoa抽象出来的一个队列模型。操作队列和GCD一样既可以在主线程运行,做一些UI刷新操作,也可以在子线程运行。</p>
-
-<p>操作队列里的工作被封装在一个NSOperation对象里,NSOperation本身是抽象对象不能直接使用,需要创建它的子类或者使用系统提供的两个子类 NSBlockOperation 或 NSInvocationOperation。</p>
-
-<h1>NSOperation</h1>
-
-<p>NSOperation 将工作单独封装成一个单元,并提供了一些线程安全的特性,比如状态(state),优先级(priority),依赖(dependencies)以及取消(cancellation)等。</p>
-
-<p>1,状态(state):</p>
-
-<p>状态(state)描述了一个 operation 的执行过程:</p>
-
-<pre><code>isReady -&gt; isExecuting -&gt; isFinished
-</code></pre>
-
-<p>1）isReady：isReady属性与dependencies有关,当operation依赖的工作完成时,会获得一个isReady键值的KVO通知,然后isReady属性修改为YES,标识该工作已经准备好。</p>
-
-<p>2）isExecuting：如果操作队列正在执行该operation,operation的isExecuting返回YES。</p>
-
-<p>3）isFinished: 任务成功的完成了或者中途被Cancel掉,该值返回YES。NSOperationQueue只会把isFinished为YES的operation踢出队列,isFinished为NO的永远不会被移除,所以实现时一定要保证其正确性,避免死锁的情况发生。</p>
-
-<p>2,取消(cancellation):</p>
-
-<p>NSOperation里的工作是可以取消的,取消一个operation可以是显式的调用cancel方法,也可以是operation依赖的其他operation执行失败。</p>
-
-<p>和state类似,当NSOperation被取消,是通过isCancelled键值的KVO来获得。当NSOperation的子类覆写cancel方法时,注意清理掉内部分配的资源。特别注意的是,这时isCancelled和isFinished的值都变为了YES,isExecuting为值变为NO</p>
-
-<p>3，优先级(priority):</p>
-
-<p>所有的operation在NSOperationQueue中未必都是一样的重要,设置queuePriority属性就可以提升和降低operation的优先级，queuePriority属性可选的值如下:</p>
-
-<ul>
-<li>NSOperationQueuePriorityVeryHigh</li>
-<li>NSOperationQueuePriorityHigh</li>
-<li>NSOperationQueuePriorityNormal</li>
-<li>NSOperationQueuePriorityLow</li>
-<li>NSOperationQueuePriorityVeryLow</li>
-</ul>
-
-
-<p>4,依赖(Dependencies):</p>
-
-<p>如果你从服务器上下载一张图片完成后进行压缩,你可能会想把下载图片作为一个operation,压缩作为另外一个。一个图片在从服务器上下载下来之前是没有办法压缩的,于是我们说压缩图片的operation依赖从服务器上下载图片的operation,后者必须先完成,前者才能开始执行。通过代码来说就是:</p>
-
-<pre><code>[resizingOperation addDependency:networkingOperation];
-[operationQueue addOperation:networkingOperation];
-[operationQueue addOperation:resizingOperation];
-</code></pre>
-
-<p>除非一个操作的依赖的isFinished返回YES，不然这个操作不会开始。要记住添加到队列里的所有的operation的依赖关系,并避免循环依赖,比如A依赖B,B依赖A,这样会产生死锁。</p>
-
-<h1>自定义NSOperation子类</h1>
-
-<p>对于非并发的工作,你只需要实现NSOperation子类里的main方法:</p>
-
-<pre><code>@implementation YourOperation
-
--(void)main
-{
-    if(self.isCancelled == NO)
-    {
-        //执行相应的操作
-    }
-}
-
-@end
-</code></pre>
-
-<p>如果要支持并发工作，那么NSOperation子类需要至少重写这四个方法:</p>
-
-<ul>
-<li>start</li>
-<li>isConcurrent</li>
-<li>isExecuting</li>
-<li>isFinished</li>
-</ul>
-
-
-<p>start方法是工作的入口，通常是你用来设置线程或者其他执行工作任务需要的运行环境的，注意不要调用[super start]；isConcurrent是标识这个Operation是否是并发执行的，这里曾经是个坑，如果你没有实现isConcurrent，默认是返回NO，那么你的NSOperation就不是并发执行而是串行执行的，不过在iOS5.0和OS X10.6之后，已经会默认忽略这个返回值，最终和Queue的maxConcurrentOperationCount最大并发操作值相关；isExecuting和isFinished是用来报告当前的工作执行状态情况的，注意必须是线程访问安全的。</p>
-
-<p>注意你的实现要发出合适的KVO通知，因为如果你的NSOperation实现需要用到工作依赖从属特性，而你的实现里没有发出合适的“isFinished”KVO通知，依赖你的NSOperation就无法正常执行。NSOperation支持KVO的属性有：</p>
-
-<ul>
-<li>isCancelled</li>
-<li>isConcurrent</li>
-<li>isExecuting</li>
-<li>isFinished</li>
-<li>isReady</li>
-<li>dependencies</li>
-<li>queuePriority</li>
-<li>completionBlock</li>
-</ul>
-
-
-<p>当然也不是说所有的KVO通知都需要自己去实现，例如通常你用不到addObserver到你工作的“isCancelled”属性，你只需要直接调用cancel方法就可以取消这个工作任务。</p>
-
-<h1>NSInvocationOperation &amp; NSBlockOperation</h1>
-
-<p>除此之外,对于一些不复杂的工作,可以由官方提供的NSOperation两个子类 NSInvocationOperation 和 NSBlockOperation 来实现。</p>
-
-<p>NSInvocationOperation:</p>
-
-<pre><code>NSInvocationOperation* operation = [[NSInvocationOperation alloc]
-                                        initWithTarget:self
-                                        selector:@selector(doSomeWork:)
-                                        object:nil];
-</code></pre>
-
-<p>NSBlockOperation:</p>
-
-<pre><code>NSBlockOperation *operation = [NSBlockOperation blockOperationWithBlock:^{
-        // Do some work.
-    }];
-</code></pre>
-
-<h1>NSOperationQueue</h1>
-
-<p>创建一个子线程队列,并将operation添加至队列里:</p>
-
-<pre><code>NSOperationQueue* operationQueue = [[NSOperationQueue alloc] init];
-[operationQueue addOperation:operation];
-</code></pre>
-
-<p>或者,直接使用主线程队列:</p>
-
-<pre><code>NSOperationQueue* operationQueue = [NSOperationQueue mainQueue];
-</code></pre>
-
-<p>设置并发工作的数量:</p>
-
-<pre><code>operationQueue.maxConcurrentOperationCount = 1;
-</code></pre>
-
-<p>取消所有队列工作:</p>
-
-<pre><code>[operationQueue cancelAllOperations];
-</code></pre>
-
-<h1>参见</h1>
-
-<ul>
-<li><a href="https://developer.apple.com/library/ios/documentation/Cocoa/Reference/NSOperation_class/index.html">https://developer.apple.com/library/ios/documentation/Cocoa/Reference/NSOperation_class/index.html</a></li>
-</ul>
-
-
-<!--对于非并发操作,你可以通过重写 main 方法来定义自己的operation。使用main方法非常简单,你不需要管理一些状态属性（例如 isExecuting 和 isFinished）,当 main 方法返回的时候,这个 operation 就结束了。
-
-    @implementation YourOperation
-        - (void)main
-        {
-            // 进行处理 ...
-        }
-    @end
-
-如果要支持并发工作,那么NSOperation子类需要至少重写这四个方法:
-
-- start
-- isConcurrent
-- isExecuting
-- isFinished
-
-..
-
-    @implementation YourOperation
-        - (void)start
-        {
-            self.isExecuting = YES;
-            self.isFinished = NO;
-            // 开始处理,在结束时应该调用 finished ...
-        }
-        
-        - (BOOL)isConcurrent {
-            return YES;
-        }
-        
-        - (BOOL)isExecuting {
-            return self.executing;
-        }
-
-        - (void)finished
-        {
-            self.isExecuting = NO;
-            self.isFinished = YES;
-        }
-    @end-->
-
-
-
-
-<!--操作队列(Operation Queue)是基于GCD实现的用于异步操作任务的队列模型。GCD本身是通过C语言实现的,而Operation Queue在GCD基础上实现了一些方便的功能,并且通过Cocoa进行抽象封装。
-
-通常来说Operation Queue是开发者最安全的选择。
-
-#NSOperation
-
-Operation Queue队列处理的任务是通过NSOperation子类来封装的。你可以自己来写子类实现,也可以使用Foundation框架里提供的两个子类:<font color="#bd260d">**NSInvocationOperation**</font> 或 <font color="#bd260d">**NSBlockOperation**</font>
-
-一,NSInvocationOperation
-
-    NSInvocationOperation* operation = [[NSInvocationOperation alloc] initWithTarget:self selector:@selector(runTask:) object:nil];
-    [operation start];
-
-二,NSBlockOperation
-    
-    NSBlockOperation *operation = [NSBlockOperation blockOperationWithBlock:^{
-        [self runTask:@&#8221;task1&#8221;];
-    }];
-    [operation addExecutionBlock:^{
-        [self runTask:@&#8221;task2&#8221;];
-    }];
-    [operation addExecutionBlock:^{
-        [self runTask:@&#8221;task3&#8221;];
-    }];
-    [operation start];
-    
-[NSBlockOperation](https://developer.apple.com/library/ios/documentation/Cocoa/Reference/NSBlockOperation_class/index.html) 可以并行执行多个 NSOperation ,但只有当所有 block 都执行完成之后,NSBlockOperation的 <font color="#bd260d">**isFinished**</font> 属性才会被标记为已完成。 
-
-三,自定义NSOperation子类
-    
-第一种方式是简单地重写main函数来操作operations,当 main 方法返回的时候,这个 operation 就结束了。
-
-
-
-    -(void)main
-    {
-        NSLog(@&#8221;Do SomeThing&#8221;);
-    }
-    
-
-
-另一种方式是重写start方法。在这种情况下,你必须手动管理操作的状态。 为了让操作队列能够捕获到操作的改变,需要将状态的属性以配合 KVO 的方式进行实现。如果你不使用它们默认的 setter 来进行设置的话,你就需要在合适的时候发送合适的 KVO 消息。
-
-
-    @implementation MyOperation
-        - (void)start
-        {
-            [self willChangeValueForKey:@&#8221;isExecuting&#8221;];
-            _isExecuting = YES;
-            [self didChangeValueForKey:@&#8221;isExecuting&#8221;];
-            
-            // 开始处理,在结束时调用 finished &#8230;
-            [self runTask];         
-        }
-        
-    
-        - (void)finish
-        {
-            [self willChangeValueForKey:@&#8221;isExecuting&#8221;];
-            [self willChangeValueForKey:@&#8221;isFinished&#8221;];
-            
-            _isExecuting = NO;
-            _isFinished = YES;
-            
-            [self didChangeValueForKey:@&#8221;isFinished&#8221;];
-            [self didChangeValueForKey:@&#8221;isExecuting&#8221;];
-        }
-    @end
-
-
-参见:[MyOperation类](https://github.com/sbxIOS/OperationQueuesExample)
-
-#Operation Queue
-
-operation创建好以后很容易加入operation queue中
-
-    queue = [[NSOperationQueue alloc] init];
-    NSInvocationOperation* operation = [[NSInvocationOperation alloc] initWithTarget:self selector:@selector(runTask:) object:nil];
-    [queue  addOperation:operation];
-    
-或者直接使用Block添加:
-    
-    //想queue队列添加任务
-    [queue addOperationWithBlock:^{
-        //向主队列添加任务 
-        [[NSOperationQueue mainQueue] addOperationWithBlock:^{
-                
-        }];
-    }];
-    
-#参考
-
-使用Operation Queue实现批量下载:<br>
-<https://github.com/sbxIOS/asyncDownloadQueque>
-
-使用Operation Queue对ScrollView里的项进行异步绘制:<br>
-<https://github.com/sbxIOS/lazyViewExample>&#8211;>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[跨平台的TCP通信客户端]]></title>
-    <link href="http://sbxfc.github.io/blog/2015/05/12/cross-platform-tcpip-socket/"/>
-    <updated>2015-05-12T14:05:45+08:00</updated>
-    <id>http://sbxfc.github.io/blog/2015/05/12/cross-platform-tcpip-socket</id>
-    <content type="html"><![CDATA[<p>TCP/IP 是 TCP/IP协议族的简称,是互联网的基础通讯架构,事实上也是计算机网络通信的国际标准。TCP/IP的前身是NCP(网络控制协议),是S.克罗克及其小组在加州大学制定的最初的主机间通信协议。NCP协议的缺点是,它没有为每台电脑设置一个唯一地址,导致在越来越庞大的网络中难以准确定位。另一方面,NCP缺乏纠错功能,导致数据传输不稳定。</p>
-
-<p>TCP/IP将网络通信的可靠性改为由主机保证而不是像NCP那样由网络保证。TCP/IP使用一个成为网关（后来改为路由器以免与网关混淆）的计算机为每个网络提供一个接口并且在它们之间来回传输数据包。</p>
-
-<p>在1985年时,因特网架构理事会举行一个三天有250家厂商代表参加的关于计算产业使用TCP/IP的工作会议，帮助推广并且引领它日渐增长的商业应用。</p>
-
-<p>如今,绝大多数商业操作系统都实现了TCP/IP协议,这其中包括所有的商业Unix、Linux发布包，以及Mac OS X和微软的Windows操作系统。</p>
-
-<h1>TCP/IP模型</h1>
-
-<p>两个因特网主机(Host)通过两个路由器（Router）和对象的层连接。</p>
-
-<p><img src="http://sbxfc.github.io/images/2015/5/tcp_ip_stack_connections.png" alt="" /></p>
-
-<!-- more -->
-
-
-<p>在TCP/IP模型是一个抽象的分层模型，这个模型中,所有的TCP/IP系列网络协议都被归类为4个抽象层,应用层、运输层、网络层、链路层。每一层建立在低一层的服务上,并为高一层提供服务。</p>
-
-<ul>
-<li><p>数据链路层:在TCP/IP协议族中,链路层又称为网络接口层。通常包括操作系统中的设备驱动和计算机中的对应网络接口卡。它们一起处理与电缆的物理接口细节。</p></li>
-<li><p><a href="http://zh.wikipedia.org/wiki/%E7%BD%91%E7%BB%9C%E5%B1%82">网络层</a>:网络层提供路由和寻址的功能，使两终端系统能够互连且决定最佳路径，并具有一定的拥塞控制和流量控制的能力。TCP/IP协议体系中的网络层功能由IP协议规定和实现，故又称IP层。</p></li>
-<li><p>运输层:运输层主要为两台计算机上的应用程序提供端到端的通信。在TCP/IP协议族中,有两个不相同的传输协议:TCP和UDP。TCP为两台主机提供高可靠性的数据通信。它所做的工作包括把应用程序交给它的数据分成合适的小块交给下面的网络层,确认接收到的分组,设置发送最后确认分组的超时时钟 等。由于运输层提供了高可靠性的端到端的通信,因此应用层可以忽略所有这些细节。而另一方面,UDP则为应用层提供一种非常简单的服务。它只是把称做数据报的分组从一台主机发送到另一台主机,但并不保证该数据报能到达另一端。任何必须的可靠性由应用层来提供。</p></li>
-<li><p>应用层:应用层是指我们的应用程序。</p></li>
-</ul>
-
-
-<p><img src="http://sbxfc.github.io/images/2015/5/ip_stack_connections.png" alt="" /></p>
-
-<h1>POSIX</h1>
-
-<p>可移植操作系统接口（英语：Portable Operating System Interface of UNIX，缩写为POSIX），是IEEE为要在各种UNIX操作系统上运行软件，而定义API的一系列互相关联的标准的总称。</p>
-
-<p>在OS和Linux在内的所有Unix系统里,我们都可以使用Posix接口来创建socket。在Windows系统里,我们可以使用WinSock来操作socket,WinSock实际上是对POSIX socket的一个封装。</p>
-
-<h1>WinSock和POSIX socket接口的异同</h1>
-
-<p>一,头文件</p>
-
-<p>在windows中需要引入头文件</p>
-
-<pre><code>#include &lt;winsock.h&gt;
-</code></pre>
-
-<p>在其他遵从POSIX规则的系统里需要引入</p>
-
-<pre><code>#include &lt;sys/types.h&gt;
-#include &lt;sys/socket.h&gt;
-#include &lt;netinet/in.h&gt;
-</code></pre>
-
-<p>二,链接库</p>
-
-<p>在windows下面需要主动连接ws2_32.lib库</p>
-
-<pre><code>#ifdef WIN32
-#include "StdAfx.h"
-#pragma comment(lib, "wsock32")
-#endif
-</code></pre>
-
-<p>三,初始化</p>
-
-<p>在windows下面需要初始化,windows下面是通过动态链接的方式调用socket的,所以需要你告诉调用的链接库的版本,操作系统会帮你加载并初始化dll。</p>
-
-<pre><code>WORD wVersionRequested;
-WSADATA wsaData;
-int err;
-wVersionRequested = MAKEWORD(2, 0);
-err = WSAStartup(wVersionRequested, &amp;wsaData);
-if(0 != err) //检查Socket初始化是否成功
-{
-    cout&lt;&lt;"Socket2.0初始化失败，Exit!";
-    return -1;
-}
-</code></pre>
-
-<p>四,函数</p>
-
-<p>在Windows和POSIX里,socket的函数是一致的。只是windows里面宏定义了一个socket描述符。</p>
-
-<h1>创建TCP套接字</h1>
-
-<p>一,创建一个TCP套接字</p>
-
-<p>该函数返回一个整数描述符,以后所有socket调用(如随后的connect和write)就用该描述符来标识这个套接字</p>
-
-<pre><code>int sockfd = socket(AF_INET,     //internetwork: UDP, TCP, etc
-                    SOCK_STREAM, //SOCK_STREAM说明是TCP类型
-                    0);          //protocol
-</code></pre>
-
-<p>二,与TCP服务器建立连接</p>
-
-<pre><code>    /**
-     * 设置发往的地址
-     */
-    struct sockaddr_in addrto;
-    addrto.sin_family = AF_INET;//地址类型为internetwork
-    addrto.sin_addr.s_addr = inet_addr(ip);
-    addrto.sin_port = htons(port);
-
-    int connect(int sockfd,          //sockfd是由socket函数返回的套接字描述符
-    const struct sockaddr* servaddr,//套接字地址
-    socklen_t addrlen);              //套接字地址结构大小
-</code></pre>
-
-<p>三,发送信息:</p>
-
-<p>使用<font color="#bd260d"><strong>send</strong></font>函数向TCP连接的另一端(服务器端)发送数据:</p>
-
-<pre><code>int send(SOCKET s,     //指定接收端的套接字描述符
-          char *buf,   //指定一个存放应用程序要发送数据的缓冲区            int len,     //指明buf的长度
-          int flags);  //这个参数一般置为0
-</code></pre>
-
-<p>四,数据接收</p>
-
-<p>使用<font color="#bd260d"><strong>recv</strong></font>函数从TCP连接的另一端接收数据:</p>
-
-<pre><code>int recv(SOCKET s,  //指定接收端的套接字描述符
-         char *buf, //指明一个缓冲区,该缓冲区用来存放recv接收到的数据
-         int len,    //指明buf的长度
-         int flags); //这个参数一般设置为0
-</code></pre>
-
-<h1>完整代码</h1>
-
-<p><a href="https://github.com/sbxfc/CrossPlatformSocket">https://github.com/sbxfc/CrossPlatformSocket</a></p>
-
-<h1>参考</h1>
-
-<p>网络传输协议(Wiki):<br><a href="http://zh.wikipedia.org/zh-cn/%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE">http://zh.wikipedia.org/zh-cn/%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE</a></p>
-
-<p>TCP/IP协议族(Wiki):<br><a href="http://zh.wikipedia.org/wiki/TCP/IP%E5%8D%8F%E8%AE%AE%E6%97%8F">http://zh.wikipedia.org/wiki/TCP/IP%E5%8D%8F%E8%AE%AE%E6%97%8F</a></p>
-
-<p>TCP/IP 详解</p>
-
-<p>Unix 网络编程</p>
-
-<p>sockimp.pdf:<br><a href="http://www.openss7.org/papers/strsock/sockimp.pdf">http://www.openss7.org/papers/strsock/sockimp.pdf</a></p>
-
-<p>windows/linux socket接口的异同:<br><a href="http://blog.chinaunix.net/uid-28323465-id-3876368.html">http://blog.chinaunix.net/uid-28323465-id-3876368.html</a></p>
 ]]></content>
   </entry>
   

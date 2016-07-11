@@ -1,0 +1,83 @@
+---
+layout: post
+title: "编译一个C语言程序"
+date: 2016-07-07 15:37:57 +0800
+comments: true
+categories: 
+---
+
+gcc是类Unix下的标准编译器,在 Linux 和 以FreeBSD为基础的 macOS下可以直接使用。
+
+#编译一个简单的C程序
+
+以下代码被包含在一个名为 "test.c"的文本文件里:
+
+	#include <stdio.h>
+	int main(){
+  		printf("Hello World!\n");
+	}
+	
+在命令行里,你可以通过标准gcc命令来编译该文件
+
+	$gcc test.c -o test
+
+该命令将test.c编译成一个名为test的可执行程序,你可以在命令行里输入 <font color='#bd260d'>**./test**</font> 来运行该程序。程序运行时屏幕上会输出 "Hello World!"
+
+除次以外,你也可以通过下面两条命令分两步来编译程序test
+
+	$gcc -c test.c
+	$gcc test.o -o test
+	 
+这两种方式的结果一样,都会生成test程序。但是第二种方式,编译器会首先将源文件 test.c 编译成名为hello.o的机器语言程序,然后再将hello.o和一些用于输出"Hello World"的系统库链接在一起,并合成最终的可执行程序test。
+
+实际上,第一种方式也同样执行了这两步,只不过编译器在后台悄悄运行,并删除了中间文件test.o
+
+#编译参数
+
+在编译时,我们可以指定一些参数来告诉编译器如何编译我们的程序
+
+在编译命令里加入<font color='#bd260d'>**-g**</font>选项,可以开启 gdb 对程序进行调试,通过输入命令 <font color='#bd260d'>**gdb ./test**</font>进入调试模式
+
+	$gcc -g test.c -o test
+
+在编译命令里加入<font color='#bd260d'>**-Wall**</font>选项会打印出程序编译时的警告信息,包括一些语法问题。
+	
+	$gcc -Wall test.c -o test
+	
+加入 <font color='#bd260d'>**-O**</font>选项,开启默认优化。
+	
+	$gcc -O test.c -o test
+
+加入 <font color='#bd260d'>**-shared**</font> ,用来生成共享文件<font color='#bd260d'>***.so**</font>(Shared Object)
+	
+	$gcc -shadred test.c -o libtest.so
+
+
+
+#链接库（-l&-L）
+
+当程序需要一些系统库或我们自己生成的类库时,并且这个库文件是在以下三个目录之中时,<font color='#bd260d'>**/lib、/usr/lib和/usr/local/lib**</font>,我们就可以在编译指令里加入<font color='#bd260d'>**-l**</font>参数来指定编译时需要链接的库文件。
+
+-l参数和其他参数的用法有所不同,-l后面不加空格并直接跟要链接的库名,比如说我们要连接的库为libm.dylib数学库,那么我们要写成<font color='#bd260d'>**-lm**</font>的形式,即库名去掉lib和.dylib后的库名。这样,编译器在链接时就会自动在目录<font color='#bd260d'>**/lib、/usr/lib和/usr/local/lib**</font>下寻找要链接的库文件
+
+	gcc test.c -o test -lm
+	
+但是,如果要链接的库不在这三个目录之列时,通过-l链接就会出错。这时可以用到<font color='#bd260d'>**-L**</font>参数。-L参数用来指定库的目录位置。比如我们用到当前项目下的lib文件夹里的库文件(<font color='#bd260d'>**../lib**</font>),我们可以写成如下格式:
+
+	gcc test.c -o test -L../lib
+
+#指定头文件目录(-I)
+
+有时,我们会将头文件放在一个统一的目录里,比如<font color='#bd260d'>**include**</font>文件夹。
+这时候,我们可以在编译指令里加入<font color='#bd260d'>**-I**</font>参数来指定头文件的目录
+
+	gcc test.c -o test -I./include
+
+当然你也可以在引用头文件的时写成完整路径的形式<font color='#bd260d'>**./include/header.h**</font>
+
+	
+	
+#参见
+
+- <https://zh.wikipedia.org/wiki/GCC>
+- <http://www.cnblogs.com/vamei/archive/2013/04/03/2998652.html>

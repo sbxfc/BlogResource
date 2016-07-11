@@ -17,7 +17,7 @@ body {
 h1 {
   font-family:"ff-tisa-web-pro-1", "ff-tisa-web-pro-2", "Lucida Grande", "Hiragino Sans GB", "Hiragino Sans GB W3", "Microsoft YaHei", "WenQuanYi Micro Hei", sans-serif;
   font-size: 1.5em;
-  font-weight: normal;
+  font-weight: bold;
 }
 
 h2, h3, h4, h5, h6 {
@@ -30,8 +30,8 @@ h2, h3, h4, h5, h6 {
   background-color:#fff;
   font-size: 1.2em;
   color: #{$base-font-color};
-  a { 
-  	color: #{$base-font-color}; 
+  a {
+  	color: #{$base-font-color};
   }
 }
 
@@ -49,12 +49,12 @@ header[role="banner"] {
       margin: 0px;
       padding: 0px;
     }
-    h2 { 
+    h2 {
     	display: none;
     }
     margin: 0px;
     padding: 0px;
-    
+
   }
 
   margin: 30px 50px 50px;
@@ -117,7 +117,7 @@ header[role="banner"] {
 
 #content{
   margin: 8px auto;
-  
+
   max-width: #{$max-width};
   a{
     color: #33c;
@@ -143,7 +143,7 @@ header[role="banner"] {
 /*标题*/
 .entry > header{
   margin: 50px 0px;
-  font-size: 1.2em;
+  font-size: 1.3em;
   font-weight: normal;
 }
 
