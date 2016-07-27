@@ -4,7 +4,7 @@
   <title><![CDATA[sbxfc]]></title>
   <link href="http://sbxfc.github.io/atom.xml" rel="self"/>
   <link href="http://sbxfc.github.io/"/>
-  <updated>2016-07-11T15:09:00+08:00</updated>
+  <updated>2016-07-27T15:55:31+08:00</updated>
   <id>http://sbxfc.github.io/</id>
   <author>
     <name><![CDATA[sbxfc]]></name>
@@ -184,7 +184,7 @@ $gcc test.o -o test
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[IEEE 802.11 WLAN]]></title>
+    <title type="html"><![CDATA[IEEE 802.11 WLAN 网路协议]]></title>
     <link href="http://sbxfc.github.io/blog/2016/06/23/wireless-lan/"/>
     <updated>2016-06-23T15:27:41+08:00</updated>
     <id>http://sbxfc.github.io/blog/2016/06/23/wireless-lan</id>
@@ -597,7 +597,7 @@ $gcc test.o -o test
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[JSB 内存管理]]></title>
+    <title type="html"><![CDATA[Cocos2d-JSB 内存管理]]></title>
     <link href="http://sbxfc.github.io/blog/2016/01/15/memory-of-jsb/"/>
     <updated>2016-01-15T14:42:31+08:00</updated>
     <id>http://sbxfc.github.io/blog/2016/01/15/memory-of-jsb</id>
@@ -753,7 +753,7 @@ setTimeout(function(){
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[IO-select]]></title>
+    <title type="html"><![CDATA[I/O复用]]></title>
     <link href="http://sbxfc.github.io/blog/2016/01/11/unix-select/"/>
     <updated>2016-01-11T11:01:41+08:00</updated>
     <id>http://sbxfc.github.io/blog/2016/01/11/unix-select</id>
@@ -846,7 +846,7 @@ $ ./a.out
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[signal]]></title>
+    <title type="html"><![CDATA[信号]]></title>
     <link href="http://sbxfc.github.io/blog/2016/01/04/unix-signal/"/>
     <updated>2016-01-04T14:24:14+08:00</updated>
     <id>http://sbxfc.github.io/blog/2016/01/04/unix-signal</id>

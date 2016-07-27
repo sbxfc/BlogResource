@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "IO-select"
+title: "I/O复用"
 date: 2016-01-11 11:01:41 +0800
 comments: true
 categories: 

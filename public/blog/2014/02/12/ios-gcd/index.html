@@ -6,10 +6,11 @@
     
 
 <meta charset="utf-8">
-<title>使用GCD的任务队列 - sbxfc</title>
+<title>iOS - 使用gcd执行异步操作 - sbxfc</title>
 <meta name="author" content="sbxfc">
 <meta name="description"
-      content="使用GCD的任务队列 GCD任务队列将多线程操作抽象成任务的形式,并通过队列的方式对任务进行组织和管理。开发者无需去关心底层如何实现多线程,只需要专注于任务操作。 主线程队列 由于主线程负责程序的生命周期和UI绘制,所以尽量使用异步方式(dispatch_async)添加线程操作: &hellip;">
+      content="iOS - 使用gcd执行异步操作 在objc里,有许多可以完成异步操作的API,gcd是这里面用起来最方便的。 主线程操作 在主线程上执行异步操作: dispatch_async(dispatch_get_main_queue(), ^{ //在这里做一些操作
+}); 串行异步操作 通过 &hellip;">
 
 
 <!-- http://t.co/dKP3o1e -->
@@ -24,7 +25,7 @@
 <script>hljs.initHighlightingOnLoad();</script>
 <!---->
 
-<link rel="canonical" href="http://sbxfc.github.io/blog/2014/02/12/gcd">
+<link rel="canonical" href="http://sbxfc.github.io/blog/2014/02/12/ios-gcd">
 <link href="/favicon.png" rel="icon">
 <link href="/stylesheets/screen.css"
       media="screen, projection"
@@ -74,65 +75,68 @@
 <article class="entry" role="article">
 
   <header>
-    <h2 class="entry_title">使用GCD的任务队列</h2>
+    <h2 class="entry_title">iOS - 使用gcd执行异步操作</h2>
     
   </header>
 
-  <div class="entry_content"><p>GCD任务队列将多线程操作抽象成任务的形式,并通过队列的方式对任务进行组织和管理。开发者无需去关心底层如何实现多线程,只需要专注于任务操作。</p>
+  <div class="entry_content"><p>在objc里,有许多可以完成异步操作的API,gcd是这里面用起来最方便的。</p>
 
-<h1>主线程队列</h1>
+<h1>主线程操作</h1>
 
-<p>由于主线程负责程序的生命周期和UI绘制,所以尽量使用异步方式(dispatch_async)添加线程操作:</p>
+<p>在主线程上执行异步操作:</p>
 
 <pre><code>dispatch_async(dispatch_get_main_queue(), ^{
-    NSLog(@"执行主线程上的异步操作!");
+    //在这里做一些操作
 });
 </code></pre>
 
-<h1>串行队列</h1>
+<h1>串行异步操作</h1>
 
-<p>对于串行队列来说,在同一时间只有一个block在运行。</p>
+<p>通过 dispatch_get_main_queue 获取 gcd 里的主程序队列,并通过 dispatch_async 往里添加一个异步队列操作。该操作会在主线程上异步执行。同样,我们也可以创建一个次线程上的任务队列,来执行次线程上的操作。</p>
 
-<p>GCD的串行队列通过dispatch_queue_create来创建,该函数每次都会返回一个不同的任务队列,这一点需要留意。如果多个操作任务执行串行操作,要确保它们被添加到同一个串行队列上。</p>
+<p>通过 dispatch_queue_create 的方式会创建一个串行队列,串行队列的特点是先入先出(FIFO),也就是 操作1 执行完之后,操作2才执行。当下面的代码执行时操作1和操作2会在次线程上依次执行。</p>
 
-<p>该函数第一个参数可选并且可以为NULL。</p>
+<p>值得注意的是,dispatch_queue_create每次都会返回一个不同的队列。所以为保证能够实现先入先出,一定要确保操作是在同一个队列上进行的。</p>
 
-<pre><code>dispatch_queue_t serialQueue = dispatch_queue_create(NULL,NULL);
-dispatch_async(serialQueue, ^{
-    NSLog(@"执行串行任务1!");
+<pre><code>dispatch_queue_t queue = dispatch_queue_create(NULL,NULL);
+
+dispatch_async(queue, ^{
+    //在这里执行操作1
 });
-dispatch_async(serialQueue, ^{
-    NSLog(@"执行串行任务2!");
+
+dispatch_async(queue, ^{
+   //在这里执行操作2
 });
 </code></pre>
 
-<h1>并行队列</h1>
+<h1>并行异步操作</h1>
 
-<p>串行队列也就是说可以并行执行多个任务block的队列,每个队列的完成顺序与其block里的时间复杂度有关。</p>
-
-<p>需要注意的是,每个并行队列是与该队列的优先级密切相关。相同的优先级对应相同的全局并行队列。</p>
+<p>相比于串行队列,并行队列就显得比较放纵了&hellip;(异步地次线程上执行,没有什么顺序) <br>
+就比如图片下载,可能同时下载好几张图片,谁下载好了刷新谁~~</p>
 
 <pre><code>dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-    NSLog(@"并行操作!");
+   //在这里做一些操作
 });
 </code></pre>
 
-<h1>监听全部队列任务完成</h1>
+<h1>队列监听</h1>
+
+<p>对于一些异步队列,我们可以监听该队列是否全部完成:</p>
 
 <pre><code>dispatch_group_t group = dispatch_group_create();
-dispatch_queue_t globalQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
+dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
 
-dispatch_group_async(group,globalQueue, ^{
+dispatch_group_async(group,queue, ^{
     [NSThread sleepForTimeInterval:3];
     NSLog(@"我是任务1");
 });
 
-dispatch_group_async(group,globalQueue, ^{
+dispatch_group_async(group,queue, ^{
     [NSThread sleepForTimeInterval:1];
     NSLog(@"我是任务2");
 });
 
-dispatch_group_async(group,globalQueue, ^{
+dispatch_group_async(group,queue, ^{
     [NSThread sleepForTimeInterval:2];
     NSLog(@"我是任务3");
 });
@@ -168,9 +172,9 @@ dispatch_async(queue, ^{
 });
 </code></pre>
 
-<h1>小结</h1>
+<h1>重要</h1>
 
-<p>由于GCD里的任务队列在使用时是不可取消的,所以尽量不要使用GCD而是选择在其基础上封装的NSOperationQueue。</p>
+<p>由于GCD里的任务队列在使用时是不可取消的</p>
 </div>
 
   <footer>
@@ -229,8 +233,8 @@ dispatch_async(queue, ^{
       
 	
 	// var disqus_developer = 1;
-	var disqus_identifier = 'http://sbxfc.github.io/blog/2014/02/12/gcd';
-	var disqus_url = 'http://sbxfc.github.io/blog/2014/02/12/gcd';
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2014/02/12/ios-gcd';
+	var disqus_url = 'http://sbxfc.github.io/blog/2014/02/12/ios-gcd';
 	var disqus_script = 'embed.js';
       
     (function () {

@@ -9,7 +9,7 @@
 <title>iOS - JSON解析 & KVC - sbxfc</title>
 <meta name="author" content="sbxfc">
 <meta name="description"
-      content="iOS - JSON解析 & KVC NSJSONSerialization NSJSONSerialization 是objc里用于JSON解析的类 解析JSON字符串: NSString* jsonString = @"[{\"name\":\"Paul McCartney\",\"age &hellip;">
+      content="iOS - JSON解析 & KVC NSJSONSerialization 解析JSON字符串: NSString* jsonString = @"[{\"name\":\"Paul McCartney\",\"age\":73,\"sex\":\"male\"},{\"name\":\" &hellip;">
 
 
 <!-- http://t.co/dKP3o1e -->
@@ -80,8 +80,6 @@
 
   <div class="entry_content"><h1>NSJSONSerialization</h1>
 
-<p>NSJSONSerialization 是objc里用于JSON解析的类</p>
-
 <p>解析JSON字符串:</p>
 
 <pre><code>    NSString* jsonString = @"[{\"name\":\"Paul McCartney\",\"age\":73,\"sex\":\"male\"},{\"name\":\"Mark\",\"age\":53,\"sex\":\"male\"}]";
@@ -92,8 +90,6 @@
     NSArray * jsonArray = [NSJSONSerialization JSONObjectWithData: jsonData options: NSJSONReadingMutableContainers error: &amp;error]; 
 </code></pre>
 
-<p>选项:</p>
-
 <ul>
 <li>NSJSONReadingMutableContainer：指定创建的可变对象为NSArray或NSDictionary。</li>
 <li>NSJSONReadingMutableLeaves：指定JSON树上的子数据为NSMutableString类型的对象</li>
@@ -101,7 +97,7 @@
 </ul>
 
 
-<p>二,将Foundation Objects对象转化为JSON</p>
+<p>转化成JSON:</p>
 
 <pre><code>    if([NSJSONSerialization isValidJSONObject:jsonArray])
     {
@@ -112,21 +108,19 @@
     }
 </code></pre>
 
-<p>1,isValidJSONObject方法首先检测jsonArray是否可转化为JSON对象。</p>
-
-<p>2,转化JSON时用参数NSJSONWritingPrettyPrinted的作用是在输出时增加空格，增加输出内容的可读性。</p>
-
 <p>对象转化为JSON必须符合以下条件:</p>
 
 <ul>
 <li>1,顶层对象必须是NSArray或NSDictionary</li>
 <li>2,所有对象必须是NSString, NSNumber, NSArray, NSDictionary, 或 NSNull.</li>
 <li>3，所有dictionary的key必须是NSString。</li>
-<li>4, Numbers不能是NaN或infinity。
-
-<h1>KVC</h1></li>
+<li>4, Numbers不能是NaN或infinity。</li>
 </ul>
 
+
+<p>转化JSON时用参数NSJSONWritingPrettyPrinted的作用是在输出时增加空格，增加输出内容的可读性。</p>
+
+<h1>KVC</h1>
 
 <p>KVC 即 Key-value coding,允许我们通过属性的字符串名称来访问属性。</p>
 

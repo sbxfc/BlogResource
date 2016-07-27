@@ -1,0 +1,102 @@
+---
+layout: post
+title: "iOS - 使用gcd执行异步操作"
+date: 2014-02-12 18:31:58 +0800
+comments: true
+categories: 
+---
+
+在objc里,有许多可以完成异步操作的API,gcd是这里面用起来最方便的。
+
+#主线程操作
+
+在主线程上执行异步操作:
+	
+	dispatch_async(dispatch_get_main_queue(), ^{
+		//在这里做一些操作
+	});
+
+#串行异步操作
+
+通过 dispatch_get_main_queue 获取 gcd 里的主程序队列,并通过 dispatch_async 往里添加一个异步队列操作。该操作会在主线程上异步执行。同样,我们也可以创建一个次线程上的任务队列,来执行次线程上的操作。
+
+通过 dispatch_queue_create 的方式会创建一个串行队列,串行队列的特点是先入先出(FIFO),也就是 操作1 执行完之后,操作2才执行。当下面的代码执行时操作1和操作2会在次线程上依次执行。
+
+值得注意的是,dispatch_queue_create每次都会返回一个不同的队列。所以为保证能够实现先入先出,一定要确保操作是在同一个队列上进行的。
+
+    dispatch_queue_t queue = dispatch_queue_create(NULL,NULL);
+    
+    dispatch_async(queue, ^{
+        //在这里执行操作1
+    });
+    
+    dispatch_async(queue, ^{
+       //在这里执行操作2
+    });
+
+
+
+#并行异步操作
+
+相比于串行队列,并行队列就显得比较放纵了...(异步地次线程上执行,没有什么顺序) <br>
+就比如图片下载,可能同时下载好几张图片,谁下载好了刷新谁~~
+
+	dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+       //在这里做一些操作
+    });
+
+#队列监听
+
+对于一些异步队列,我们可以监听该队列是否全部完成:
+
+	dispatch_group_t group = dispatch_group_create();
+    dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
+    
+    dispatch_group_async(group,queue, ^{
+        [NSThread sleepForTimeInterval:3];
+        NSLog(@"我是任务1");
+    });
+    
+    dispatch_group_async(group,queue, ^{
+        [NSThread sleepForTimeInterval:1];
+        NSLog(@"我是任务2");
+    });
+    
+    dispatch_group_async(group,queue, ^{
+        [NSThread sleepForTimeInterval:2];
+        NSLog(@"我是任务3");
+    });
+    
+    dispatch_group_notify(group, dispatch_get_main_queue(), ^{
+        NSLog(@"任务全部完成!");
+    });
+
+#dispatch_barrier_async
+
+通过 dispatch_barrier_async 可以设置前面的执行完,后一个才执行，而且它后面的任务要等它执行完成之后才会开始
+
+	dispatch_queue_t queue = dispatch_queue_create(NULL,NULL);
+    dispatch_async(queue, ^{
+        [NSThread sleepForTimeInterval:3];// 耗时的操作
+        NSLog(@"task1");
+    });
+    
+    dispatch_async(queue, ^{
+        [NSThread sleepForTimeInterval:2];
+        NSLog(@"task2");
+    });
+    
+    dispatch_barrier_async(queue, ^{
+        [NSThread sleepForTimeInterval:4];
+        NSLog(@"dispatch_barrier_async");
+    });
+    
+    dispatch_async(queue, ^{
+        [NSThread sleepForTimeInterval:2];
+        NSLog(@"task3");
+    });
+
+#重要
+
+由于GCD里的任务队列在使用时是不可取消的
+

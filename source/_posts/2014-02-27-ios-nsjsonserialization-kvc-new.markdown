@@ -8,9 +8,6 @@ categories:
 
 #NSJSONSerialization
 
-
-NSJSONSerialization 是objc里用于JSON解析的类
-
 解析JSON字符串:
 
 		NSString* jsonString = @"[{\"name\":\"Paul McCartney\",\"age\":73,\"sex\":\"male\"},{\"name\":\"Mark\",\"age\":53,\"sex\":\"male\"}]";
@@ -19,13 +16,11 @@ NSJSONSerialization 是objc里用于JSON解析的类
 		//解析
 		NSError* error;
 		NSArray * jsonArray = [NSJSONSerialization JSONObjectWithData: jsonData options: NSJSONReadingMutableContainers error: &error];	
-选项:
-
 - NSJSONReadingMutableContainer：指定创建的可变对象为NSArray或NSDictionary。
 - NSJSONReadingMutableLeaves：指定JSON树上的子数据为NSMutableString类型的对象
 - NSJSONReadingAllowFragments：指定JSON顶层的对象可以不是NSArray或NSDictionary类型的对象
 
-二,将Foundation Objects对象转化为JSON
+转化成JSON:
 
 		if([NSJSONSerialization isValidJSONObject:jsonArray])
 		{
@@ -34,10 +29,7 @@ NSJSONSerialization 是objc里用于JSON解析的类
 			
 			NSLog(@"json data:%@",jsonString);
 		}
-	
-1,isValidJSONObject方法首先检测jsonArray是否可转化为JSON对象。
 
-2,转化JSON时用参数NSJSONWritingPrettyPrinted的作用是在输出时增加空格，增加输出内容的可读性。
 
 对象转化为JSON必须符合以下条件:
 
@@ -45,7 +37,9 @@ NSJSONSerialization 是objc里用于JSON解析的类
 - 2,所有对象必须是NSString, NSNumber, NSArray, NSDictionary, 或 NSNull.
 - 3，所有dictionary的key必须是NSString。
 - 4, Numbers不能是NaN或infinity。
-#KVC
+	
+转化JSON时用参数NSJSONWritingPrettyPrinted的作用是在输出时增加空格，增加输出内容的可读性。
+#KVC
 
 KVC 即 Key-value coding,允许我们通过属性的字符串名称来访问属性。
 

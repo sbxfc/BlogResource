@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "signal"
+title: "信号"
 date: 2016-01-04 14:24:14 +0800
 comments: true
 categories: 
