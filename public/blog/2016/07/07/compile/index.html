@@ -6,11 +6,11 @@
     
 
 <meta charset="utf-8">
-<title>编译一个C语言程序 - sbxfc</title>
+<title>编译一个C程序 - sbxfc</title>
 <meta name="author" content="sbxfc">
 <meta name="description"
-      content="编译一个C语言程序 gcc是类Unix下的标准编译器,在 Linux 和 以FreeBSD为基础的 macOS下可以直接使用。 编译一个简单的C程序 以下代码被包含在一个名为 &ldquo;test.c&#8221;的文本文件里: #include &lt;stdio.h&gt;
-int &hellip;">
+      content="编译一个C程序 GCC是类Unix操作系统下的标准编译器,在Linux或者是以FreeBSD为基础的macOS下可以直接使用。 编译一个简单的C程序 下面的代码被包含在一个名为test.c的文本文件里: #include &lt;stdio.h&gt;
+int main(){ printf(" &hellip;">
 
 
 <!-- http://t.co/dKP3o1e -->
@@ -75,38 +75,38 @@ int &hellip;">
 <article class="entry" role="article">
 
   <header>
-    <h2 class="entry_title">编译一个C语言程序</h2>
+    <h2 class="entry_title">编译一个C程序</h2>
     
   </header>
 
-  <div class="entry_content"><p>gcc是类Unix下的标准编译器,在 Linux 和 以FreeBSD为基础的 macOS下可以直接使用。</p>
+  <div class="entry_content"><p>GCC是类Unix操作系统下的标准编译器,在Linux或者是以FreeBSD为基础的macOS下可以直接使用。</p>
 
 <h1>编译一个简单的C程序</h1>
 
-<p>以下代码被包含在一个名为 &ldquo;test.c&#8221;的文本文件里:</p>
+<p>下面的代码被包含在一个名为<font color='#bd260d'><strong>test.c</strong></font>的文本文件里:</p>
 
 <pre><code>#include &lt;stdio.h&gt;
 int main(){
     printf("Hello World!\n");
-}
+}   
 </code></pre>
 
-<p>在命令行里,你可以通过标准gcc命令来编译该文件</p>
+<p>你可以通过macOS终端直接编译该文件:</p>
 
 <pre><code>$gcc test.c -o test
 </code></pre>
 
-<p>该命令将test.c编译成一个名为test的可执行程序,你可以在命令行里输入 <font color='#bd260d'><strong>./test</strong></font> 来运行该程序。程序运行时屏幕上会输出 &ldquo;Hello World!&rdquo;</p>
+<p>编译指令会将test.c编译成一个名为test的可执行程序,<font color='#bd260d'><strong>-o</strong></font>参数用于指定编译后的程序名。 执行程序<font color='#bd260d'><strong>(./test)</strong></font>时屏幕上会输出 <em>Hello World!</em></p>
 
-<p>除次以外,你也可以通过下面两条命令分两步来编译程序test</p>
+<p>除此之外,你也可以执行下面两行编译命令来生成test程序</p>
 
 <pre><code>$gcc -c test.c
 $gcc test.o -o test
 </code></pre>
 
-<p>这两种方式的结果一样,都会生成test程序。但是第二种方式,编译器会首先将源文件 test.c 编译成名为hello.o的机器语言程序,然后再将hello.o和一些用于输出&#8221;Hello World&#8221;的系统库链接在一起,并合成最终的可执行程序test。</p>
+<p>和第一条编译命令相比,除了执行命令多出一行以外,还额外生成了一个名为test.o的文件。这是因为,GCC在编译C程序时要经过预处理、编译、汇编和连接四步。通过第二种方式,编译器首先会将源文件test.c编译成名为hello.o的机器语言程序。接着,再将hello.o和一些用于输出&#8221;Hello World&#8221;的系统库链接在一起,并合成最终的可执行程序test。</p>
 
-<p>实际上,第一种方式也同样执行了这两步,只不过编译器在后台悄悄运行,并删除了中间文件test.o</p>
+<p>而第一种方式同样执行了这两步,只不过编译器在后台悄悄运行,并删除了中间文件test.o</p>
 
 <h1>编译参数</h1>
 

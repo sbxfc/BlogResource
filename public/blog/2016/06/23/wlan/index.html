@@ -6,10 +6,10 @@
     
 
 <meta charset="utf-8">
-<title>IEEE 802.11 WLAN 网路协议 - sbxfc</title>
+<title>IEEE 802.11 WLAN协议 - sbxfc</title>
 <meta name="author" content="sbxfc">
 <meta name="description"
-      content="IEEE 802.11 WLAN 网路协议 IEEE 802.11 IEEE 802.11 是现今无线局域网的通讯标准,该标准包括物理层和数据链路层中的媒体访问控制层（MAC层）的两部分规范。 物理层 IEEE 802.11 中的物理层由 PLCP Sublayer、PMD Sublayer &hellip;">
+      content="IEEE 802.11 WLAN协议 在上面的示意图里,Preamble(序言)和PLCP header是物理层驱动的使用的一些信息,而我们获取的MAC层协议帧是MPDU部分,MPDU是Mac protocal data unit的简称,即IEEE 802.11在 MAC 层的数据单元。 &hellip;">
 
 
 <!-- http://t.co/dKP3o1e -->
@@ -24,7 +24,7 @@
 <script>hljs.initHighlightingOnLoad();</script>
 <!---->
 
-<link rel="canonical" href="http://sbxfc.github.io/blog/2016/06/23/wireless-lan">
+<link rel="canonical" href="http://sbxfc.github.io/blog/2016/06/23/wlan">
 <link href="/favicon.png" rel="icon">
 <link href="/stylesheets/screen.css"
       media="screen, projection"
@@ -74,240 +74,248 @@
 <article class="entry" role="article">
 
   <header>
-    <h2 class="entry_title">IEEE 802.11 WLAN 网路协议</h2>
+    <h2 class="entry_title">IEEE 802.11 WLAN协议</h2>
     
   </header>
 
-  <div class="entry_content"><h1>IEEE 802.11</h1>
+  <div class="entry_content"><p><img src="/images/2016/6/ieee80211.png" alt="IEEE_802_11" /></p>
 
-<p>IEEE 802.11 是现今无线局域网的通讯标准,该标准包括物理层和数据链路层中的媒体访问控制层（MAC层）的两部分规范。</p>
+<p>在上面的示意图里,Preamble(序言)和PLCP header是物理层驱动的使用的一些信息,而我们获取的MAC层协议帧是MPDU部分,MPDU是Mac protocal data unit的简称,即IEEE 802.11在 MAC 层的数据单元。</p>
 
-<h1>物理层</h1>
-
-<p>IEEE 802.11 中的物理层由 PLCP Sublayer、PMD Sublayer 以及 Physical-Layer Management 三部分组成。PLCP主要进行载波的分析和针对不同的物理层形成的相应格式分组。PMD层用于识别相关介质传输的信息所使用的调制和编码技术。物理管理层为不同的物理层进行信道选择和协调。</p>
-
-<h1>MAC层</h1>
-
-<p><img src="/images/2016/6/ieee80211.png" alt="IEEE_802_11" /></p>
-
-<p>MPDU(Mac protocal data unit)即IEEE 802.11在MAC层数据帧格式。802.11在MAC层的数据帧分为三大类,类型由Frame control里的Type决定,每个大类又会根据Subtype的不同分为许多子类。首先是三大类:</p>
+<p>MPDU分为三大类:管理帧、控制帧和数据帧。通过Frame Control里的Type值,我们可以判断当前数据帧是什么类型:</p>
 
 <ul>
-<li><p>00,管理帧 这类数据帧主要用来进行身份验证,发送热点信号(Beacon)等。</p></li>
-<li><p>01,控制帧 发送RTS/CTS,ACK等一些查询和控制响应帧。</p></li>
-<li><p>10,数据帧 携带更高层的数据(如IP数据包，ISO7层协议)。</p></li>
+<li><p>管理帧(00) 这类数据帧主要用来进行身份验证,发送信号(Beacon)等。</p></li>
+<li><p>控制帧(01) 发送RTS/CTS,ACK等一些查询和控制响应帧。</p></li>
+<li><p>数据帧(10) 携带更高层的数据(如IP数据包，ISO7层协议)。</p></li>
 </ul>
 
 
-<h2>1,管理帧</h2>
+<p>在这三个大类下面,又会根据subtype的不同将数据帧分为不同的类型。</p>
 
-<p>管理帧根据Subtype类型不同,分为如下类型:</p>
+<p>由于,每种数据帧对应的数据格式是不同的(<font color='#bd260d'><strong>除了Frame control部分以外</strong></font>),所以说如果我们解析某个数据帧格式,需要根据具体的类型来判断:</p>
+
+<h1>管理帧(00)</h1>
+
+<p>管理帧根据subtype的不同,又分为如下类型:</p>
 
 <table>
 <thead>
 <tr>
-<th>管理类掩码</th>
-<th> 子类型掩码  </th>
-<th> 帧描述</th>
+<th> subtype  </th>
+<th> 描述</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>00 </td>
 <td>0000 </td>
-<td>Association request (连接请求) </td>
+<td> Association request (关联请求) </td>
 </tr>
 <tr>
-<td>00 </td>
 <td>0001 </td>
-<td>  Association response (连接响应)  </td>
+<td> Association response (关联响应)  </td>
 </tr>
 <tr>
-<td>00 </td>
 <td>0010 </td>
-<td> Reassociation request（重连接请求）</td>
+<td> Reassociation request（重关联请求）</td>
 </tr>
 <tr>
-<td>00 </td>
 <td>0011 </td>
-<td> Reassociation response（重连接联响应）</td>
+<td> Reassociation response（重关联响应）</td>
 </tr>
 <tr>
-<td>00 </td>
+<td>1010 </td>
+<td> Disassociation（解除关联）</td>
+</tr>
+<tr>
 <td>0100 </td>
 <td> Probe request（探测请求）</td>
 </tr>
 <tr>
-<td>00 </td>
 <td>0101 </td>
 <td> Probe response（探测响应）</td>
 </tr>
 <tr>
-<td>00 </td>
 <td>1000 </td>
-<td> Beacon（信标，被动扫描时AP 发出，notify）</td>
+<td> Beacon（信标,由AP发出,告知BSS的存在）</td>
 </tr>
 <tr>
-<td>00 </td>
 <td>1001 </td>
 <td> ATIM（通知传输指示消息）</td>
 </tr>
 <tr>
-<td>00 </td>
-<td>1010 </td>
-<td> Disassociation（解除连接，notify）</td>
-</tr>
-<tr>
-<td>00 </td>
 <td>1011 </td>
 <td> Authentication（身份验证）</td>
 </tr>
 <tr>
-<td>00 </td>
 <td>1100 </td>
-<td>Deauthentication（解除认证，notify）</td>
+<td> Deauthentication（解除认证）</td>
+</tr>
+<tr>
+<td>1101～1111</td>
+<td>Reserved（保留，未使用）</td>
 </tr>
 </tbody>
 </table>
 
 
-<p>1000 Beacon(信标)的帧格式:</p>
+<p>Beacon帧格式:</p>
 
 <p><img src="/images/2016/6/ieee80211_beacon.jpeg" alt="IEEE_802_11" /></p>
 
-<h2>2,控制帧</h2>
+<p>Probe Request帧:</p>
+
+<p><img src="/images/2016/6/probe_request.jpg" alt="IEEE_802_11" /></p>
+
+<p>Probe Response帧:</p>
+
+<p><img src="/images/2016/6/probe_esponse.jpg" alt="IEEE_802_11" /></p>
+
+<p>ATIM帧:</p>
+
+<p><img src="/images/2016/6/atim.jpg" alt="IEEE_802_11" /></p>
+
+<p>Disassociation与Deauthentication帧:</p>
+
+<p><img src="/images/2016/6/dd.jpg" alt="IEEE_802_11" /></p>
+
+<p>Association Request帧:</p>
+
+<p><img src="/images/2016/6/association_request.jpg" alt="IEEE_802_11" /></p>
+
+<p>Reassociation Request帧:</p>
+
+<p><img src="/images/2016/6/reassociation_request.jpg" alt="IEEE_802_11" /></p>
+
+<p>Authentication帧:</p>
+
+<p><img src="/images/2016/6/authentication.jpg" alt="IEEE_802_11" /></p>
+
+<h1>控制帧(01)</h1>
 
 <table>
 <thead>
 <tr>
-<th>类型信息</th>
-<th> 子类型信息  </th>
-<th> 帧描述</th>
+<th> Subtype值   </th>
+<th> 描述</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>01 </td>
 <td>1010 </td>
-<td>Power Save（PS）- Poll（省电－轮询）</td>
+<td>Power Save- Poll（省电－轮询,由休眠的AP定时发送）</td>
 </tr>
 <tr>
-<td>01 </td>
 <td>1011 </td>
-<td>RTS（请求发送，即: Request To Send ，预约信道，帧长20字节）</td>
+<td>RTS（Request To Send,请求发送,预约信道,帧长20字节）</td>
 </tr>
 <tr>
-<td>01 </td>
 <td>1100 </td>
-<td>CTS（清除发送，即:Clear To Send ，同意预约，帧长14字节）</td>
+<td>CTS（Clear To Send,清除发送,收到RTS后,如果同意预约,就通过CTS告知其他人在一定时间内暂停向自己发送数据,避免冲突,帧长14字节）</td>
 </tr>
 <tr>
-<td>01 </td>
 <td>1101 </td>
-<td>ACK（确认）</td>
+<td>ACK（确认收到的数据帧,如果收到的数据帧校验出错，则不发送ACK，等待重传。）</td>
 </tr>
 <tr>
-<td>01 </td>
 <td>1110 </td>
-<td>CF-End（无竞争周期结束）</td>
+<td>CF-End（无竞争周期结束,让STA脱离协调模式，开始基于竞争模式。)</td>
 </tr>
 <tr>
-<td>01 </td>
 <td>1111 </td>
-<td>CF-End（无竞争周期结束）＋CF-ACK（无竞争周期确认）</td>
+<td>CF-End＋CF-ACK（无竞争周期结束+无竞争周期确认）</td>
 </tr>
 </tbody>
 </table>
 
 
-<h2>3,数据帧</h2>
+<p>RTS帧:</p>
+
+<p><img src="/images/2016/6/rts.jpg" alt="IEEE_802_11" /></p>
+
+<p>CTS帧:</p>
+
+<p><img src="/images/2016/6/cts.jpg" alt="IEEE_802_11" /></p>
+
+<p>ACK帧:</p>
+
+<p><img src="/images/2016/6/ack.jpg" alt="IEEE_802_11" /></p>
+
+<p>PS-Poll:</p>
+
+<p><img src="/images/2016/6/pspoll.jpg" alt="IEEE_802_11" /></p>
+
+<h1>数据帧(10)</h1>
 
 <table>
 <thead>
 <tr>
-<th>类型信息</th>
-<th> 子类型信息  </th>
-<th> 帧描述</th>
+<th> Subtype值   </th>
+<th> 描述</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>10 </td>
 <td> 0000 </td>
-<td> Data（数据）</td>
+<td> Data（传输数据）</td>
 </tr>
 <tr>
-<td>10 </td>
 <td> 0001 </td>
 <td> Data+CF-ACK</td>
 </tr>
 <tr>
-<td>10 </td>
 <td> 0010 </td>
 <td> Data+CF-Poll</td>
 </tr>
 <tr>
-<td>10 </td>
 <td> 0011 </td>
 <td> Data+CF-ACK+CF-Poll</td>
 </tr>
 <tr>
-<td>10 </td>
 <td> 0100 </td>
-<td> Null data（无数据：未传送数据）</td>
+<td> Null（无数据的空帧）</td>
 </tr>
 <tr>
-<td>10 </td>
 <td> 0101 </td>
-<td> CF-ACK（未传送数据）</td>
+<td> CF-ACK（无竞争周期的确认,用于确认之前所收到的帧）</td>
 </tr>
 <tr>
-<td>10 </td>
 <td> 0110 </td>
-<td> CF-Poll（未传送数据）</td>
+<td> CF-Poll（无竞争周期的轮询,用于通知已经没有数据要传输）</td>
 </tr>
 <tr>
-<td>10 </td>
 <td> 0111 </td>
 <td> Data+CF-ACK+CF-Poll</td>
 </tr>
 <tr>
-<td>10 </td>
 <td> 1000 </td>
 <td> Qos Data</td>
 </tr>
 <tr>
-<td>10 </td>
 <td> 1001 </td>
 <td> Qos Data + CF-ACK</td>
 </tr>
 <tr>
-<td>10 </td>
 <td> 1010 </td>
 <td> Qos Data + CF-Poll</td>
 </tr>
 <tr>
-<td>10 </td>
 <td> 1011 </td>
 <td> Qos Data + CF-ACK+ CF-Poll</td>
 </tr>
 <tr>
-<td>10 </td>
 <td> 1100 </td>
 <td> QoS Null（未传送数据）</td>
 </tr>
 <tr>
-<td>10 </td>
 <td> 1101 </td>
 <td> QoS CF-ACK（未传送数据）</td>
 </tr>
 <tr>
-<td>10 </td>
 <td> 1110 </td>
 <td> QoS CF-Poll（未传送数据）</td>
 </tr>
 <tr>
-<td>10 </td>
 <td> 1111 </td>
 <td> QoS CF-ACK+ CF-Poll（未传送数据）</td>
 </tr>
@@ -315,11 +323,32 @@
 </table>
 
 
+<p>IBSS帧:</p>
+
+<p><img src="/images/2016/6/ibss.jpg" alt="IEEE_802_11" /></p>
+
+<p>由接入点发出的数据帧格式(From AP):</p>
+
+<p><img src="/images/2016/6/from_ap.jpg" alt="IEEE_802_11" /></p>
+
+<p>发送至接入点的数据帧格式(To AP):</p>
+
+<p><img src="/images/2016/6/to_ap.jpg" alt="IEEE_802_11" /></p>
+
+<p>WDS数据帧:</p>
+
+<p><img src="/images/2016/6/wds.jpg" alt="IEEE_802_11" /></p>
+
 <h1>RadioTap</h1>
 
-<p>当网络接口处于monitor模式时,内核会生成一个RadioTap数据头添加在MPDU前面,Radiotap记录了热点的信息,如信号强度、MPDU帧信息等信息。</p>
+<p>当无线网络接口处于monitor模式时,内核会生成一个名为RadioTap的数据添加在IEEE802.11数据帧(MPDU)的前面,该Radiotap记录了热点的信息,如信号强度、MPDU帧信息等信息。意思就是在正常的IEEE802.11数据帧前面,内核又额外给你加了一块RadioTap类型的数据,这块数据记录了一些无线网的属性。</p>
 
-<p>RadioTap包括 Header 和 Data两部分数据,其中Header的结构如下:</p>
+<pre><code>---------------------
+|--Header--|--Data--|
+---------------------
+</code></pre>
+
+<p>RadioTap的结构包括Header和Data两部分,首先看一眼Header:</p>
 
 <pre><code>struct ieee80211_radiotap_header {
     u_int8_t        it_version;     /* set to 0 */
@@ -329,22 +358,11 @@
 } __attribute__((__packed__));
 </code></pre>
 
-<ul>
-<li>it_version 版本号,始终为0.</li>
-<li>it_pad 未使用,只作字段对齐使用。</li>
-<li>it_len 整个Radiotap的长度,如果你不关心Radiotap里包含的信息,可以通过这个值跳过Radiotap部分。</li>
-<li>it_present 是Data数据部分的掩码,标识哪些数据出现在接下来的Data里。</li>
-</ul>
+<p>it_version 是一个8位的版本号,值始终为0,it_pad未使用,只作字段对齐用,it_len 是整个Radiotap的长度,如果你不关心Radiotap里具体包含哪些信息,可以通过这个值跳过解析Radiotap的解析。it_present 是Data数据的掩码,标识哪些数据出现在接下来的Data里。</p>
 
+<p>在这里面,it_present是最有趣的一个值,它总共有32位,里面的每一位都代表一种数据有没有出现在接下来的Data里。什么意思呢,我们知道每一位的值无非就是0和1两个值,如果该位是1则表示该位代表的数据在RadioTap里的Data部分携带了,并且每一位对应什么值都可以在这里(<a href="http://www.radiotap.org/defined-fields">http://www.radiotap.org/defined-fields</a>)查到,例如是它的size多大或是它代表了啥含义。</p>
 
-<p>it_present里的每一位代表一种类型的数据是否出现在接下来的Data数据里,并且这些数据的出现的顺序是与掩码的位次依次相关的。其中前22位为标准掩码,其位置和对应的数据结构信息可以在这里查看:</p>
-
-<ul>
-<li><a href="http://www.radiotap.org/defined-fields">http://www.radiotap.org/defined-fields</a></li>
-</ul>
-
-
-<p>通常it_present的最后一位Ext为0,此时Data紧随it_present之后出现。如果Ext为1,表明开发者增加了it_present字段,每个增加的it_present大小为32bit,直到最后一个Ext为0的it_present出现时,Data才会紧接着出现。除Ext之外Present中倒数第2、3位是设备厂商的保留位，不能作为Data掩码使用。</p>
+<p>it_present代表的数据出场顺序与这32个掩码的位置是依次相关的。也就是第一位携带的数据如果有,永远是靠在最前的,其他的依次排列。通常it_present的最后一位Ext为0,此时Data紧随it_present之后出现。如果Ext为1,表明开发者增加了it_present字段,每个增加的it_present大小都是标准的32位,直到最后一个Ext为0的it_present出现时,Data才会紧接着出现。除Ext之外Present中倒数第2、3位是设备厂商的保留位，不能作为Data掩码使用。</p>
 
 <pre><code>.... .... .... .... .... .... .... ...1 = TSFT : True
 .... .... .... .... .... .... .... ..1. = Flags: True
@@ -368,7 +386,7 @@
 0... .... .... .... .... .... .... .... = Ext:False
 </code></pre>
 
-<p>掩码对应的数据信息</p>
+<p>掩码对应信息:</p>
 
 <table>
 <thead>
@@ -471,7 +489,7 @@
 <h1>示例</h1>
 
 <ul>
-<li><a href="https://github.com/sbxfc/wlan-sniffer/">https://github.com/sbxfc/wlan-sniffer/</a></li>
+<li><a href="https://github.com/sbxfc/wlan-macos">https://github.com/sbxfc/wlan-macos</a></li>
 </ul>
 
 
@@ -481,6 +499,8 @@
 <li><a href="https://zh.wikipedia.org/wiki/IEEE_802.11">https://zh.wikipedia.org/wiki/IEEE_802.11</a></li>
 <li><a href="http://www.radiotap.org/">http://www.radiotap.org/</a></li>
 <li><a href="http://www.radiotap.org/defined-fields">http://www.radiotap.org/defined-fields</a></li>
+<li><a href="http://www.cnblogs.com/littlehann/p/3700357.html">http://www.cnblogs.com/littlehann/p/3700357.html</a></li>
+<li><a href="http://rick_stone.leanote.com/post/802.11%E5%B8%A7%E8%A7%A3%E6%9E%90">http://rick_stone.leanote.com/post/802.11%E5%B8%A7%E8%A7%A3%E6%9E%90</a></li>
 </ul>
 
 </div>
@@ -541,8 +561,8 @@
       
 	
 	// var disqus_developer = 1;
-	var disqus_identifier = 'http://sbxfc.github.io/blog/2016/06/23/wireless-lan';
-	var disqus_url = 'http://sbxfc.github.io/blog/2016/06/23/wireless-lan';
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2016/06/23/wlan';
+	var disqus_url = 'http://sbxfc.github.io/blog/2016/06/23/wlan';
 	var disqus_script = 'embed.js';
       
     (function () {

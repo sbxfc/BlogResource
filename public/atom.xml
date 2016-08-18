@@ -4,7 +4,7 @@
   <title><![CDATA[sbxfc]]></title>
   <link href="http://sbxfc.github.io/atom.xml" rel="self"/>
   <link href="http://sbxfc.github.io/"/>
-  <updated>2016-07-27T15:55:31+08:00</updated>
+  <updated>2016-08-18T17:35:39+08:00</updated>
   <id>http://sbxfc.github.io/</id>
   <author>
     <name><![CDATA[sbxfc]]></name>
@@ -14,38 +14,38 @@
 
   
   <entry>
-    <title type="html"><![CDATA[编译一个C语言程序]]></title>
+    <title type="html"><![CDATA[编译一个C程序]]></title>
     <link href="http://sbxfc.github.io/blog/2016/07/07/compile/"/>
     <updated>2016-07-07T15:37:57+08:00</updated>
     <id>http://sbxfc.github.io/blog/2016/07/07/compile</id>
-    <content type="html"><![CDATA[<p>gcc是类Unix下的标准编译器,在 Linux 和 以FreeBSD为基础的 macOS下可以直接使用。</p>
+    <content type="html"><![CDATA[<p>GCC是类Unix操作系统下的标准编译器,在Linux或者是以FreeBSD为基础的macOS下可以直接使用。</p>
 
 <h1>编译一个简单的C程序</h1>
 
-<p>以下代码被包含在一个名为 &ldquo;test.c&#8221;的文本文件里:</p>
+<p>下面的代码被包含在一个名为<font color='#bd260d'><strong>test.c</strong></font>的文本文件里:</p>
 
 <pre><code>#include &lt;stdio.h&gt;
 int main(){
     printf("Hello World!\n");
-}
+}   
 </code></pre>
 
-<p>在命令行里,你可以通过标准gcc命令来编译该文件</p>
+<p>你可以通过macOS终端直接编译该文件:</p>
 
 <pre><code>$gcc test.c -o test
 </code></pre>
 
-<p>该命令将test.c编译成一个名为test的可执行程序,你可以在命令行里输入 <font color='#bd260d'><strong>./test</strong></font> 来运行该程序。程序运行时屏幕上会输出 &ldquo;Hello World!&rdquo;</p>
+<p>编译指令会将test.c编译成一个名为test的可执行程序,<font color='#bd260d'><strong>-o</strong></font>参数用于指定编译后的程序名。 执行程序<font color='#bd260d'><strong>(./test)</strong></font>时屏幕上会输出 <em>Hello World!</em></p>
 
-<p>除次以外,你也可以通过下面两条命令分两步来编译程序test</p>
+<p>除此之外,你也可以执行下面两行编译命令来生成test程序</p>
 
 <pre><code>$gcc -c test.c
 $gcc test.o -o test
 </code></pre>
 
-<p>这两种方式的结果一样,都会生成test程序。但是第二种方式,编译器会首先将源文件 test.c 编译成名为hello.o的机器语言程序,然后再将hello.o和一些用于输出&#8221;Hello World&#8221;的系统库链接在一起,并合成最终的可执行程序test。</p>
+<p>和第一条编译命令相比,除了执行命令多出一行以外,还额外生成了一个名为test.o的文件。这是因为,GCC在编译C程序时要经过预处理、编译、汇编和连接四步。通过第二种方式,编译器首先会将源文件test.c编译成名为hello.o的机器语言程序。接着,再将hello.o和一些用于输出&#8221;Hello World&#8221;的系统库链接在一起,并合成最终的可执行程序test。</p>
 
-<p>实际上,第一种方式也同样执行了这两步,只不过编译器在后台悄悄运行,并删除了中间文件test.o</p>
+<p>而第一种方式同样执行了这两步,只不过编译器在后台悄悄运行,并删除了中间文件test.o</p>
 
 <h1>编译参数</h1>
 
@@ -110,15 +110,13 @@ $gcc test.o -o test
     <link href="http://sbxfc.github.io/blog/2016/07/01/makefile/"/>
     <updated>2016-07-01T11:36:32+08:00</updated>
     <id>http://sbxfc.github.io/blog/2016/07/01/makefile</id>
-    <content type="html"><![CDATA[<p><em>注1：本文使用的make为GNU Make</em></p>
+    <content type="html"><![CDATA[<p><em>注1：本中使用的make为GNU Make</em></p>
 
-<hr />
+<h1>源文件的编译</h1>
 
-<h1>程序的编译</h1>
+<p>通常,我们将源代码编译成可执行程序时,首先要将源代码文件编译成中间文件(Windows下为.obj文件,在Unix下为.o文件),这个过程称为编译（compile）。然后,将大量的中间文件合成最终执行文件的过程称为链接（link）。</p>
 
-<p>通常,我们将源代码编译成可执行程序,首先要将源代码文件编译成中间文件,在Windows下为.obj文件,在Unix下为.o文件,这个过程叫做编译（compile）。然后,将大量的中间文件合成执行文件,这个过程称为链接（link）。</p>
-
-<p>链接主要是链接函数和全局变量,链接器不关心函数所在的源文件,只关心函数的中间文件。有时候生成的中间目标文件太多,而链接时需要明显指出中间目标名,这对于编译很不方便。所以,我们要给中间文件打个包,在Windows下这种包叫“库文件”（Library File),也就是 .lib 文件,在UNIX下,是Archive File,也就是 .a 文件。</p>
+<p>其中,链接主要是链接函数和全局变量,链接器不关心函数所在的源文件,只关心函数的中间文件。有时候生成的中间目标文件太多,而链接时需要明显指出中间目标名,这对于编译很不方便。所以,我们要给中间文件打个包,在Windows下这种包叫“库文件”（Library File),也就是 .lib 文件,在UNIX下,是Archive File,也就是 .a 文件。</p>
 
 <h1>Makefile的使用</h1>
 
@@ -184,240 +182,248 @@ $gcc test.o -o test
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[IEEE 802.11 WLAN 网路协议]]></title>
-    <link href="http://sbxfc.github.io/blog/2016/06/23/wireless-lan/"/>
+    <title type="html"><![CDATA[IEEE 802.11 WLAN协议]]></title>
+    <link href="http://sbxfc.github.io/blog/2016/06/23/wlan/"/>
     <updated>2016-06-23T15:27:41+08:00</updated>
-    <id>http://sbxfc.github.io/blog/2016/06/23/wireless-lan</id>
-    <content type="html"><![CDATA[<h1>IEEE 802.11</h1>
+    <id>http://sbxfc.github.io/blog/2016/06/23/wlan</id>
+    <content type="html"><![CDATA[<p><img src="http://sbxfc.github.io/images/2016/6/ieee80211.png" alt="IEEE_802_11" /></p>
 
-<p>IEEE 802.11 是现今无线局域网的通讯标准,该标准包括物理层和数据链路层中的媒体访问控制层（MAC层）的两部分规范。</p>
+<p>在上面的示意图里,Preamble(序言)和PLCP header是物理层驱动的使用的一些信息,而我们获取的MAC层协议帧是MPDU部分,MPDU是Mac protocal data unit的简称,即IEEE 802.11在 MAC 层的数据单元。</p>
 
-<h1>物理层</h1>
-
-<p>IEEE 802.11 中的物理层由 PLCP Sublayer、PMD Sublayer 以及 Physical-Layer Management 三部分组成。PLCP主要进行载波的分析和针对不同的物理层形成的相应格式分组。PMD层用于识别相关介质传输的信息所使用的调制和编码技术。物理管理层为不同的物理层进行信道选择和协调。</p>
-
-<h1>MAC层</h1>
-
-<p><img src="http://sbxfc.github.io/images/2016/6/ieee80211.png" alt="IEEE_802_11" /></p>
-
-<p>MPDU(Mac protocal data unit)即IEEE 802.11在MAC层数据帧格式。802.11在MAC层的数据帧分为三大类,类型由Frame control里的Type决定,每个大类又会根据Subtype的不同分为许多子类。首先是三大类:</p>
+<p>MPDU分为三大类:管理帧、控制帧和数据帧。通过Frame Control里的Type值,我们可以判断当前数据帧是什么类型:</p>
 
 <ul>
-<li><p>00,管理帧 这类数据帧主要用来进行身份验证,发送热点信号(Beacon)等。</p></li>
-<li><p>01,控制帧 发送RTS/CTS,ACK等一些查询和控制响应帧。</p></li>
-<li><p>10,数据帧 携带更高层的数据(如IP数据包，ISO7层协议)。</p></li>
+<li><p>管理帧(00) 这类数据帧主要用来进行身份验证,发送信号(Beacon)等。</p></li>
+<li><p>控制帧(01) 发送RTS/CTS,ACK等一些查询和控制响应帧。</p></li>
+<li><p>数据帧(10) 携带更高层的数据(如IP数据包，ISO7层协议)。</p></li>
 </ul>
 
 
-<h2>1,管理帧</h2>
+<p>在这三个大类下面,又会根据subtype的不同将数据帧分为不同的类型。</p>
 
-<p>管理帧根据Subtype类型不同,分为如下类型:</p>
+<p>由于,每种数据帧对应的数据格式是不同的(<font color='#bd260d'><strong>除了Frame control部分以外</strong></font>),所以说如果我们解析某个数据帧格式,需要根据具体的类型来判断:</p>
+
+<h1>管理帧(00)</h1>
+
+<p>管理帧根据subtype的不同,又分为如下类型:</p>
 
 <table>
 <thead>
 <tr>
-<th>管理类掩码</th>
-<th> 子类型掩码  </th>
-<th> 帧描述</th>
+<th> subtype  </th>
+<th> 描述</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>00 </td>
 <td>0000 </td>
-<td>Association request (连接请求) </td>
+<td> Association request (关联请求) </td>
 </tr>
 <tr>
-<td>00 </td>
 <td>0001 </td>
-<td>  Association response (连接响应)  </td>
+<td> Association response (关联响应)  </td>
 </tr>
 <tr>
-<td>00 </td>
 <td>0010 </td>
-<td> Reassociation request（重连接请求）</td>
+<td> Reassociation request（重关联请求）</td>
 </tr>
 <tr>
-<td>00 </td>
 <td>0011 </td>
-<td> Reassociation response（重连接联响应）</td>
+<td> Reassociation response（重关联响应）</td>
 </tr>
 <tr>
-<td>00 </td>
+<td>1010 </td>
+<td> Disassociation（解除关联）</td>
+</tr>
+<tr>
 <td>0100 </td>
 <td> Probe request（探测请求）</td>
 </tr>
 <tr>
-<td>00 </td>
 <td>0101 </td>
 <td> Probe response（探测响应）</td>
 </tr>
 <tr>
-<td>00 </td>
 <td>1000 </td>
-<td> Beacon（信标，被动扫描时AP 发出，notify）</td>
+<td> Beacon（信标,由AP发出,告知BSS的存在）</td>
 </tr>
 <tr>
-<td>00 </td>
 <td>1001 </td>
 <td> ATIM（通知传输指示消息）</td>
 </tr>
 <tr>
-<td>00 </td>
-<td>1010 </td>
-<td> Disassociation（解除连接，notify）</td>
-</tr>
-<tr>
-<td>00 </td>
 <td>1011 </td>
 <td> Authentication（身份验证）</td>
 </tr>
 <tr>
-<td>00 </td>
 <td>1100 </td>
-<td>Deauthentication（解除认证，notify）</td>
+<td> Deauthentication（解除认证）</td>
+</tr>
+<tr>
+<td>1101～1111</td>
+<td>Reserved（保留，未使用）</td>
 </tr>
 </tbody>
 </table>
 
 
-<p>1000 Beacon(信标)的帧格式:</p>
+<p>Beacon帧格式:</p>
 
 <p><img src="http://sbxfc.github.io/images/2016/6/ieee80211_beacon.jpeg" alt="IEEE_802_11" /></p>
 
-<h2>2,控制帧</h2>
+<p>Probe Request帧:</p>
+
+<p><img src="http://sbxfc.github.io/images/2016/6/probe_request.jpg" alt="IEEE_802_11" /></p>
+
+<p>Probe Response帧:</p>
+
+<p><img src="http://sbxfc.github.io/images/2016/6/probe_esponse.jpg" alt="IEEE_802_11" /></p>
+
+<p>ATIM帧:</p>
+
+<p><img src="http://sbxfc.github.io/images/2016/6/atim.jpg" alt="IEEE_802_11" /></p>
+
+<p>Disassociation与Deauthentication帧:</p>
+
+<p><img src="http://sbxfc.github.io/images/2016/6/dd.jpg" alt="IEEE_802_11" /></p>
+
+<p>Association Request帧:</p>
+
+<p><img src="http://sbxfc.github.io/images/2016/6/association_request.jpg" alt="IEEE_802_11" /></p>
+
+<p>Reassociation Request帧:</p>
+
+<p><img src="http://sbxfc.github.io/images/2016/6/reassociation_request.jpg" alt="IEEE_802_11" /></p>
+
+<p>Authentication帧:</p>
+
+<p><img src="http://sbxfc.github.io/images/2016/6/authentication.jpg" alt="IEEE_802_11" /></p>
+
+<h1>控制帧(01)</h1>
 
 <table>
 <thead>
 <tr>
-<th>类型信息</th>
-<th> 子类型信息  </th>
-<th> 帧描述</th>
+<th> Subtype值   </th>
+<th> 描述</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>01 </td>
 <td>1010 </td>
-<td>Power Save（PS）- Poll（省电－轮询）</td>
+<td>Power Save- Poll（省电－轮询,由休眠的AP定时发送）</td>
 </tr>
 <tr>
-<td>01 </td>
 <td>1011 </td>
-<td>RTS（请求发送，即: Request To Send ，预约信道，帧长20字节）</td>
+<td>RTS（Request To Send,请求发送,预约信道,帧长20字节）</td>
 </tr>
 <tr>
-<td>01 </td>
 <td>1100 </td>
-<td>CTS（清除发送，即:Clear To Send ，同意预约，帧长14字节）</td>
+<td>CTS（Clear To Send,清除发送,收到RTS后,如果同意预约,就通过CTS告知其他人在一定时间内暂停向自己发送数据,避免冲突,帧长14字节）</td>
 </tr>
 <tr>
-<td>01 </td>
 <td>1101 </td>
-<td>ACK（确认）</td>
+<td>ACK（确认收到的数据帧,如果收到的数据帧校验出错，则不发送ACK，等待重传。）</td>
 </tr>
 <tr>
-<td>01 </td>
 <td>1110 </td>
-<td>CF-End（无竞争周期结束）</td>
+<td>CF-End（无竞争周期结束,让STA脱离协调模式，开始基于竞争模式。)</td>
 </tr>
 <tr>
-<td>01 </td>
 <td>1111 </td>
-<td>CF-End（无竞争周期结束）＋CF-ACK（无竞争周期确认）</td>
+<td>CF-End＋CF-ACK（无竞争周期结束+无竞争周期确认）</td>
 </tr>
 </tbody>
 </table>
 
 
-<h2>3,数据帧</h2>
+<p>RTS帧:</p>
+
+<p><img src="http://sbxfc.github.io/images/2016/6/rts.jpg" alt="IEEE_802_11" /></p>
+
+<p>CTS帧:</p>
+
+<p><img src="http://sbxfc.github.io/images/2016/6/cts.jpg" alt="IEEE_802_11" /></p>
+
+<p>ACK帧:</p>
+
+<p><img src="http://sbxfc.github.io/images/2016/6/ack.jpg" alt="IEEE_802_11" /></p>
+
+<p>PS-Poll:</p>
+
+<p><img src="http://sbxfc.github.io/images/2016/6/pspoll.jpg" alt="IEEE_802_11" /></p>
+
+<h1>数据帧(10)</h1>
 
 <table>
 <thead>
 <tr>
-<th>类型信息</th>
-<th> 子类型信息  </th>
-<th> 帧描述</th>
+<th> Subtype值   </th>
+<th> 描述</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>10 </td>
 <td> 0000 </td>
-<td> Data（数据）</td>
+<td> Data（传输数据）</td>
 </tr>
 <tr>
-<td>10 </td>
 <td> 0001 </td>
 <td> Data+CF-ACK</td>
 </tr>
 <tr>
-<td>10 </td>
 <td> 0010 </td>
 <td> Data+CF-Poll</td>
 </tr>
 <tr>
-<td>10 </td>
 <td> 0011 </td>
 <td> Data+CF-ACK+CF-Poll</td>
 </tr>
 <tr>
-<td>10 </td>
 <td> 0100 </td>
-<td> Null data（无数据：未传送数据）</td>
+<td> Null（无数据的空帧）</td>
 </tr>
 <tr>
-<td>10 </td>
 <td> 0101 </td>
-<td> CF-ACK（未传送数据）</td>
+<td> CF-ACK（无竞争周期的确认,用于确认之前所收到的帧）</td>
 </tr>
 <tr>
-<td>10 </td>
 <td> 0110 </td>
-<td> CF-Poll（未传送数据）</td>
+<td> CF-Poll（无竞争周期的轮询,用于通知已经没有数据要传输）</td>
 </tr>
 <tr>
-<td>10 </td>
 <td> 0111 </td>
 <td> Data+CF-ACK+CF-Poll</td>
 </tr>
 <tr>
-<td>10 </td>
 <td> 1000 </td>
 <td> Qos Data</td>
 </tr>
 <tr>
-<td>10 </td>
 <td> 1001 </td>
 <td> Qos Data + CF-ACK</td>
 </tr>
 <tr>
-<td>10 </td>
 <td> 1010 </td>
 <td> Qos Data + CF-Poll</td>
 </tr>
 <tr>
-<td>10 </td>
 <td> 1011 </td>
 <td> Qos Data + CF-ACK+ CF-Poll</td>
 </tr>
 <tr>
-<td>10 </td>
 <td> 1100 </td>
 <td> QoS Null（未传送数据）</td>
 </tr>
 <tr>
-<td>10 </td>
 <td> 1101 </td>
 <td> QoS CF-ACK（未传送数据）</td>
 </tr>
 <tr>
-<td>10 </td>
 <td> 1110 </td>
 <td> QoS CF-Poll（未传送数据）</td>
 </tr>
 <tr>
-<td>10 </td>
 <td> 1111 </td>
 <td> QoS CF-ACK+ CF-Poll（未传送数据）</td>
 </tr>
@@ -425,11 +431,32 @@ $gcc test.o -o test
 </table>
 
 
+<p>IBSS帧:</p>
+
+<p><img src="http://sbxfc.github.io/images/2016/6/ibss.jpg" alt="IEEE_802_11" /></p>
+
+<p>由接入点发出的数据帧格式(From AP):</p>
+
+<p><img src="http://sbxfc.github.io/images/2016/6/from_ap.jpg" alt="IEEE_802_11" /></p>
+
+<p>发送至接入点的数据帧格式(To AP):</p>
+
+<p><img src="http://sbxfc.github.io/images/2016/6/to_ap.jpg" alt="IEEE_802_11" /></p>
+
+<p>WDS数据帧:</p>
+
+<p><img src="http://sbxfc.github.io/images/2016/6/wds.jpg" alt="IEEE_802_11" /></p>
+
 <h1>RadioTap</h1>
 
-<p>当网络接口处于monitor模式时,内核会生成一个RadioTap数据头添加在MPDU前面,Radiotap记录了热点的信息,如信号强度、MPDU帧信息等信息。</p>
+<p>当无线网络接口处于monitor模式时,内核会生成一个名为RadioTap的数据添加在IEEE802.11数据帧(MPDU)的前面,该Radiotap记录了热点的信息,如信号强度、MPDU帧信息等信息。意思就是在正常的IEEE802.11数据帧前面,内核又额外给你加了一块RadioTap类型的数据,这块数据记录了一些无线网的属性。</p>
 
-<p>RadioTap包括 Header 和 Data两部分数据,其中Header的结构如下:</p>
+<pre><code>---------------------
+|--Header--|--Data--|
+---------------------
+</code></pre>
+
+<p>RadioTap的结构包括Header和Data两部分,首先看一眼Header:</p>
 
 <pre><code>struct ieee80211_radiotap_header {
     u_int8_t        it_version;     /* set to 0 */
@@ -439,22 +466,11 @@ $gcc test.o -o test
 } __attribute__((__packed__));
 </code></pre>
 
-<ul>
-<li>it_version 版本号,始终为0.</li>
-<li>it_pad 未使用,只作字段对齐使用。</li>
-<li>it_len 整个Radiotap的长度,如果你不关心Radiotap里包含的信息,可以通过这个值跳过Radiotap部分。</li>
-<li>it_present 是Data数据部分的掩码,标识哪些数据出现在接下来的Data里。</li>
-</ul>
+<p>it_version 是一个8位的版本号,值始终为0,it_pad未使用,只作字段对齐用,it_len 是整个Radiotap的长度,如果你不关心Radiotap里具体包含哪些信息,可以通过这个值跳过解析Radiotap的解析。it_present 是Data数据的掩码,标识哪些数据出现在接下来的Data里。</p>
 
+<p>在这里面,it_present是最有趣的一个值,它总共有32位,里面的每一位都代表一种数据有没有出现在接下来的Data里。什么意思呢,我们知道每一位的值无非就是0和1两个值,如果该位是1则表示该位代表的数据在RadioTap里的Data部分携带了,并且每一位对应什么值都可以在这里(<a href="http://www.radiotap.org/defined-fields">http://www.radiotap.org/defined-fields</a>)查到,例如是它的size多大或是它代表了啥含义。</p>
 
-<p>it_present里的每一位代表一种类型的数据是否出现在接下来的Data数据里,并且这些数据的出现的顺序是与掩码的位次依次相关的。其中前22位为标准掩码,其位置和对应的数据结构信息可以在这里查看:</p>
-
-<ul>
-<li><a href="http://www.radiotap.org/defined-fields">http://www.radiotap.org/defined-fields</a></li>
-</ul>
-
-
-<p>通常it_present的最后一位Ext为0,此时Data紧随it_present之后出现。如果Ext为1,表明开发者增加了it_present字段,每个增加的it_present大小为32bit,直到最后一个Ext为0的it_present出现时,Data才会紧接着出现。除Ext之外Present中倒数第2、3位是设备厂商的保留位，不能作为Data掩码使用。</p>
+<p>it_present代表的数据出场顺序与这32个掩码的位置是依次相关的。也就是第一位携带的数据如果有,永远是靠在最前的,其他的依次排列。通常it_present的最后一位Ext为0,此时Data紧随it_present之后出现。如果Ext为1,表明开发者增加了it_present字段,每个增加的it_present大小都是标准的32位,直到最后一个Ext为0的it_present出现时,Data才会紧接着出现。除Ext之外Present中倒数第2、3位是设备厂商的保留位，不能作为Data掩码使用。</p>
 
 <pre><code>.... .... .... .... .... .... .... ...1 = TSFT : True
 .... .... .... .... .... .... .... ..1. = Flags: True
@@ -478,7 +494,7 @@ $gcc test.o -o test
 0... .... .... .... .... .... .... .... = Ext:False
 </code></pre>
 
-<p>掩码对应的数据信息</p>
+<p>掩码对应信息:</p>
 
 <table>
 <thead>
@@ -581,7 +597,7 @@ $gcc test.o -o test
 <h1>示例</h1>
 
 <ul>
-<li><a href="https://github.com/sbxfc/wlan-sniffer/">https://github.com/sbxfc/wlan-sniffer/</a></li>
+<li><a href="https://github.com/sbxfc/wlan-macos">https://github.com/sbxfc/wlan-macos</a></li>
 </ul>
 
 
@@ -591,6 +607,8 @@ $gcc test.o -o test
 <li><a href="https://zh.wikipedia.org/wiki/IEEE_802.11">https://zh.wikipedia.org/wiki/IEEE_802.11</a></li>
 <li><a href="http://www.radiotap.org/">http://www.radiotap.org/</a></li>
 <li><a href="http://www.radiotap.org/defined-fields">http://www.radiotap.org/defined-fields</a></li>
+<li><a href="http://www.cnblogs.com/littlehann/p/3700357.html">http://www.cnblogs.com/littlehann/p/3700357.html</a></li>
+<li><a href="http://rick_stone.leanote.com/post/802.11%E5%B8%A7%E8%A7%A3%E6%9E%90">http://rick_stone.leanote.com/post/802.11%E5%B8%A7%E8%A7%A3%E6%9E%90</a></li>
 </ul>
 
 ]]></content>

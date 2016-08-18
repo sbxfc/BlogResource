@@ -1,0 +1,218 @@
+---
+layout: post
+title: "IEEE 802.11 WLAN协议"
+date: 2016-06-23 15:27:41 +0800
+comments: true
+categories: 
+---
+
+
+
+![IEEE_802_11](/images/2016/6/ieee80211.png)
+
+在上面的示意图里,Preamble(序言)和PLCP header是物理层驱动的使用的一些信息,而我们获取的MAC层协议帧是MPDU部分,MPDU是Mac protocal data unit的简称,即IEEE 802.11在 MAC 层的数据单元。
+
+MPDU分为三大类:管理帧、控制帧和数据帧。通过Frame Control里的Type值,我们可以判断当前数据帧是什么类型:
+
+- 管理帧(00) 这类数据帧主要用来进行身份验证,发送信号(Beacon)等。
+
+- 控制帧(01) 发送RTS/CTS,ACK等一些查询和控制响应帧。
+
+- 数据帧(10) 携带更高层的数据(如IP数据包，ISO7层协议)。
+
+在这三个大类下面,又会根据subtype的不同将数据帧分为不同的类型。
+
+由于,每种数据帧对应的数据格式是不同的(<font color='#bd260d'>**除了Frame control部分以外**</font>),所以说如果我们解析某个数据帧格式,需要根据具体的类型来判断:
+
+#管理帧(00)
+
+管理帧根据subtype的不同,又分为如下类型:
+
+ subtype  | 描述
+ ------------- | ------------
+0000 | Association request (关联请求) 
+0001 | Association response (关联响应)  
+0010 | Reassociation request（重关联请求）
+0011 | Reassociation response（重关联响应）
+1010 | Disassociation（解除关联）
+0100 | Probe request（探测请求）
+0101 | Probe response（探测响应）
+1000 | Beacon（信标,由AP发出,告知BSS的存在）
+1001 | ATIM（通知传输指示消息）
+1011 | Authentication（身份验证）
+1100 | Deauthentication（解除认证）
+1101～1111|Reserved（保留，未使用）
+
+
+Beacon帧格式:
+
+![IEEE_802_11](/images/2016/6/ieee80211_beacon.jpeg)
+
+Probe Request帧:
+
+![IEEE_802_11](/images/2016/6/probe_request.jpg)
+
+Probe Response帧:
+
+![IEEE_802_11](/images/2016/6/probe_esponse.jpg)
+
+ATIM帧:
+
+![IEEE_802_11](/images/2016/6/atim.jpg)
+
+Disassociation与Deauthentication帧:
+
+![IEEE_802_11](/images/2016/6/dd.jpg)
+
+Association Request帧:
+
+![IEEE_802_11](/images/2016/6/association_request.jpg)
+
+Reassociation Request帧:
+
+![IEEE_802_11](/images/2016/6/reassociation_request.jpg)
+
+Authentication帧:
+
+![IEEE_802_11](/images/2016/6/authentication.jpg)
+
+
+#控制帧(01) 
+
+ Subtype值   | 描述
+------------- | ------------
+1010 |Power Save- Poll（省电－轮询,由休眠的AP定时发送）
+1011 |RTS（Request To Send,请求发送,预约信道,帧长20字节）
+1100 |CTS（Clear To Send,清除发送,收到RTS后,如果同意预约,就通过CTS告知其他人在一定时间内暂停向自己发送数据,避免冲突,帧长14字节）
+1101 |ACK（确认收到的数据帧,如果收到的数据帧校验出错，则不发送ACK，等待重传。）
+1110 |CF-End（无竞争周期结束,让STA脱离协调模式，开始基于竞争模式。)
+1111 |CF-End＋CF-ACK（无竞争周期结束+无竞争周期确认）
+
+RTS帧:
+
+![IEEE_802_11](/images/2016/6/rts.jpg)
+
+CTS帧:
+
+![IEEE_802_11](/images/2016/6/cts.jpg)
+
+ACK帧:
+
+![IEEE_802_11](/images/2016/6/ack.jpg)
+
+
+PS-Poll:
+
+![IEEE_802_11](/images/2016/6/pspoll.jpg)
+
+#数据帧(10) 
+
+ Subtype值   | 描述
+ ------------- | ------------
+ 0000 | Data（传输数据）
+ 0001 | Data+CF-ACK
+ 0010 | Data+CF-Poll
+ 0011 | Data+CF-ACK+CF-Poll
+ 0100 | Null（无数据的空帧）
+ 0101 | CF-ACK（无竞争周期的确认,用于确认之前所收到的帧）
+ 0110 | CF-Poll（无竞争周期的轮询,用于通知已经没有数据要传输）
+ 0111 | Data+CF-ACK+CF-Poll
+ 1000 | Qos Data
+ 1001 | Qos Data + CF-ACK
+ 1010 | Qos Data + CF-Poll
+ 1011 | Qos Data + CF-ACK+ CF-Poll
+ 1100 | QoS Null（未传送数据）
+ 1101 | QoS CF-ACK（未传送数据）
+ 1110 | QoS CF-Poll（未传送数据）
+ 1111 | QoS CF-ACK+ CF-Poll（未传送数据）
+
+IBSS帧:
+
+![IEEE_802_11](/images/2016/6/ibss.jpg)
+
+由接入点发出的数据帧格式(From AP):
+
+![IEEE_802_11](/images/2016/6/from_ap.jpg)
+
+发送至接入点的数据帧格式(To AP):
+
+![IEEE_802_11](/images/2016/6/to_ap.jpg)
+
+WDS数据帧:
+
+![IEEE_802_11](/images/2016/6/wds.jpg)
+
+#RadioTap 
+
+当无线网络接口处于monitor模式时,内核会生成一个名为RadioTap的数据添加在IEEE802.11数据帧(MPDU)的前面,该Radiotap记录了热点的信息,如信号强度、MPDU帧信息等信息。意思就是在正常的IEEE802.11数据帧前面,内核又额外给你加了一块RadioTap类型的数据,这块数据记录了一些无线网的属性。
+
+	---------------------
+	|--Header--|--Data--|
+	---------------------
+
+RadioTap的结构包括Header和Data两部分,首先看一眼Header:
+
+	struct ieee80211_radiotap_header {
+        u_int8_t        it_version;     /* set to 0 */
+        u_int8_t        it_pad;
+        u_int16_t       it_len;         /* entire length */
+        u_int32_t       it_present;     /* fields present */
+	} __attribute__((__packed__));
+
+it_version 是一个8位的版本号,值始终为0,it_pad未使用,只作字段对齐用,it_len 是整个Radiotap的长度,如果你不关心Radiotap里具体包含哪些信息,可以通过这个值跳过解析Radiotap的解析。it_present 是Data数据的掩码,标识哪些数据出现在接下来的Data里。
+
+在这里面,it_present是最有趣的一个值,它总共有32位,里面的每一位都代表一种数据有没有出现在接下来的Data里。什么意思呢,我们知道每一位的值无非就是0和1两个值,如果该位是1则表示该位代表的数据在RadioTap里的Data部分携带了,并且每一位对应什么值都可以在这里(<http://www.radiotap.org/defined-fields>)查到,例如是它的size多大或是它代表了啥含义。
+
+it_present代表的数据出场顺序与这32个掩码的位置是依次相关的。也就是第一位携带的数据如果有,永远是靠在最前的,其他的依次排列。通常it_present的最后一位Ext为0,此时Data紧随it_present之后出现。如果Ext为1,表明开发者增加了it_present字段,每个增加的it_present大小都是标准的32位,直到最后一个Ext为0的it_present出现时,Data才会紧接着出现。除Ext之外Present中倒数第2、3位是设备厂商的保留位，不能作为Data掩码使用。
+
+	.... .... .... .... .... .... .... ...1 = TSFT : True
+	.... .... .... .... .... .... .... ..1. = Flags: True
+	.... .... .... .... .... .... .... .1.. = Rate : True
+	.... .... .... .... .... .... .... 1... = Channel : True
+	.... .... .... .... .... .... ...0 .... = FHSS : False
+	.... .... .... .... .... .... ..1. .... = Antenna signal  : False
+	.... .... .... .... .... .... .0.. .... = Antenna noise : False 
+	.... .... .... .... .... .... 0... .... = Lock quality : False
+	.... .... .... .... .... ...0 .... .... = TX attenuation : False 
+	.... .... .... .... .... ..0. .... .... = dB TX attenuation : False 
+	.... .... .... .... .... .0.. .... .... = dBm TX power : False  
+	.... .... .... .... .... 1... .... .... = Antenna  : True
+	.... .... .... .... ...0 .... .... .... = dB antenna signal : False
+	.... .... .... .... ..0. .... .... .... = dB antenna noise : False
+	.... .... .... .... .1.. .... .... .... = RX flags : False
+	.... .... .... .... 0... .... .... .... = MCS : False
+	.... .... .... ...0 .... .... .... .... = A-MPDU status : False
+	.... .... .... ..0. .... .... .... .... = VHT : False
+	.... .... .... .0.. .... .... .... .... = ... 
+	0... .... .... .... .... .... .... .... = Ext:False
+
+掩码对应信息:
+
+ 位置编码| 大小 |名称| 描述
+------------  | ------------- | ------------- |------------
+0  |  8byte   | TSFT | 只对接收帧有效,表示MPDU第一个bit到达MAC时的时间,单位是微秒
+1  |  1byte   | Flags| 发送或接收帧属性,包括一些有用信息,比如FCS是否符合 
+2  |  1byte   | Rate | 传输或接收速率,单位500kbs
+3  |  2byte   |  Channel | 发送接收信号的频率，单位是MHz
+4  |  1byte   |  FHSS | 跳频技术，是无线通讯最常用的扩频方式之一
+5  |  1byte   | Antenna signal | 天线的射频信号强度，单位是dBm
+6  |  1byte   | Antenna noise  | 天线的射频噪声强度，单位是dBm；
+7  |  2byte   | Lock quality | 信号质量
+8  |  2byte   | TX attenuation | 与出厂标准最大功率相比的功率衰减，0为最大功率
+9  |  2byte   | dB TX attenuation | 与出厂标准最大功率相比的功率衰减dB值，0为最大功率
+10 |  1byte   | dBm TX power | 传输功率的dBm值，这是在天线端口测量的功率绝对值
+11 |  1byte   | Antenna | 发送或接收该帧的天线索引编号（硬件编号从0开始）；
+12 |  1byte   | dB antenna signal | 天线的射频信号的相对功率强度dB值；
+13 |  1byte   | dB antenna noise | 天线的射频噪音的相对功率强度dB值；
+
+
+#示例
+
+- <https://github.com/sbxfc/wlan-macos>
+
+#参考
+- <https://zh.wikipedia.org/wiki/IEEE_802.11>
+- <http://www.radiotap.org/>
+- <http://www.radiotap.org/defined-fields>
+- <http://www.cnblogs.com/littlehann/p/3700357.html>
+- <http://rick_stone.leanote.com/post/802.11%E5%B8%A7%E8%A7%A3%E6%9E%90>

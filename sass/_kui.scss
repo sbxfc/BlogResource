@@ -138,7 +138,28 @@ header[role="banner"] {
     font-style: italic;
     left:0px;
   }
+
+  /*细边框样式*/
+	table{
+    border-collapse:collapse;
+  }
+	table,th,td{
+    border:1px solid #ccc;
+    padding:10px 20px;
+  }
+
+	/*设置表头背景颜色*/
+	th{background:#fff}
+	/*鼠标移上来，行背景变为黄色*/
+	tr:hover td{
+    background:yellow
+  }
+
+	/*隔行变色*/
+  table tr:nth-child(odd){background:#F4F4F4;}
+
 }
+
 
 /*标题*/
 .entry > header{

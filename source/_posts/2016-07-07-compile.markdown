@@ -1,36 +1,36 @@
 ---
 layout: post
-title: "编译一个C语言程序"
+title: "编译一个C程序"
 date: 2016-07-07 15:37:57 +0800
 comments: true
 categories: 
 ---
 
-gcc是类Unix下的标准编译器,在 Linux 和 以FreeBSD为基础的 macOS下可以直接使用。
-
+GCC是类Unix操作系统下的标准编译器,在Linux或者是以FreeBSD为基础的macOS下可以直接使用。
+	
 #编译一个简单的C程序
-
-以下代码被包含在一个名为 "test.c"的文本文件里:
-
+	
+下面的代码被包含在一个名为<font color='#bd260d'>**test.c**</font>的文本文件里:
+	
 	#include <stdio.h>
 	int main(){
   		printf("Hello World!\n");
-	}
+	}	
 	
-在命令行里,你可以通过标准gcc命令来编译该文件
+你可以通过macOS终端直接编译该文件:
 
 	$gcc test.c -o test
 
-该命令将test.c编译成一个名为test的可执行程序,你可以在命令行里输入 <font color='#bd260d'>**./test**</font> 来运行该程序。程序运行时屏幕上会输出 "Hello World!"
+编译指令会将test.c编译成一个名为test的可执行程序,<font color='#bd260d'>**-o**</font>参数用于指定编译后的程序名。 执行程序<font color='#bd260d'>**(./test)**</font>时屏幕上会输出 *Hello World!*
 
-除次以外,你也可以通过下面两条命令分两步来编译程序test
+除此之外,你也可以执行下面两行编译命令来生成test程序
 
 	$gcc -c test.c
 	$gcc test.o -o test
-	 
-这两种方式的结果一样,都会生成test程序。但是第二种方式,编译器会首先将源文件 test.c 编译成名为hello.o的机器语言程序,然后再将hello.o和一些用于输出"Hello World"的系统库链接在一起,并合成最终的可执行程序test。
 
-实际上,第一种方式也同样执行了这两步,只不过编译器在后台悄悄运行,并删除了中间文件test.o
+和第一条编译命令相比,除了执行命令多出一行以外,还额外生成了一个名为test.o的文件。这是因为,GCC在编译C程序时要经过预处理、编译、汇编和连接四步。通过第二种方式,编译器首先会将源文件test.c编译成名为hello.o的机器语言程序。接着,再将hello.o和一些用于输出"Hello World"的系统库链接在一起,并合成最终的可执行程序test。
+
+而第一种方式同样执行了这两步,只不过编译器在后台悄悄运行,并删除了中间文件test.o
 
 #编译参数
 
