@@ -41,8 +41,8 @@
         <lastmod>2015-11-17T20:36:30+08:00</lastmod>
     </url>
     <url>
-        <loc>http://sbxfc.github.io/blog/2014/03/17/ios-block/</loc>
-        <lastmod>2015-10-20T10:41:36+08:00</lastmod>
+        <loc>http://sbxfc.github.io/blog/2014/03/17/objc-block/</loc>
+        <lastmod>2016-08-22T11:02:11+08:00</lastmod>
     </url>
     <url>
         <loc>http://sbxfc.github.io/blog/2014/03/24/u3d-diffuse-shading-2/</loc>
@@ -114,7 +114,7 @@
     </url>
     <url>
         <loc>http://sbxfc.github.io/blog/2014/08/22/opengl-first-window/</loc>
-        <lastmod>2016-06-01T19:03:41+08:00</lastmod>
+        <lastmod>2016-09-21T16:02:22+08:00</lastmod>
     </url>
     <url>
         <loc>http://sbxfc.github.io/blog/2014/09/01/opengl-draw-thriangle/</loc>
@@ -134,7 +134,7 @@
     </url>
     <url>
         <loc>http://sbxfc.github.io/blog/2014/09/09/opengl-freeimage/</loc>
-        <lastmod>2015-11-03T11:52:08+08:00</lastmod>
+        <lastmod>2016-09-27T10:35:54+08:00</lastmod>
     </url>
     <url>
         <loc>http://sbxfc.github.io/blog/2014/09/11/opengl-texture-mapping/</loc>
@@ -353,16 +353,40 @@
         <lastmod>2016-08-02T19:10:20+08:00</lastmod>
     </url>
     <url>
+        <loc>http://sbxfc.github.io/blog/2016/09/13/objc-property/</loc>
+        <lastmod>2016-09-14T10:35:24+08:00</lastmod>
+    </url>
+    <url>
+        <loc>http://sbxfc.github.io/blog/2016/09/14/objc-modifiers/</loc>
+        <lastmod>2016-09-23T18:04:26+08:00</lastmod>
+    </url>
+    <url>
+        <loc>http://sbxfc.github.io/blog/2016/09/21/attribute-syntax/</loc>
+        <lastmod>2016-09-26T15:07:46+08:00</lastmod>
+    </url>
+    <url>
+        <loc>http://sbxfc.github.io/blog/2016/10/10/dns/</loc>
+        <lastmod>2016-10-18T15:40:59+08:00</lastmod>
+    </url>
+    <url>
+        <loc>http://sbxfc.github.io/blog/2016/10/17/unix-ps/</loc>
+        <lastmod>2016-10-18T12:31:26+08:00</lastmod>
+    </url>
+    <url>
+        <loc>http://sbxfc.github.io/blog/2016/11/01/wlan-stream-cipher/</loc>
+        <lastmod>2016-11-02T20:09:07+08:00</lastmod>
+    </url>
+    <url>
         <loc>http://sbxfc.github.io/about/</loc>
         <lastmod>2015-10-20T10:26:25+08:00</lastmod>
     </url>
     <url>
         <loc>http://sbxfc.github.io/blog/archives/</loc>
-        <lastmod>2016-08-17T17:10:47+08:00</lastmod>
+        <lastmod>2016-11-02T20:09:07+08:00</lastmod>
     </url>
     <url>
         <loc>http://sbxfc.github.io/</loc>
-        <lastmod>2016-08-17T17:10:47+08:00</lastmod>
+        <lastmod>2016-11-02T20:09:07+08:00</lastmod>
     </url>
     <url>
         <loc>http://sbxfc.github.io/robots.txt</loc>

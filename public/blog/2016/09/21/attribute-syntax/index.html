@@ -1,0 +1,355 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>GNU C 中的 __attribute__ 机制 - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="GNU C 中的 __attribute__ 机制 __attribute__ 机制 __attribute__ 是 GCC 提供的一种语法,可以帮助我们在编译时对声明的函数、变量和类型做一些特殊处理或者是检查操作。 __attribute__ 的语法格式为: __attribute__ (( &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="http://lib.sinaapp.com/js/jquery/2.0.3/jquery-2.0.3.min.js"></script>
+<link href='http://fonts.lug.ustc.edu.cn/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2016/09/21/attribute-syntax">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">GNU C 中的 __attribute__ 机制</h2>
+    
+  </header>
+
+  <div class="entry_content"><h1>__attribute__ 机制</h1>
+
+<p>__attribute__ 是 GCC 提供的一种语法,可以帮助我们在编译时对声明的函数、变量和类型做一些特殊处理或者是检查操作。</p>
+
+<p>__attribute__ 的语法格式为: <font color='#bd260d'><strong>__attribute__ ((attribute-list))</strong></font> , attribute-list 是指令集 , __attribute__ 出现在函数、变量和类型声明的 <font color='#bd260d'><strong>&ldquo;;&rdquo;</strong></font> 前。</p>
+
+<p>__attribute__ 有三类,分别为函数属性(Function Attribute) 、变量属性(Variable  Attribute) 和类型属性(Type  Attribute)</p>
+
+<h1>一,函数属性</h1>
+
+<p><font color='#bd260d'><strong>1. format (archetype, string-index, first-to-check)</strong></font></p>
+
+<p>format 属性通过指定 <em>printf, scanf, strftime</em> 或 <em>strfmon</em> 等方法来检测函数的参数是否同样适用于这些指定的格式化字符串方法,如果不适用,编译器在编译时的就会发出警告,从而发现错误。</p>
+
+<pre><code>extern int
+my_printf (int value, const char *my_format, ...)
+__attribute__ ((format (printf, 2, 3)));
+
+void foo()
+{
+    my_printf(0, "age = %d\n",17);
+    my_printf(0, "age = %d\n","17");
+    my_printf(0, "age = %d name = %s\n",17,"sbxfc");
+}
+</code></pre>
+
+<p>上面示例中, format 属性的第一个参数指定了一个 printf 方法,第二个参数 string-index  表示函数 my_printf 里格式化参数是总参数的第几个,这里我们的格式化参数 <font color='#bd260d'><strong>my_format</strong></font> 是第2个参数,format 属性的第三个参数表示,参数集合 (<font color='#bd260d'><strong>&hellip;</strong></font>) 从函数 my_printf 的第几个参数开始出现。</p>
+
+<p>如无意外,上述示例在 gcc 编译时会提示以下警告信息:</p>
+
+<pre><code>$ gcc -c main.c
+main.c:12:31: warning: format specifies type 'int' but the argument has type
+  'char *' [-Wformat]
+my_printf(0, "age = %d\n","17");
+</code></pre>
+
+<p>去掉 __attribute__ 属性,该示例则不会提示错误,但运行时会出错。</p>
+
+<p><font color='#bd260d'><strong>2.  noreturn </strong></font></p>
+
+<p>noreturn 属性表示其指定的函数没有返回值,当编译器执行到这时,要面对现实,不要大惊小怪(~慌忙报错~)。下面是 fatal 的部分代码,在程序出错的位置调用 fatal 函数打印信息,然后直接退出程序,不需要 return。</p>
+
+<pre><code>void fatal () __attribute__ ((noreturn));
+
+void
+fatal (/* ... */)
+{
+  /* ... */ /* Print error message. */ /* ... */
+  exit (1);
+}
+</code></pre>
+
+<p><font color='#bd260d'><strong>3.  deprecated </strong></font></p>
+
+<p>deprecated 属性可以用来标识一个预计将会被弃用的函数,如果开发者使用该函数,编译时就会发出警告,并提示出错的行数。警告信息只会在开发者调用该函数时才会提示:</p>
+
+<pre><code>int old_fn () __attribute__ ((deprecated));
+int old_fn ();
+int (*fn_ptr)() = old_fn;
+</code></pre>
+
+<p>在上面示例中,只会在第3行提出警告:</p>
+
+<pre><code>main.c:7:19: warning: 'old_fn' is deprecated [-Wdeprecated-declarations]
+int (*fn_ptr)() = old_fn;
+                    ^
+main.c:6:5: note: 'old_fn' has been explicitly marked deprecated here
+int old_fn ();
+</code></pre>
+
+<p>deprecated 也可以用于<a href="https://gcc.gnu.org/onlinedocs/gcc-4.4.0/gcc/Variable-Attributes.html#Variable-Attributes">变量</a>和<a href="https://gcc.gnu.org/onlinedocs/gcc-4.4.0/gcc/Type-Attributes.html#Type-Attributes">类型</a>。</p>
+
+<p><font color='#bd260d'><strong> 4. constructor &amp; destructor</strong></font></p>
+
+<p>设置 constructor 属性可以使函数在 main 方法之前执行,而设置 destructor 可以使函数在 main 方法之后执行。</p>
+
+<pre><code>#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+__attribute__((constructor)) void before_func (){
+  printf("before \n");
+}
+
+__attribute__((destructor)) void after_func (){
+  printf("after \n");
+}
+
+int main(){
+  printf("main func \n");
+  return 0;
+}
+</code></pre>
+
+<p>不出意外,会看到以下输出:</p>
+
+<pre><code>$ gcc main.c
+$ ./a.out 
+before 
+main func 
+after   
+</code></pre>
+
+<p>constructor 、 destructor 函数也可以设置执行的优先级:</p>
+
+<pre><code>__attribute__((constructor(PRIORITY)))
+__attribute__((destructor(PRIORITY)))
+</code></pre>
+
+<h1>二,变量属性</h1>
+
+<p><font color='#bd260d'><strong> 1.  aligned (alignment) </strong></font></p>
+
+<p>aligned 属性让其指定的变量或结构体成员按 alignment 字节大小对齐。如果其中对齐长度有长度大于 alignment的,则按照最大对齐长度来对齐。</p>
+
+<pre><code>#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+//结构体的对齐值为8
+struct foo {
+  char a;
+  int x[2] __attribute__ ((aligned (8)));
+};
+
+int main(){
+  int s0 = sizeof(struct foo);
+  printf("s0 = %d\n",s0);//print s0 = 16
+  return 0;
+}
+</code></pre>
+
+<p><font color='#bd260d'><strong> 2.  packed </strong></font></p>
+
+<p>packed 属性用于设置变量或结构体成员以最小的对齐方式对齐。</p>
+
+<p>在下面的结构体中,由于 x 已经使用 packed 进行对齐,所以此时结构体以 a 的size来对齐:</p>
+
+<pre><code>#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+struct foo{
+  char a;
+  int x[2] __attribute__ ((packed));
+};
+
+int main(){
+  int s0 = sizeof(struct foo);
+  printf("s0 = %d\n",s0);//print s0 = 9
+  return 0;
+}
+</code></pre>
+
+<h1>三,类型属性</h1>
+
+<p><font color='#bd260d'><strong> 1. packed </strong></font></p>
+
+<p>如果 packed 属性用在 struct 或 union 上,表示该结构的成员变量按照紧凑模式对齐,即以变量的实际占用字节对齐,不用编译器进行优化对齐。如果用在 enum 上,则表示使用最小的整数来存储枚举类型。</p>
+
+<pre><code>#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+struct my_unpacked_struct{
+  char c;
+  int i;
+};
+
+struct __attribute__ ((__packed__)) my_packed_struct {
+   char c;
+   int  i;
+   struct my_unpacked_struct s;
+};
+
+int main(){
+  int s0 = sizeof(struct my_unpacked_struct);
+  int s1 = sizeof(struct my_packed_struct);
+  printf("s0 = %d,s1 = %d\n",s0,s1);//print s0 = 8,s1 = 13
+  return 0;
+}
+</code></pre>
+
+<h1>参见</h1>
+
+<ul>
+<li><a href="https://gcc.gnu.org/onlinedocs/gcc/Attribute-Syntax.html">https://gcc.gnu.org/onlinedocs/gcc/Attribute-Syntax.html</a></li>
+<li><a href="https://gcc.gnu.org/onlinedocs/gcc-4.4.0/gcc/Function-Attributes.html">https://gcc.gnu.org/onlinedocs/gcc-4.4.0/gcc/Function-Attributes.html</a></li>
+<li><a href="https://gcc.gnu.org/onlinedocs/gcc-4.4.0/gcc/Variable-Attributes.html#Variable-Attributes">https://gcc.gnu.org/onlinedocs/gcc-4.4.0/gcc/Variable-Attributes.html#Variable-Attributes</a></li>
+<li><a href="https://gcc.gnu.org/onlinedocs/gcc-4.4.0/gcc/Type-Attributes.html#Type-Attributes">https://gcc.gnu.org/onlinedocs/gcc-4.4.0/gcc/Type-Attributes.html#Type-Attributes</a></li>
+<li><a href="http://blog.zhangjikai.com/2015/11/28/%E3%80%90C%E3%80%91alignment/">http://blog.zhangjikai.com/2015/11/28/%E3%80%90C%E3%80%91alignment/</a></li>
+<li><a href="http://www.jianshu.com/p/6153eccdbe62">http://www.jianshu.com/p/6153eccdbe62</a></li>
+<li><a href="http://blog.wangruofeng007.com/blog/2016/01/13/attribute/">http://blog.wangruofeng007.com/blog/2016/01/13/attribute/</a></li>
+<li><a href="http://unixwiz.net/techtips/gnu-c-attributes.html">http://unixwiz.net/techtips/gnu-c-attributes.html</a></li>
+</ul>
+
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2016-09-21 18:31:09 +0800" pubdate>Sep 21<span>st</span>, 2016</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2016 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2016/09/21/attribute-syntax';
+	var disqus_url = 'http://sbxfc.github.io/blog/2016/09/21/attribute-syntax';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

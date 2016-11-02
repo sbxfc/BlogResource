@@ -1,0 +1,252 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>关于属性和成员变量的疑惑 - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="关于属性和成员变量的疑惑 成员变量和属性 在objc里变量有两种写法，一种是以 @property 形式声明的属性,另一种是定义在大括号里 (@interface :NSObject{} )的成员变量( instance variable )。 @interface MyObject : &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="http://lib.sinaapp.com/js/jquery/2.0.3/jquery-2.0.3.min.js"></script>
+<link href='http://fonts.lug.ustc.edu.cn/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2016/09/13/objc-property">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">关于属性和成员变量的疑惑</h2>
+    
+  </header>
+
+  <div class="entry_content"><h1>成员变量和属性</h1>
+
+<p>在objc里变量有两种写法，一种是以 <font color='#bd260d'><strong>@property</strong></font> 形式声明的属性,另一种是定义在大括号里 (<font color='#bd260d'><strong>@interface :NSObject{}</strong></font> )的成员变量( <font color='#bd260d'><strong>instance variable</strong></font> )。</p>
+
+<pre><code>@interface MyObject : NSObject {
+    NSInteger memberVar; // 成员变量
+}
+
+@property NSInteger value; // 属性
+
+@end
+</code></pre>
+
+<p>这两者有什么区别呢?</p>
+
+<p>从设计的角度上来讲, @property 方式声明的属性,主要是用来暴露给外部访问用的。而成员变量( instance variable )是内部变量,主要用作内部使用,外部无法访问。</p>
+
+<p>需要留意的是,成员变量既可以在 <font color='#bd260d'><strong>@interface :NSObject{}</strong></font> 里声明,也可以在 <font color='#bd260d'><strong>@Implementation :NSObject{}</strong></font> 里声明。在 <font color='#bd260d'><strong>@Interface</strong></font> 区域声明的成员变量默认权限是protected,能被被子类访问,而在 <font color='#bd260d'><strong>@implementation</strong></font>里声明的成员变量权限是private。在 <font color='#bd260d'><strong>@implementation</strong></font> 里定义私有成员变量更符合面向对象的封装原则,因为此类别的信息不会暴露于公开的interface中。</p>
+
+<p>成员变量和属性在访问时也有所不同,属性可以用<font color='#bd260d'><strong>点表达式(.)</strong></font> 来访问(<font color='#bd260d'><strong>self.name</strong></font>),而成员变量,因为是内部变量可以直接使用变量名(<font color='#bd260d'><strong>name</strong></font>)访问或者通过<font color='#bd260d'><strong>右箭头(&ndash;>)</strong></font>来访问(<font color='#bd260d'><strong>self->name</strong></font>)。</p>
+
+<h1>属性的声明</h1>
+
+<p>经常看到有的人用 <font color='#bd260d'><strong>@property</strong></font>声明了属性,又在<font color='#bd260d'><strong>@interface</strong></font>里定义了相同的成员变量。</p>
+
+<pre><code>@interface MyObject : NSObject{
+    NSInteger value;
+}
+
+@property NSInteger value;
+@end
+</code></pre>
+
+<p>首先应当了解一下 @property 的用法。当我们用 @property （和 @synthsize) 声明一个属性时,在 .h 文件里 @property会让编译器帮我们创建两个存取方法的声明:</p>
+
+<pre><code>- (NSInteger)propertyName;      
+- (void)setPropertyName:(NSInteger)value;
+</code></pre>
+
+<p>而在 .m 文件里, <font color='#bd260d'><strong>@synthesize propertyName</strong></font> 会告诉编译器,帮我们创建这两个声明的实现函数,并且以 propertyName 命名该属性的成员变量。</p>
+
+<pre><code>- (void)setPropertyName:(NSInteger)value{   
+    propertyName  =  value;
+}
+
+- (NSInteger)propertyName{
+    return  propertyName;
+}
+</code></pre>
+
+<p>因此,在使用 @property （和 @synthsize) 声明属性时,编译器帮我们生成读写方法的同时,也会自动创建一个成员变量,不需要我们手动去创建。</p>
+
+<p>假如,我们不想使用现有的属性名作为成员变量名,我们可以将 <font color='#bd260d'><strong>@synthesize propertyName</strong></font> 改为 <font color='#bd260d'><strong>@synthsize propertyName = xxx</strong></font>  的形式,这样我们的成员变量就变成了 <font color='#bd260d'><strong>xxx</strong></font>。Xcode4.5 以后,如果我们没有写 @synthsize ,系统会为我们自动生成一个 @synthsize 并指定一个以下划线 ( <font color='#bd260d'><strong>_</strong></font> ) 为前缀,加上属性名的成员变量,即  <font color='#bd260d'><strong>@synthsize propertyName = _propertyName</strong></font> 。</p>
+
+<h1>.h和.m文件</h1>
+
+<p>在objc里,类的定义（interface）与实现（implementation）被分成了两个部分。我们知道在 @interface 里面定义的属性和函数主要用于外部访问,但是这里有一个的前提条件:</p>
+
+<pre><code>//MyObject.h
+@interface MyObject : NSObject{
+    NSInteger memberVar1;
+}
+
+@end
+
+//MyObject.m
+@interface MyObject(){
+    NSInteger memberVar2;
+}
+
+@end
+</code></pre>
+
+<p>在上面的 .h 和 .m文件里的两个 @interface 定义区域里,我们分辨创建了两个成员变量 memberVar1 和 memberVar2。其中在 .h 里面写的成员变量会暴露出来,而在 .m里写的变量外界是看不到的,也不能访问。</p>
+
+<p>当我们在子类里访问该类的成员变量时,只能看到暴露出来的memberVar1。</p>
+
+<p><img src="/images/2016/9/tmp799c4889.png" alt="" /></p>
+
+<p><font color='#bd260d'><strong>所有定义在 .m文件里的变量和函数,无论是 @interface 还是 @implementation ,外界是无法访问的。</strong></font></p>
+
+<h1>参见</h1>
+
+<ul>
+<li><a href="https://zh.wikipedia.org/wiki/Objective-C">https://zh.wikipedia.org/wiki/Objective-C</a></li>
+<li><a href="http://www.cnblogs.com/letmefly/archive/2012/07/20/2601338.html">http://www.cnblogs.com/letmefly/archive/2012/07/20/2601338.html</a></li>
+<li><a href="http://www.devtalking.com/articles/you-should-to-know-property/">http://www.devtalking.com/articles/you-should-to-know-property/</a></li>
+</ul>
+
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2016-09-13 10:03:20 +0800" pubdate>Sep 13<span>th</span>, 2016</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2016 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2016/09/13/objc-property';
+	var disqus_url = 'http://sbxfc.github.io/blog/2016/09/13/objc-property';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

@@ -4,7 +4,7 @@
   <title><![CDATA[sbxfc]]></title>
   <link href="http://sbxfc.github.io/atom.xml" rel="self"/>
   <link href="http://sbxfc.github.io/"/>
-  <updated>2016-08-18T17:35:39+08:00</updated>
+  <updated>2016-11-02T20:09:23+08:00</updated>
   <id>http://sbxfc.github.io/</id>
   <author>
     <name><![CDATA[sbxfc]]></name>
@@ -12,6 +12,877 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[WLAN密钥流解密]]></title>
+    <link href="http://sbxfc.github.io/blog/2016/11/01/wlan-stream-cipher/"/>
+    <updated>2016-11-01T16:10:22+08:00</updated>
+    <id>http://sbxfc.github.io/blog/2016/11/01/wlan-stream-cipher</id>
+    <content type="html"><![CDATA[<h1>解密操作</h1>
+
+<blockquote><p>使用工具 Wireshark 和 Aircrack-ng</p></blockquote>
+
+<p>首先,打开 Wireshark 并监听无线网接口。如果已开启WIFI,这时候就可以看到许多杂乱无章的捕获数据。</p>
+
+<p>我们进行一下过滤,通过过滤 Beacon帧来寻找WIFI热点(Access Point,简称AP)。Beacon 是由热点发出的,用于告知设备自己的存在的数据帧。Beacon 是管理帧 type=00 (即0x00),并且 subtype=1000(即0x08):</p>
+
+<p><img src="http://sbxfc.github.io/images/2016/10/tmp75c54425.png" alt="ws" /></p>
+
+<p>选择一个WIFI热点,然后点击查看其帧信息,并记录下MAC地址。(看名称可知,这是一个苹果的网卡接口,是一台开着共享的Mac电脑):</p>
+
+<p><img src="http://sbxfc.github.io/images/2016/10/tmp11983903.png" alt="ws" /></p>
+
+<p>接着,我们以这个MAC地址线索再寻找一个与其相连的设备。(这个设备是我的iPad,因为之前获得过这个WIFI的密码,所以我把iPad的完整MAC地址隐藏掉了)</p>
+
+<p><img src="http://sbxfc.github.io/images/2016/10/tmp0a502955.png" alt="ws" /></p>
+
+<p>在得到设备和热点的MAC地址后,我们就可以通过一些工具尝试让他们解除认证,然后抓取他们重连时的认证信息。这里,我用了之前自己写的小工具:</p>
+
+<p><a href="https://github.com/sbxfc/wlan-macos/tree/master/deauth">https://github.com/sbxfc/wlan-macos/tree/master/deauth</a></p>
+
+<pre><code>$ make
+$ ./deauth en1 -s xx:xx:xx:xx:b0:73 -a c8:e0:eb:58:34:bd --rate 1 - number 10
+</code></pre>
+
+<p>在运行上面的示例之前,要确保你的 Wireshark 正在处于抓包状态。执行后,如果发现捕获到了四次握手数据就可以停止Wireshark了,如果没有那就再来一次。</p>
+
+<p><img src="http://sbxfc.github.io/images/2016/10/tmp2c8e7312.png" alt="ws" /></p>
+
+<p>在成功捕获握手数据之后,将捕获数据进行保存（Wireshark->文件->另存为）。然后打开 Aircrack-ng 对数据进行解密。 Aircrack-ng 实际上是通过现有的密码字典通过PRG算法生成密钥流与加密后的流进行一系列的比对,从而找到正确的密码值。也就是说,如果你的WiFi密码设置的越复杂也就越难以破解。</p>
+
+<p>在使用 Aircrack-ng 对数据流进行解密时,我们需要一个密码字典,你可以从网上下一个常用的密码字典。在确定设备上安装  Aircrack-ng 之后,就可以在终端下开始解密了:</p>
+
+<pre><code>aircrack-ng -w /Volumes/sbxfc/pwd_dic/破解字典/wordlist/wordlist.txt /Users/sbxfc/Downloads/tmp.pcap
+</code></pre>
+
+<p>在运行之后,程序会询问你选择哪一个目标,一般是第一个,后面标识 handshake。输入序列号,然后回车。由于我选择的WIFI热点密码太过简单,回车之后立刻就返回结果了:</p>
+
+<p><img src="http://sbxfc.github.io/images/2016/10/tmp53ad4572.png" alt="ws" /></p>
+
+<h1>四次握手</h1>
+
+<p>802.11i 中的 RSN（Robust Security Network）定义了在无线网络下的一个安全的连接流程。这个流程也就是 RSNA（Robust Security Network Association）,定义了认证、加密以及密钥管理。</p>
+
+<p>STA 通过 802.1x 的认证后,AP 与 STA 都会拿到同一组 session key。有RADIUS(认证服务器)时称为 PMK(Pairwise Master Key),无 RADIUS 时 PSK(Pre-Shared Key) 即PMK。之后进行 4-way handshake。</p>
+
+<blockquote><p>在没有RADIUS时,AP 与 STA 会预先设定好一组passphrase,并用来衍生出PMK。</p></blockquote>
+
+<p>对于网络安全而言,key愈少愈好。因此 4-way handshake 用来建立 512 bits的PTK(Pairwise Transient Key)。PTK 由 PMK,AP Nonce,STA Nonce,AP&#8217;MAC,STA&#8217;MAC生成。4-way handshake 也会产生GTK（Group Temporal Key）,用来解密 multicast和broadcast traffic。这个GTK是所有STA公用一个key。</p>
+
+<p><img src="http://sbxfc.github.io/images/2016/10/tmp13152092.png" alt="4-handshake" /></p>
+
+<ol>
+<li>AP 发送 ANonce 至 STA。</li>
+<li>STA 收到后,用 ANonce 和已知信息生成PTK,并通过PTK中的KCK生成检验码MIC,附上SNonce 发送至 AP。</li>
+<li>AP 收到后也生成 PTK,然后用PTK中的KCK部分对MIC进行校验。成功,则发送GTK和MIC至STA。</li>
+<li>STA 答复。</li>
+</ol>
+
+
+<p>WPA1 TKIP的 PTK 长度512bits,WPA2 CCMP的PTK长度为384bits。其中,TMK1 和 TMK2 只用在 TKIP 加密data时。</p>
+
+<table>
+<thead>
+<tr>
+<th>区域 </th>
+<th> 简称 </th>
+<th> 长度</th>
+<th> 名称 </th>
+<th> 用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0-127   </td>
+<td> KCK  </td>
+<td> 128 bits</td>
+<td> EAPOL-Key Confirmation Key</td>
+<td> 计算WPA EAPOL key message 的MIC</td>
+</tr>
+<tr>
+<td>128-255  </td>
+<td> KEK  </td>
+<td> 128 bits</td>
+<td> EAPOL-Key Encryption Key</td>
+<td> 加密额外要送给STA的data,如 GTK or RSN IE</td>
+</tr>
+<tr>
+<td>256-383  </td>
+<td> TEK </td>
+<td> 128 bits</td>
+<td> Temporal Encryption Key</td>
+<td> 解密unicast packets</td>
+</tr>
+<tr>
+<td>384-447  </td>
+<td> TMK1  </td>
+<td> 64 bits</td>
+<td> Temporal AP Tx MIC Key</td>
+<td> 计算AP 发送的unicast packet的MIC</td>
+</tr>
+<tr>
+<td>448-511  </td>
+<td> TMK2  </td>
+<td> 64 bits</td>
+<td> Temporal AP Rx MIC Key</td>
+<td> 计算STA 发送的unicast packet的MIC</td>
+</tr>
+</tbody>
+</table>
+
+
+<p>生成PTK算法:</p>
+
+<p>首先使用PBKDF2（Password-Based Key Derivation Function 2）算法生成一个32字节的PMK key，该算法需要执行4096*2轮,同时由于使用了SSID（0-32字符）进行salt。</p>
+
+<pre><code> PMK = PBKDF2(HMAC−SHA1, pwd, ssid, 4096, 256)
+</code></pre>
+
+<p>PTK使用PRF-512（pseudo random functions 512bits）算法产生，通过PMK、固定字符串、AP_Mac、Sta_Mac、ANonce、SNonce六个输入参数得到一个512 bits的PTK。</p>
+
+<pre><code> PTK = PRF-512(PMK, “Pairwise key expansion”, Min(AP_Mac, Sta_Mac) ||Max(AP_Mac, Sta_Mac) || Min(ANonce, SNonce) || Max(ANonce, SNonce))
+</code></pre>
+
+<p>生成MIC算法:</p>
+
+<pre><code>//WAP1
+MIC = HMAC(EVP_sha1(), KCK, 16, eapol_data，eapol_size) 
+//WAP2
+MIC = HMAC(EVP_md5(), KCK, 16, eapol_data，eapol_size)
+</code></pre>
+
+<h1>解密原理</h1>
+
+<p><img src="http://sbxfc.github.io/images/2016/10/142303547147.png" alt="4-handshake" /></p>
+
+<p>破解时,利用我们字典中 PSK 和 ssid 生成PMK。</p>
+
+<p>然后结合已知的MAC，AP的BSSID，A-NONCE，S-NONCE计算出PTK。</p>
+
+<p>然后加上原始的报文数据算出MIC,并与AP发送的MIC比较。如果一致，那么该PSK就是密钥。</p>
+
+<h1>参见</h1>
+
+<ul>
+<li><a href="https://zh.wikipedia.org/wiki/%E6%B5%81%E5%8A%A0%E5%AF%86">https://zh.wikipedia.org/wiki/%E6%B5%81%E5%8A%A0%E5%AF%86</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[查看类UNIX系统下的进程]]></title>
+    <link href="http://sbxfc.github.io/blog/2016/10/17/unix-ps/"/>
+    <updated>2016-10-17T16:52:11+08:00</updated>
+    <id>http://sbxfc.github.io/blog/2016/10/17/unix-ps</id>
+    <content type="html"><![CDATA[<h1>ps</h1>
+
+<p>ps程序 ( process status 的简称) 是类Unix系统下用来查看系统进程的命令。在终端里,不带参数运行时,该命令显示与当前登陆用户相关的bash命令:</p>
+
+<pre><code>$ps
+ PID  TTY        TIME    CMD
+ 6122 ttys003    0:00.25 -bash
+ 6356 ttys003    0:00.01 /Users/sbxfc/...
+</code></pre>
+
+<p>如果添加 <font color='#bd260d'><strong>-l</strong></font> 参数,则会在此基础上显示更详细的信息:</p>
+
+<pre><code>$ps -l
+  UID  PID   PPID     F     CPU PRI NI SZ        RSS  WCHAN  S   ADDR TTY           TIME CMD
+  501  6122  6121     4006   0  31  0  2463084   3212 -      S   0    ttys003    0:00.26 -bash
+  501  6356     1     4006   0  31  0  2463148   3052 -      S   0    ttys003    0:00.01 /Users/sbxfc/...
+</code></pre>
+
+<p>如果是查看所有程序,通常会使用 <font color='#bd260d'><strong>aux</strong></font> 参数。其中 <font color='#bd260d'><strong>a</strong></font> 列出了一个终端上的所有进程,包括其他用户运行的,<font color='#bd260d'><strong>x</strong></font>列出所有没有控制终端的进程,<font color='#bd260d'><strong>u</strong></font> 添加了一列显示每个进程的控制用户。需要注意的是，为了提高兼容性，使用此语法时&#8221;aux&#8221; 前没有 &ldquo;&ndash;&rdquo; 。</p>
+
+<pre><code>$ps aux
+USER   PID   %CPU %MEM VSZ     RSS      TT  STAT STARTED   TIME COMMAND
+sbxfc  6105  12.1 1.1  3034064 141676  ??  S    4:55下午  5:00.59 /Applications/Google Chrome.app/Contents/...
+sbxfc  5813  5.6  0.5  2784956 62488   ??  S    3:47下午  0:35.94 /Applications/Utilities/Terminal.app/Contents
+sbxfc  261   4.6  1.8  3049408 223952  ??  S    9:55上午  19:03.62 /Applications/QQ.app/Contents/MacOS/QQ
+sbxfc  6552  2.5  0.2  2516792 22536   ??  S    6:34下午  0:00.35 /System/Library/Frameworks/CoreServices...
+...
+</code></pre>
+
+<h1>配合grep使用</h1>
+
+<p>ps 可以配合 grep 使用并擦出火花:</p>
+
+<pre><code>$ ps aux | grep chrome
+sbxfc 6720   0.0  0.0  2434840    772 s001  S+    7:01下午   0:00.00 grep chrome
+</code></pre>
+
+<h1>其他有用参数</h1>
+
+<p>指定用户运行的进程:</p>
+
+<pre><code>$ ps -u sbxfc
+</code></pre>
+
+<h1>对应列名</h1>
+
+<table>
+<thead>
+<tr>
+<th>列名  </th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td> %CPU</td>
+<td>  进程正在使用多少个CPU</td>
+</tr>
+<tr>
+<td> %MEM</td>
+<td>  进程正在使用多少内存</td>
+</tr>
+<tr>
+<td>ADDR    </td>
+<td>进程的内存地址</td>
+</tr>
+<tr>
+<td>C或CP</td>
+<td> CPU使用率和调度信息</td>
+</tr>
+<tr>
+<td>COMMAND*    </td>
+<td>进程名，包括参数（如果有的话）</td>
+</tr>
+<tr>
+<td>NI  </td>
+<td>nice值</td>
+</tr>
+<tr>
+<td>F   </td>
+<td>标志</td>
+</tr>
+<tr>
+<td>PID </td>
+<td>进程ID</td>
+</tr>
+<tr>
+<td>PPID    </td>
+<td>父进程ID</td>
+</tr>
+<tr>
+<td>PRI </td>
+<td>进程优先级</td>
+</tr>
+<tr>
+<td>RSS </td>
+<td>真实内存用量</td>
+</tr>
+<tr>
+<td>S or STAT   </td>
+<td>进程状态码</td>
+</tr>
+<tr>
+<td>START or STIME  </td>
+<td>进程启动时间</td>
+</tr>
+<tr>
+<td>SZ  </td>
+<td>虚拟内存用量</td>
+</tr>
+<tr>
+<td>TIME    </td>
+<td>总CPU用量</td>
+</tr>
+<tr>
+<td>TT或TTY    </td>
+<td>与进程相关的终端</td>
+</tr>
+<tr>
+<td>UID或USER  </td>
+<td>进程所有者的用户名</td>
+</tr>
+<tr>
+<td>WCHAN   </td>
+<td>进程所等待事件的内存地址</td>
+</tr>
+</tbody>
+</table>
+
+
+<h1>参见</h1>
+
+<ul>
+<li><a href="https://zh.wikipedia.org/wiki/Ps_(Unix)">https://zh.wikipedia.org/wiki/Ps_(Unix)</a></li>
+<li><a href="https://www.ibm.com/support/knowledgecenter/zh/ssw_aix_72/com.ibm.aix.cmds4/ps.htm">https://www.ibm.com/support/knowledgecenter/zh/ssw_aix_72/com.ibm.aix.cmds4/ps.htm</a></li>
+<li><a href="http://linux.vbird.org/linux_basic/0440processcontrol.php#process_1">http://linux.vbird.org/linux_basic/0440processcontrol.php#process_1</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[DNS查询工具 ]]></title>
+    <link href="http://sbxfc.github.io/blog/2016/10/10/dns/"/>
+    <updated>2016-10-10T11:15:36+08:00</updated>
+    <id>http://sbxfc.github.io/blog/2016/10/10/dns</id>
+    <content type="html"><![CDATA[<h1>DNS(Domain Name System 域名系统)</h1>
+
+<p>域名服务器常见记录类型列表:</p>
+
+<table>
+<thead>
+<tr>
+<th>代码</th>
+<th> 描述 </th>
+<th> 功能</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A </td>
+<td> 主机记录  </td>
+<td> 指定域名对应的主机IP地址。</td>
+</tr>
+<tr>
+<td>CNAME </td>
+<td> 别名记录  </td>
+<td> 可以将其他域名指向到A记录,这个别名可以是域名也可以是IP地址</td>
+</tr>
+<tr>
+<td>AAAA </td>
+<td> IPv6主机记录  </td>
+<td> 与A记录对应，用于将特定的域名映射到一个主机的IPv6地址。</td>
+</tr>
+<tr>
+<td>MX </td>
+<td> 邮件交互记录  </td>
+<td> 用于将以该域名为结尾的电子邮件指向对应的邮件服务器以进行处理。</td>
+</tr>
+<tr>
+<td>NS </td>
+<td> 名称服务器记录 </td>
+<td> 当前域下的DNS服务器。</td>
+</tr>
+</tbody>
+</table>
+
+
+<p><a href="https://zh.wikipedia.org/wiki/%E5%9F%9F%E5%90%8D%E4%BC%BA%E6%9C%8D%E5%99%A8%E8%A8%98%E9%8C%84%E9%A1%9E%E5%9E%8B%E5%88%97%E8%A1%A8">域名服务器记录类型列表</a></p>
+
+<h1>nslookup</h1>
+
+<p>nslookup 是一款非常有用的 DNS 查询工具,可以指定查询类型,可以查到DNS记录的生存时间,还可以指定使用哪个DNS服务器进行解析。</p>
+
+<p>查询指定域名的IP地址:</p>
+
+<pre><code>$ nslookup
+&gt; rungame.me
+Server:     114.114.114.114
+Address:    114.114.114.114#53
+
+Non-authoritative answer:
+rungame.me  canonical name = sbxfc.github.io.
+sbxfc.github.io canonical name = github.map.fastly.net.
+github.map.fastly.net   canonical name = prod.github.map.fastlylb.net.
+Name:   prod.github.map.fastlylb.net
+Address: 151.101.36.133
+&gt;exit
+</code></pre>
+
+<p>前面的 Server: 和 Address: 是你电脑所使用的DNS服务器地址,可以看出 rungame.me 的一个别名是 sbxfc.github.io 、github.map.fastly.net、prod.github.map.fastlylb.net 的别名,rungame.me对应的IP地址是 151.101.36.133。</p>
+
+<p>查询域名服务器:</p>
+
+<pre><code>$ nslookup
+&gt; set type=NS
+&gt; sina.com.cn
+Server:     114.114.114.114
+Address:    114.114.114.114#53
+
+Non-authoritative answer:
+sina.com.cn nameserver = ns4.sina.com.cn.
+sina.com.cn nameserver = ns2.sina.com.cn.
+sina.com.cn nameserver = ns1.sina.com.cn.
+sina.com.cn nameserver = ns3.sina.com.cn.
+
+Authoritative answers can be found from:
+&gt;exit
+</code></pre>
+
+<p>通过指定DNS服务器来查询域名的IP:</p>
+
+<pre><code>$ nslookup - 8.8.8.8
+&gt; 163.com
+Server:     8.8.8.8
+Address:    8.8.8.8#53
+
+Non-authoritative answer:
+Name:   163.com
+Address: 123.58.180.8
+Name:   163.com
+Address: 123.58.180.7
+&gt;exit
+</code></pre>
+
+<p>当然也可以写成这种形式:</p>
+
+<pre><code>$ nslookup 163.com 8.8.8.8
+</code></pre>
+
+<p>查看邮件服务器:</p>
+
+<pre><code>$ nslookup
+&gt; set type=MX
+&gt; 163.com
+Server:     114.114.114.114
+Address:    114.114.114.114#53
+
+Non-authoritative answer:
+163.com mail exchanger = 10 163mx01.mxmail.netease.com.
+163.com mail exchanger = 10 163mx02.mxmail.netease.com.
+163.com mail exchanger = 10 163mx03.mxmail.netease.com.
+163.com mail exchanger = 50 163mx00.mxmail.netease.com.
+
+Authoritative answers can be found from:
+&gt; set type=A
+&gt; 163mx01.mxmail.netease.com
+Server:     114.114.114.114
+Address:    114.114.114.114#53
+
+Non-authoritative answer:
+Name:   163mx01.mxmail.netease.com
+Address: 220.181.14.138
+Name:   163mx01.mxmail.netease.com
+Address: 220.181.14.137
+Name:   163mx01.mxmail.netease.com
+Address: 220.181.14.140
+Name:   163mx01.mxmail.netease.com
+Address: 220.181.14.142
+Name:   163mx01.mxmail.netease.com
+Address: 220.181.14.141
+Name:   163mx01.mxmail.netease.com
+Address: 220.181.14.143
+Name:   163mx01.mxmail.netease.com
+Address: 220.181.14.139
+Name:   163mx01.mxmail.netease.com
+Address: 220.181.14.135
+Name:   163mx01.mxmail.netease.com
+Address: 220.181.14.136
+</code></pre>
+
+<h1>查看顶级域信息</h1>
+
+<pre><code>$ nslookup - 8.8.8.8
+&gt; set type=ns
+&gt; me.
+Server:     8.8.8.8
+Address:    8.8.8.8#53
+
+Non-authoritative answer:
+me  nameserver = a0.cctld.afilias-nst.info.
+me  nameserver = a2.me.afilias-nst.info.
+me  nameserver = b0.cctld.afilias-nst.org.
+me  nameserver = b2.me.afilias-nst.org.
+me  nameserver = c0.cctld.afilias-nst.info.
+me  nameserver = d0.cctld.afilias-nst.org.
+me  nameserver = ns.nic.me.
+me  nameserver = ns2.nic.me.
+
+Authoritative answers can be found from:
+&gt; 
+</code></pre>
+
+<h1>dig</h1>
+
+<p>dig和nslookup的使用类似。</p>
+
+<pre><code>$ dig soa rungame.me
+
+; &lt;&lt;&gt;&gt; DiG 9.8.3-P1 &lt;&lt;&gt;&gt; soa rungame.me
+;; global options: +cmd
+;; Got answer:
+;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOERROR, id: 28257
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;rungame.me.            IN  SOA
+
+;; ANSWER SECTION:
+rungame.me.     600 IN  SOA f1g1ns1.dnspod.net. freednsadmin.dnspod.com. 1476082444 3600 180 1209600 180
+
+;; Query time: 371 msec
+;; SERVER: 114.114.114.114#53(114.114.114.114)
+;; WHEN: Mon Oct 10 18:42:26 2016
+;; MSG SIZE  rcvd: 105
+</code></pre>
+
+<h1>参见</h1>
+
+<ul>
+<li><a href="https://zh.wikipedia.org/wiki/%E5%9F%9F%E5%90%8D%E7%B3%BB%E7%BB%9F">https://zh.wikipedia.org/wiki/%E5%9F%9F%E5%90%8D%E7%B3%BB%E7%BB%9F</a></li>
+<li><a href="https://zh.wikipedia.org/wiki/MX%E8%AE%B0%E5%BD%95">https://zh.wikipedia.org/wiki/MX%E8%AE%B0%E5%BD%95</a></li>
+<li><a href="https://zh.wikipedia.org/wiki/%E5%9F%9F%E5%90%8D%E4%BC%BA%E6%9C%8D%E5%99%A8%E8%A8%98%E9%8C%84%E9%A1%9E%E5%9E%8B%E5%88%97%E8%A1%A8">https://zh.wikipedia.org/wiki/%E5%9F%9F%E5%90%8D%E4%BC%BA%E6%9C%8D%E5%99%A8%E8%A8%98%E9%8C%84%E9%A1%9E%E5%9E%8B%E5%88%97%E8%A1%A8</a></li>
+<li><a href="https://www.freebsd.org/doc/zh_CN.UTF-8/books/handbook/network-dns.html">https://www.freebsd.org/doc/zh_CN.UTF-8/books/handbook/network-dns.html</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[GNU C 中的 __attribute__ 机制]]></title>
+    <link href="http://sbxfc.github.io/blog/2016/09/21/attribute-syntax/"/>
+    <updated>2016-09-21T18:31:09+08:00</updated>
+    <id>http://sbxfc.github.io/blog/2016/09/21/attribute-syntax</id>
+    <content type="html"><![CDATA[<h1>__attribute__ 机制</h1>
+
+<p>__attribute__ 是 GCC 提供的一种语法,可以帮助我们在编译时对声明的函数、变量和类型做一些特殊处理或者是检查操作。</p>
+
+<p>__attribute__ 的语法格式为: <font color='#bd260d'><strong>__attribute__ ((attribute-list))</strong></font> , attribute-list 是指令集 , __attribute__ 出现在函数、变量和类型声明的 <font color='#bd260d'><strong>&ldquo;;&rdquo;</strong></font> 前。</p>
+
+<p>__attribute__ 有三类,分别为函数属性(Function Attribute) 、变量属性(Variable  Attribute) 和类型属性(Type  Attribute)</p>
+
+<h1>一,函数属性</h1>
+
+<p><font color='#bd260d'><strong>1. format (archetype, string-index, first-to-check)</strong></font></p>
+
+<p>format 属性通过指定 <em>printf, scanf, strftime</em> 或 <em>strfmon</em> 等方法来检测函数的参数是否同样适用于这些指定的格式化字符串方法,如果不适用,编译器在编译时的就会发出警告,从而发现错误。</p>
+
+<pre><code>extern int
+my_printf (int value, const char *my_format, ...)
+__attribute__ ((format (printf, 2, 3)));
+
+void foo()
+{
+    my_printf(0, "age = %d\n",17);
+    my_printf(0, "age = %d\n","17");
+    my_printf(0, "age = %d name = %s\n",17,"sbxfc");
+}
+</code></pre>
+
+<p>上面示例中, format 属性的第一个参数指定了一个 printf 方法,第二个参数 string-index  表示函数 my_printf 里格式化参数是总参数的第几个,这里我们的格式化参数 <font color='#bd260d'><strong>my_format</strong></font> 是第2个参数,format 属性的第三个参数表示,参数集合 (<font color='#bd260d'><strong>&hellip;</strong></font>) 从函数 my_printf 的第几个参数开始出现。</p>
+
+<p>如无意外,上述示例在 gcc 编译时会提示以下警告信息:</p>
+
+<pre><code>$ gcc -c main.c
+main.c:12:31: warning: format specifies type 'int' but the argument has type
+  'char *' [-Wformat]
+my_printf(0, "age = %d\n","17");
+</code></pre>
+
+<p>去掉 __attribute__ 属性,该示例则不会提示错误,但运行时会出错。</p>
+
+<p><font color='#bd260d'><strong>2.  noreturn </strong></font></p>
+
+<p>noreturn 属性表示其指定的函数没有返回值,当编译器执行到这时,要面对现实,不要大惊小怪(~慌忙报错~)。下面是 fatal 的部分代码,在程序出错的位置调用 fatal 函数打印信息,然后直接退出程序,不需要 return。</p>
+
+<pre><code>void fatal () __attribute__ ((noreturn));
+
+void
+fatal (/* ... */)
+{
+  /* ... */ /* Print error message. */ /* ... */
+  exit (1);
+}
+</code></pre>
+
+<p><font color='#bd260d'><strong>3.  deprecated </strong></font></p>
+
+<p>deprecated 属性可以用来标识一个预计将会被弃用的函数,如果开发者使用该函数,编译时就会发出警告,并提示出错的行数。警告信息只会在开发者调用该函数时才会提示:</p>
+
+<pre><code>int old_fn () __attribute__ ((deprecated));
+int old_fn ();
+int (*fn_ptr)() = old_fn;
+</code></pre>
+
+<p>在上面示例中,只会在第3行提出警告:</p>
+
+<pre><code>main.c:7:19: warning: 'old_fn' is deprecated [-Wdeprecated-declarations]
+int (*fn_ptr)() = old_fn;
+                    ^
+main.c:6:5: note: 'old_fn' has been explicitly marked deprecated here
+int old_fn ();
+</code></pre>
+
+<p>deprecated 也可以用于<a href="https://gcc.gnu.org/onlinedocs/gcc-4.4.0/gcc/Variable-Attributes.html#Variable-Attributes">变量</a>和<a href="https://gcc.gnu.org/onlinedocs/gcc-4.4.0/gcc/Type-Attributes.html#Type-Attributes">类型</a>。</p>
+
+<p><font color='#bd260d'><strong> 4. constructor &amp; destructor</strong></font></p>
+
+<p>设置 constructor 属性可以使函数在 main 方法之前执行,而设置 destructor 可以使函数在 main 方法之后执行。</p>
+
+<pre><code>#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+__attribute__((constructor)) void before_func (){
+  printf("before \n");
+}
+
+__attribute__((destructor)) void after_func (){
+  printf("after \n");
+}
+
+int main(){
+  printf("main func \n");
+  return 0;
+}
+</code></pre>
+
+<p>不出意外,会看到以下输出:</p>
+
+<pre><code>$ gcc main.c
+$ ./a.out 
+before 
+main func 
+after   
+</code></pre>
+
+<p>constructor 、 destructor 函数也可以设置执行的优先级:</p>
+
+<pre><code>__attribute__((constructor(PRIORITY)))
+__attribute__((destructor(PRIORITY)))
+</code></pre>
+
+<h1>二,变量属性</h1>
+
+<p><font color='#bd260d'><strong> 1.  aligned (alignment) </strong></font></p>
+
+<p>aligned 属性让其指定的变量或结构体成员按 alignment 字节大小对齐。如果其中对齐长度有长度大于 alignment的,则按照最大对齐长度来对齐。</p>
+
+<pre><code>#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+//结构体的对齐值为8
+struct foo {
+  char a;
+  int x[2] __attribute__ ((aligned (8)));
+};
+
+int main(){
+  int s0 = sizeof(struct foo);
+  printf("s0 = %d\n",s0);//print s0 = 16
+  return 0;
+}
+</code></pre>
+
+<p><font color='#bd260d'><strong> 2.  packed </strong></font></p>
+
+<p>packed 属性用于设置变量或结构体成员以最小的对齐方式对齐。</p>
+
+<p>在下面的结构体中,由于 x 已经使用 packed 进行对齐,所以此时结构体以 a 的size来对齐:</p>
+
+<pre><code>#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+struct foo{
+  char a;
+  int x[2] __attribute__ ((packed));
+};
+
+int main(){
+  int s0 = sizeof(struct foo);
+  printf("s0 = %d\n",s0);//print s0 = 9
+  return 0;
+}
+</code></pre>
+
+<h1>三,类型属性</h1>
+
+<p><font color='#bd260d'><strong> 1. packed </strong></font></p>
+
+<p>如果 packed 属性用在 struct 或 union 上,表示该结构的成员变量按照紧凑模式对齐,即以变量的实际占用字节对齐,不用编译器进行优化对齐。如果用在 enum 上,则表示使用最小的整数来存储枚举类型。</p>
+
+<pre><code>#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+struct my_unpacked_struct{
+  char c;
+  int i;
+};
+
+struct __attribute__ ((__packed__)) my_packed_struct {
+   char c;
+   int  i;
+   struct my_unpacked_struct s;
+};
+
+int main(){
+  int s0 = sizeof(struct my_unpacked_struct);
+  int s1 = sizeof(struct my_packed_struct);
+  printf("s0 = %d,s1 = %d\n",s0,s1);//print s0 = 8,s1 = 13
+  return 0;
+}
+</code></pre>
+
+<h1>参见</h1>
+
+<ul>
+<li><a href="https://gcc.gnu.org/onlinedocs/gcc/Attribute-Syntax.html">https://gcc.gnu.org/onlinedocs/gcc/Attribute-Syntax.html</a></li>
+<li><a href="https://gcc.gnu.org/onlinedocs/gcc-4.4.0/gcc/Function-Attributes.html">https://gcc.gnu.org/onlinedocs/gcc-4.4.0/gcc/Function-Attributes.html</a></li>
+<li><a href="https://gcc.gnu.org/onlinedocs/gcc-4.4.0/gcc/Variable-Attributes.html#Variable-Attributes">https://gcc.gnu.org/onlinedocs/gcc-4.4.0/gcc/Variable-Attributes.html#Variable-Attributes</a></li>
+<li><a href="https://gcc.gnu.org/onlinedocs/gcc-4.4.0/gcc/Type-Attributes.html#Type-Attributes">https://gcc.gnu.org/onlinedocs/gcc-4.4.0/gcc/Type-Attributes.html#Type-Attributes</a></li>
+<li><a href="http://blog.zhangjikai.com/2015/11/28/%E3%80%90C%E3%80%91alignment/">http://blog.zhangjikai.com/2015/11/28/%E3%80%90C%E3%80%91alignment/</a></li>
+<li><a href="http://www.jianshu.com/p/6153eccdbe62">http://www.jianshu.com/p/6153eccdbe62</a></li>
+<li><a href="http://blog.wangruofeng007.com/blog/2016/01/13/attribute/">http://blog.wangruofeng007.com/blog/2016/01/13/attribute/</a></li>
+<li><a href="http://unixwiz.net/techtips/gnu-c-attributes.html">http://unixwiz.net/techtips/gnu-c-attributes.html</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[iOS - Property的修饰词]]></title>
+    <link href="http://sbxfc.github.io/blog/2016/09/14/objc-modifiers/"/>
+    <updated>2016-09-14T14:11:45+08:00</updated>
+    <id>http://sbxfc.github.io/blog/2016/09/14/objc-modifiers</id>
+    <content type="html"><![CDATA[<h1>原子性</h1>
+
+<p><font color='#bd260d'><strong>nonatomic/atomic</strong></font>  是objc里有关属性原子操作的两种修饰词,其中 nonatomic 是非线程安全的,即不对 setter/getter 操作进行加锁,而 atomic 会对生成的 setter/getter 添加<font color='#bd260d'><strong>类似于</strong></font>下面这样的互斥锁操作:</p>
+
+<pre><code>- (void) setProperty:(property_type *) property {
+    @synchronized(self){
+        _property = property;
+    }
+}
+</code></pre>
+
+<p>尽管,Apple 可能会使用一些比 @synchronized 更加高级的互斥操作,但是由于 atomic 本身并不能保证已加锁的类和对象是 <font color='#bd260d'><strong>thread safe</strong></font> 的,并且 atomic 在加锁时会消耗一些系统资源,我们一般会用 nonatomic 来作为修饰词。</p>
+
+<p>需要注意的是,如果你没有在属性上键入 nonatomic 修饰词,编译器会把 atomic 当做默认修饰词( <a href="http://stackoverflow.com/questions/5168331/why-is-atomic-a-default-property-qualifier-in-objective-c-when-i-find-myself"><font color='#bd260d'><strong>吐槽看这里</strong></font></a> )。</p>
+
+<h1>读写权限</h1>
+
+<p><font color='#bd260d'><strong>readwrite/readonly</strong></font> 定义了属性的访问权限,其中 readwrite 是可读写,当你声明这个修饰词时,编译器会生成该属性的 setter/getter方法。readonly 为只读,当声明该属性时只会生成 getter 方法。</p>
+
+<p>假如你只声明了 readonly 权限,但自己手动实现了 setter 方法,该属性也会变成可读可写的(囧)。所有属性,如果未声明读写权限,编译器会以 readwrite 作为默认方式处理。</p>
+
+<h1>内存管理</h1>
+
+<p><font color='#bd260d'><strong>1.  strong/retain</strong></font> 在 MRC (Mannul Reference Counting) 时代,当我们想得到一个对象的控制权时,我们会对该对象进行 retain 操作。这样一来,该对象的引用次数就会增加1,即便在其他地方,该对象的其他指针被置为 nil 或者是被 release过一次。但由于其总引用次数没有减小至0,系统依旧不会释放该对象,不会出现 &ldquo;EXC_BAD_ACCESS&rdquo; 错误。</p>
+
+<pre><code>/**
+ * 使用retain标识属性的内存处理方式时,会在 setter 方法里,
+ * 对传入的对象进行引用计数加1的操作。
+ */
+-(void)setProperty:(property_type*)property{  
+     if ( _property != property){  
+          [_property release];  
+          _property = [property retain];  
+     }  
+}
+</code></pre>
+
+<p>进入 ARC (Auto Reference Counting) 时代,retain 被 strong 取代了。实际上,在ARC环境里,无论是使用 strong 还是 retain ,其作用是完全一致的, strong = retain 。但 ARC 环境里,因为编译器会帮我们自动处理 setter 和 getter 里的 retain 和 release 操作,这时用 strong 修饰词就显得更 ARC 的语意。</p>
+
+<p>在objc里,object 类型的属性默认内存处理方式是 strong,也就是说,即便你没有指明 object 属性内存修饰词时,系统会默认按照 strong 的方式处理该属性。而基本类型(int、float、double、NSInteger，CGFloat等) 的属性,其默认是以 <font color='#bd260d'><strong>assign</strong></font> 的方式处理的。</p>
+
+<p><font color='#bd260d'><strong>2.  assign/weak/unsafe_unretained</strong></font> 使用 assign 修饰的属性,在赋值时 setter 方法里进行的是简单的指针拷贝,并没有像 retain 或 strong 那样进行引用计数的增加。对于基本类型,由于其本身是由系统自动分配和管理的,不需要考虑内存问题,所以可以直接使用指针来赋值。但如果用 assign 修饰 object 属性,一旦属性指向的对象中的其中一个引用指针被为nil,系统就会回收该对象,由此会导致,当我们访问该 object 属性时出现 &ldquo;EXC_BAD_ACCESS&rdquo; 错误。</p>
+
+<p>对于 object 类型的属性,如果我们不想持有该属性指向的对象。我们可以使用 weak 修饰词,weak 修饰词和 assign 类似 ,唯一的区别是,当 weak 修饰的属性如果其指向对象的指针在别处被置为nil,导致该对象被释放,那么 weak 属性里的成员变量指针也会被置为nil,从而不会出现野指针的情况。(delegate 和 Outlet 一般用weak来声明。)。</p>
+
+<p>在ARC之前,我们通常用 assign 来修饰基本类型,而 unsafe_unretained 则通常用于“对象类型”,unsafe_unretained 与 assign 是等价的,在实际使用时 unsafe_unretained 修饰“基础类型”并不会报错 。进入ARC之后,我们用weak代替unsafe_unretained修饰“对象类型”。</p>
+
+<p><font color='#bd260d'><strong>3.  copy</strong></font> 与strong类似，但区别在于属性的成员变量是对传入对象的副本拥有所有权，而非对象本身。</p>
+
+<h1>参见</h1>
+
+<ul>
+<li><a href="http://stackoverflow.com/questions/5168331/why-is-atomic-a-default-property-qualifier-in-objective-c-when-i-find-myself">http://stackoverflow.com/questions/5168331/why-is-atomic-a-default-property-qualifier-in-objective-c-when-i-find-myself</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[关于属性和成员变量的疑惑]]></title>
+    <link href="http://sbxfc.github.io/blog/2016/09/13/objc-property/"/>
+    <updated>2016-09-13T10:03:20+08:00</updated>
+    <id>http://sbxfc.github.io/blog/2016/09/13/objc-property</id>
+    <content type="html"><![CDATA[<h1>成员变量和属性</h1>
+
+<p>在objc里变量有两种写法，一种是以 <font color='#bd260d'><strong>@property</strong></font> 形式声明的属性,另一种是定义在大括号里 (<font color='#bd260d'><strong>@interface :NSObject{}</strong></font> )的成员变量( <font color='#bd260d'><strong>instance variable</strong></font> )。</p>
+
+<pre><code>@interface MyObject : NSObject {
+    NSInteger memberVar; // 成员变量
+}
+
+@property NSInteger value; // 属性
+
+@end
+</code></pre>
+
+<p>这两者有什么区别呢?</p>
+
+<p>从设计的角度上来讲, @property 方式声明的属性,主要是用来暴露给外部访问用的。而成员变量( instance variable )是内部变量,主要用作内部使用,外部无法访问。</p>
+
+<p>需要留意的是,成员变量既可以在 <font color='#bd260d'><strong>@interface :NSObject{}</strong></font> 里声明,也可以在 <font color='#bd260d'><strong>@Implementation :NSObject{}</strong></font> 里声明。在 <font color='#bd260d'><strong>@Interface</strong></font> 区域声明的成员变量默认权限是protected,能被被子类访问,而在 <font color='#bd260d'><strong>@implementation</strong></font>里声明的成员变量权限是private。在 <font color='#bd260d'><strong>@implementation</strong></font> 里定义私有成员变量更符合面向对象的封装原则,因为此类别的信息不会暴露于公开的interface中。</p>
+
+<p>成员变量和属性在访问时也有所不同,属性可以用<font color='#bd260d'><strong>点表达式(.)</strong></font> 来访问(<font color='#bd260d'><strong>self.name</strong></font>),而成员变量,因为是内部变量可以直接使用变量名(<font color='#bd260d'><strong>name</strong></font>)访问或者通过<font color='#bd260d'><strong>右箭头(&ndash;>)</strong></font>来访问(<font color='#bd260d'><strong>self->name</strong></font>)。</p>
+
+<h1>属性的声明</h1>
+
+<p>经常看到有的人用 <font color='#bd260d'><strong>@property</strong></font>声明了属性,又在<font color='#bd260d'><strong>@interface</strong></font>里定义了相同的成员变量。</p>
+
+<pre><code>@interface MyObject : NSObject{
+    NSInteger value;
+}
+
+@property NSInteger value;
+@end
+</code></pre>
+
+<p>首先应当了解一下 @property 的用法。当我们用 @property （和 @synthsize) 声明一个属性时,在 .h 文件里 @property会让编译器帮我们创建两个存取方法的声明:</p>
+
+<pre><code>- (NSInteger)propertyName;      
+- (void)setPropertyName:(NSInteger)value;
+</code></pre>
+
+<p>而在 .m 文件里, <font color='#bd260d'><strong>@synthesize propertyName</strong></font> 会告诉编译器,帮我们创建这两个声明的实现函数,并且以 propertyName 命名该属性的成员变量。</p>
+
+<pre><code>- (void)setPropertyName:(NSInteger)value{   
+    propertyName  =  value;
+}
+
+- (NSInteger)propertyName{
+    return  propertyName;
+}
+</code></pre>
+
+<p>因此,在使用 @property （和 @synthsize) 声明属性时,编译器帮我们生成读写方法的同时,也会自动创建一个成员变量,不需要我们手动去创建。</p>
+
+<p>假如,我们不想使用现有的属性名作为成员变量名,我们可以将 <font color='#bd260d'><strong>@synthesize propertyName</strong></font> 改为 <font color='#bd260d'><strong>@synthsize propertyName = xxx</strong></font>  的形式,这样我们的成员变量就变成了 <font color='#bd260d'><strong>xxx</strong></font>。Xcode4.5 以后,如果我们没有写 @synthsize ,系统会为我们自动生成一个 @synthsize 并指定一个以下划线 ( <font color='#bd260d'><strong>_</strong></font> ) 为前缀,加上属性名的成员变量,即  <font color='#bd260d'><strong>@synthsize propertyName = _propertyName</strong></font> 。</p>
+
+<h1>.h和.m文件</h1>
+
+<p>在objc里,类的定义（interface）与实现（implementation）被分成了两个部分。我们知道在 @interface 里面定义的属性和函数主要用于外部访问,但是这里有一个的前提条件:</p>
+
+<pre><code>//MyObject.h
+@interface MyObject : NSObject{
+    NSInteger memberVar1;
+}
+
+@end
+
+//MyObject.m
+@interface MyObject(){
+    NSInteger memberVar2;
+}
+
+@end
+</code></pre>
+
+<p>在上面的 .h 和 .m文件里的两个 @interface 定义区域里,我们分辨创建了两个成员变量 memberVar1 和 memberVar2。其中在 .h 里面写的成员变量会暴露出来,而在 .m里写的变量外界是看不到的,也不能访问。</p>
+
+<p>当我们在子类里访问该类的成员变量时,只能看到暴露出来的memberVar1。</p>
+
+<p><img src="http://sbxfc.github.io/images/2016/9/tmp799c4889.png" alt="" /></p>
+
+<p><font color='#bd260d'><strong>所有定义在 .m文件里的变量和函数,无论是 @interface 还是 @implementation ,外界是无法访问的。</strong></font></p>
+
+<h1>参见</h1>
+
+<ul>
+<li><a href="https://zh.wikipedia.org/wiki/Objective-C">https://zh.wikipedia.org/wiki/Objective-C</a></li>
+<li><a href="http://www.cnblogs.com/letmefly/archive/2012/07/20/2601338.html">http://www.cnblogs.com/letmefly/archive/2012/07/20/2601338.html</a></li>
+<li><a href="http://www.devtalking.com/articles/you-should-to-know-property/">http://www.devtalking.com/articles/you-should-to-know-property/</a></li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[编译一个C程序]]></title>
@@ -1746,590 +2617,6 @@ Director::getInstance()-&gt;getVisibleOrigin()//可视区域起点
 <li><a href="http://www.cocos.com/doc/article/index?type=cocos2d-x&amp;url=/doc/cocos-docs-master/manual/framework/cocos2d-js/4-essential-concepts/4-4-resolution-policies/zh.md+">Cocos2d-JS的屏幕适配方案</a></li>
 </ul>
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[glm数学库]]></title>
-    <link href="http://sbxfc.github.io/blog/2015/10/29/glm/"/>
-    <updated>2015-10-29T11:56:31+08:00</updated>
-    <id>http://sbxfc.github.io/blog/2015/10/29/glm</id>
-    <content type="html"><![CDATA[<p>glm库是一个C++头文件形式的几何数学库,用于GLSL规范下的图形绘制。(OpenGL Mathematics (GLM) is a header only C++ mathematics library for graphics software based on the OpenGL Shading Language (GLSL) specifications.)</p>
-
-<p>下载glm库:<br>
-<a href="http://glm.g-truc.net/">http://glm.g-truc.net/</a><br>
-<a href="https://github.com/g-truc/glm/releases">https://github.com/g-truc/glm/releases</a></p>
-
-<p>如果使用Xcode,下载之后将解压后的glm文件夹路径(根目录)包含在Build Settings/Header Search Path里即可,使用时include相应的文件。</p>
-
-<p>示例如下:</p>
-
-<pre><code>#include &lt;glm/vec3.hpp&gt; // glm::vec3
-#include &lt;glm/vec4.hpp&gt; // glm::vec4
-#include &lt;glm/mat4x4.hpp&gt; // glm::mat4
-#include &lt;glm/gtc/matrix_transform.hpp&gt; // glm::translate, glm::rotate, glm::scale, glm::perspective
-glm::mat4 camera(float Translate, glm::vec2 const &amp; Rotate)
-{   
-    glm::mat4 Projection = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.f);
-    glm::mat4 View = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -Translate));
-    View = glm::rotate(View, Rotate.y, glm::vec3(-1.0f, 0.0f, 0.0f));
-    View = glm::rotate(View, Rotate.x, glm::vec3(0.0f, 1.0f, 0.0f));
-    glm::mat4 Model = glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
-    return Projection * View * Model;
-}
-</code></pre>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[WebSocket数据帧]]></title>
-    <link href="http://sbxfc.github.io/blog/2015/10/15/ccjs-websocket/"/>
-    <updated>2015-10-15T17:35:06+08:00</updated>
-    <id>http://sbxfc.github.io/blog/2015/10/15/ccjs-websocket</id>
-    <content type="html"><![CDATA[<p>WebSocket通过onmessage函数接收服务器返回的数据,其中evt.data的数据格式可能为String、ArrayBuffer或Blob三者之一。这个数据格式是由服务器返回数据里的数据帧的opcode决定的。</p>
-
-<p>所以,即便服务器返回的数据是byte或者char,如果opcode的值仍是文本类型,客户端还是会收到一个字符串。</p>
-
-<ul>
-<li><a href="https://w3c.github.io/websockets/#websocket">https://w3c.github.io/websockets/#websocket</a></li>
-<li><a href="http://www.cnblogs.com/fengyunlishi/archive/2013/05/10/3071893.html">http://www.cnblogs.com/fengyunlishi/archive/2013/05/10/3071893.html</a></li>
-</ul>
-
-
-<h1>代码:</h1>
-
-<p><a href="https://github.com/sbxfc/CocosJSWebSocket">https://github.com/sbxfc/CocosJSWebSocket</a></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[cocos2d-JS 初探]]></title>
-    <link href="http://sbxfc.github.io/blog/2015/10/09/ccjs-start/"/>
-    <updated>2015-10-09T18:21:41+08:00</updated>
-    <id>http://sbxfc.github.io/blog/2015/10/09/ccjs-start</id>
-    <content type="html"><![CDATA[<h1>锚点和坐标</h1>
-
-<p>Cocos引擎使用的是右手<a href="https://zh.wikipedia.org/wiki/%E7%AC%9B%E5%8D%A1%E5%84%BF%E5%9D%90%E6%A0%87%E7%B3%BB">笛卡尔坐标系</a>,相对于我们熟悉的标准屏幕坐标系,其坐标原点在屏幕的左下角。</p>
-
-<p>在Cocos里,显示对象以锚点(anchor)对齐。即一个sprite如果坐标设置为【0,0】并且锚点也是【0,0】的话,它的左下角就与屏幕的左下角对齐。但是默认情况下,非Layer对象的默认节点都是【0.5,0.5】。所以,如果没注意直接将坐标设置为【0,0】时,就会导致图片上半边和下半边出现在屏幕外。</p>
-
-<pre><code>var sprite  = cc.Sprite.create(res.bkg_image);
-sprite.anchorX = 0;
-sprite.anchorY = 0; 
-sprite.x = 0;
-sprite.y = 0;
-this.addChild(sprite);
-</code></pre>
-
-<h1>定位</h1>
-
-<p>cc.winSize表示游戏窗口大小,而cc.visibleRect表示游戏的可视区域。在有些情况下,游戏窗口大小并不等于显示区域大小。如果在屏幕上方显示一个文本或精灵推荐使用cc.visibleRect</p>
-
-<pre><code>var visibleRect = cc.visibleRect;
-var topLeft = visibleRect.topLeft;
-</code></pre>
-
-<h1>自定义事件</h1>
-
-<p>自定义事件的使用和JS、AS3类似,首先是建立一个事件监听器,并且设置相应的处理函数:</p>
-
-<pre><code>var listener = cc.EventListener.create({
-    event: cc.EventListener.CUSTOM,
-    eventName: "game_custom_event",
-    callback: function(event){
-        // 可以通过getUserData来设置需要传输的用户自定义数据
-        console.log("Custom event received : " + event.getUserData().toString());
-    }
-});
-cc.eventManager.addListener(listener, 1);
-</code></pre>
-
-<p>在触发事件的地方使用dispatchEvent抛出事件:</p>
-
-<pre><code>var event = new cc.EventCustom("game_custom_event");
-event.setUserData("Hello World");
-cc.eventManager.dispatchEvent(event);
-</code></pre>
-
-<p>其中,addListener函数的第二个参数可以填一个显示对象,也可以填一个数字。如果以显示对象为参数时,当该对象被回收则监听器也被移除。如果以数值为参数,该数值的大小决定了事件的优先级,数值越大则优先级越低。显示对象为参数的事件优先级为0 (ps.若一个以非显示对象为参数的addListener函数的第二个参数填0时,在一些情况下会出现问题)</p>
-
-<p>这些可以在官方文档里的<a href="http://www.cocos.com/doc/article/index?type=cocos2d-x&amp;url=/doc/cocos-docs-master/manual/framework/html5/v3/eventManager/zh.md">事件分发机制</a>中找到:</p>
-
-<ul>
-<li><a href="http://www.cocos.com/doc/article/index?type=cocos2d-x&amp;url=/doc/cocos-docs-master/manual/framework/html5/v3/eventManager/zh.md">http://www.cocos.com/doc/article/index?type=cocos2d-x&amp;url=/doc/cocos-docs-master/manual/framework/html5/v3/eventManager/zh.md</a></li>
-</ul>
-
-
-<h1>异步</h1>
-
-<p>有时候,在不增加新线程的情况下,可以使用分时处理的方式解决一些游戏里常见的卡顿问题。</p>
-
-<p>卡顿的原因在于一帧时间内处理的事情太多,需要很长时间才能切到下一帧,所以导致画面卡顿。如果我们可以将逻辑放在多帧里处理,这样就会好很多。</p>
-
-<p>ccjs里支持的异步方法:</p>
-
-<pre><code>cc.log("预备!");
-var NEXT_FRAME_TIME = 17;
-cc.async.parallel([
-    function (cb) {
-        setTimeout(function () {
-            cc.log("A说:异步大法好! 当前帧:" + cc.director.getTotalFrames());
-            cb();
-        }, NEXT_FRAME_TIME);
-    },
-    function (cb) {
-        cc.log("B说:异步大法好! 当前帧:" + cc.director.getTotalFrames());
-        cb();
-    }
-], function () {
-    cc.log("大家都说:异步大法好!");
-});
-</code></pre>
-
-<p>使用JSB在iOS设备上有如下输出:</p>
-
-<p><em>预备!<br>
-B说:异步大法好! 当前帧:22<br>
-A说:异步大法好! 当前帧:23<br>
-大家都说:异步大法好!</em></p>
-
-<p>在JS语言里有两个函数可以实现异步操作 setInterval 和 setTimeout</p>
-
-<ul>
-<li><a href="http://www.cocos.com/doc/article/index?type=cocos2d-x&amp;url=/doc/cocos-docs-master/manual/framework/html5/v3/cc-async/zh.md">http://www.cocos.com/doc/article/index?type=cocos2d-x&amp;url=/doc/cocos-docs-master/manual/framework/html5/v3/cc-async/zh.md</a></li>
-</ul>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[iOS - iOS9 键盘系统]]></title>
-    <link href="http://sbxfc.github.io/blog/2015/09/28/ios9kb/"/>
-    <updated>2015-09-28T18:29:52+08:00</updated>
-    <id>http://sbxfc.github.io/blog/2015/09/28/ios9kb</id>
-    <content type="html"><![CDATA[<p>我们知道,访问UIApplication的windows属性可以获取当前显示的所有非系统window。其中,在iOS9之前类型为UITextEffectWindow的window就是键盘窗口,结构大致如下:</p>
-
-<pre><code>windows = { UIWindow,UITextEffectWindow }
-</code></pre>
-
-<p>但在iOS9之后,新增了一个类型为 UIRemoteKeyboardWindow 的窗口用来显示键盘按钮,所以想获取键盘上的按钮,就需要得到UIRemoteKeyboardWindow</p>
-
-<pre><code>windows = { UIWindow,UITextEffectWindow,UIRemoteKeyboardWindow }
-</code></pre>
-
-<p>获取一个键盘窗口(swift):</p>
-
-<pre><code>internal var keyboardWindow: UIWindow? {
-    let windows = UIApplication.sharedApplication().windows
-    for window in windows {
-        let views = window.subviews
-        for subview in views{
-            let className = NSStringFromClass(subview.dynamicType)
-            if className == "UIKeyboard" {
-                return window
-            }
-        }
-    }
-
-    for window in windows.reverse() {
-        let className = NSStringFromClass(window.dynamicType)
-        if className == "UIRemoteKeyboardWindow" {
-            return window
-        }
-    }
-
-    //获取UITextEffectWindow
-    if windows.count &gt; 1 {
-        return windows.last!
-    }
-
-    //fail
-    return nil
-}
-</code></pre>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[字符集及编码]]></title>
-    <link href="http://sbxfc.github.io/blog/2015/07/29/character-encoding/"/>
-    <updated>2015-07-29T18:01:48+08:00</updated>
-    <id>http://sbxfc.github.io/blog/2015/07/29/character-encoding</id>
-    <content type="html"><![CDATA[<p>计算机是二进制设备,并且识别的数据也是二进制格式。我们常用的字符、数字或者标点最终都要被转化成二进制的形式。一个char类型的数字1在内存里的存储:</p>
-
-<pre><code>—————————————————
-|0|0|0|0|0|0|0|1|
-—————————————————
-</code></pre>
-
-<p>计算机处理二进制的形式的数据,但是我们使用计算机去工作或娱乐的时候很难追踪到二进制的影子。我们看到的是大量的文字、图片、甚至是影像等。这中间发生了什么呢？</p>
-
-<h1>前人的智慧</h1>
-
-<p>最初人们发明了无线电电报,并通过点(.)、划(&ndash;)和中间停顿将每个字符和标点符号彼此的发送出去。&#8221;滴&#8221; 和 &ldquo;嗒&rdquo; 分别代指点和划。比如字母‘X’对应的组合就是:</p>
-
-<pre><code>- . . -
-</code></pre>
-
-<p>单词之间使用小停顿,一个句子之间使用大停顿。这种把字符用可变长度的信号表示的编码方式称为莫尔斯电码。</p>
-
-<h1>ASCII</h1>
-
-<p>到了计算机时代,因为计算只识别&#8221;0&#8221;或&#8221;1&#8221;这两种数据,这很类似于莫尔斯电码里的点和划。于是,人们借鉴莫尔斯电码用8位的&#8221;0&#8221;和&#8221;1&#8221;的不同组合来表示英文中出现的26个小写字母、26个大些字母、英式符号、0-9的阿拉伯数字以及计算机终端的特殊动作,这就是ASCII码。</p>
-
-<p>大写的‘X’对应的ASCII码:</p>
-
-<pre><code>—————————————————
-|0|1|0|1|1|0|0|0|  = ‘X’
-—————————————————
-</code></pre>
-
-<p>字母&#8217;X&#8217;就是一个字符,而54个大小写字母、英式符号以及10个阿拉伯数字就是ASCII的字符集,&lsquo;0101 1000&#8217;这种八个字节的数据就是ASCII的编码。除此之外,还有几个概念。比如,还有一些概念:</p>
-
-<ul>
-<li>比特(bit) : 也可称为&#8221;位&#8221;,是计算机信息中的最小单位,是 binary digit(二进制数位)的缩写,指二进制中的一位。</li>
-<li>字节(byte): 计算机中信息计量的一种单位,一个位就代表&#8221;0&#8221;或&#8221;1&#8221;,每8个位(bit)组成一个字节(byte)</li>
-<li>字符(Character):文字与符号的总称,可以是各个国家的文字、标点符号、图形符号、数字等。</li>
-<li>字符集(Character
-Set):是多个字符的集合</li>
-<li>编码(Encoding):信息从一种形式或格式转换为另一种形式的过程</li>
-<li>字符编码(Character Encoding): 按照何种规则存储字符</li>
-</ul>
-
-
-<p>8位(bit)总共有2的8次方,256种不同的组合。而ASCII码只用到了128种,刚好占了后7位。</p>
-
-<h1>EASCII &amp; ANSI编码</h1>
-
-<p>最初计算机只在美国使用,这些字符显然足够用了。但是后来,计算机传到了欧洲各国,为了支持本国语言他们将后面128种没有使用到的字节编入本国的文字和符号。比如法国的 é 对应的编码为130(1000 0010)</p>
-
-<p>但是,这里又出现了新的问题。不同的国家有不同的字母,因此,哪怕它们都使用256个符号的编码方式,代表的字母却不一样。比如,
-130在法语编码中代表了é,在希伯来语编码中却代表了字母Gimel
-但是不管怎样,所有这些编码方式中,0&mdash;127表示的符号是一样的,不一样的只是128&mdash;255的这一段。
-EASCII由此应运而生,EASCII码比ASCII码扩充出来的符号包括表格符号、计算符号、希腊字母和特殊的拉丁符号。</p>
-
-<p>再后来,计算机传入了亚洲国家。对于像中国这样动辄几万个汉字字符的语言。使用ASCII码显示不行。于是中国国家标准总局在1981年,
-正式制订了中华人民共和国国家标准简体中文字符集,项目代号 <font color="#bd260d">GB2312</font> 或 <font color="#bd260d">GB2312-80</font>。</p>
-
-<p><img src="http://sbxfc.github.io/images/2015/8/th.jpeg" alt="" /></p>
-
-<p>其他国家和地区也制定了不同的标准,比如日本的<font color="#bd260d">JIS</font> 、香港和台湾的繁体中文 <font color="#bd260d">BIG5</font></p>
-
-<h1>Unicode</h1>
-
-<p>由于每个国家都各自定义自己的标准,但带来的结果就是谁也不懂对方的编码体系。于是,世界相关组织意识到了这个问题,并开始尝试制定统一的编码标准。最初尝试做这件事情的两个组织是<font color="#bd260d">国际标准化组织(ISO)</font>和<font color="#bd260d">统一码联盟</font>。国际标准化组织(ISO)及国际电工委员会(IEC)于1984年联合成立了<font
-color="#bd260d">ISO/IEC小组</font>(GB为国标汉语拼音的首字母),主要用于开发统一编码项目；
-而Xerox、Apple等软件制造商则于1988年组成了统一码联盟,用于开发统一码项目。两个组织都在编写统一字符集,但后来他们发现各自在做相同的工作,同时世界上也不需要两个不兼容的字符集,于是两个组织就此合并了双方的工作成果,
-并为创立一个单一编码表而协同工作。</p>
-
-<p>1991年,两个组织共同的工作成果Unicode 1.0正式发布。(最新的一个版本 是2014年6月15日发布的Unicode 7.0。)</p>
-
-<h1>ISO/IEC 8859</h1>
-
-<p>ISO/IEC小组在1984年成立后的第三年(即1987年)开始启动ISO 8859标准的编写,ISO
-8859是一系列8位字符集的标准,主要为世界各地的不同语言(除CJK)而单独编写的字符集,一共定义了15个字符集:</p>
-
-<ul>
-<li>ISO/IEC 8859-1:西欧语言</li>
-<li>ISO/IEC 8859-2:中欧语言</li>
-<li>ISO/IEC 8859-3:南欧语言</li>
-<li>ISO/IEC 8859-4:北欧语言</li>
-<li>ISO/IEC 8859-5:斯拉夫语</li>
-<li>ISO/IEC 8859-6:阿拉伯语</li>
-<li>ISO/IEC 8859-7:希腊语</li>
-<li>ISO/IEC 8859-8:希伯来语</li>
-<li>ISO/IEC 8859-9:土耳其语</li>
-<li>ISO/IEC 8859-10:北日耳曼语</li>
-<li>ISO/IEC 8859-11:泰语</li>
-<li>ISO/IEC 8859-13:波罗的语族</li>
-<li>ISO/IEC
-8859-14: 凯尔特语族</li>
-<li>ISO/IEC 8859-15:西欧语言,收录芬兰语字母和大写法语重音字母,以及欧元(€)符号</li>
-<li>ISO/IEC 8859-16 :东南欧语言,主要供罗马尼亚语使用,并加入欧元(€)符号</li>
-</ul>
-
-
-<p>其中ISO/IEC 8859-1至ISO/IEC
-8859-4四个项目早在1982年就已经编写出来,只不过是由ANSI与ECMA合作完成,并于1985年正式公布,ISO/IEC小组成立后,
-这一成果被其收录,并改名为ISO/IEC 8859 前四个项目。 大家其实发现以上15个字符集中并没有代号为&#8221;ISO/IEC 8859
--12&#8221;的字符集,据说-12号本来是预留给印度天城体梵文的,但后来却搁置了(阿三有了自己的编码－ISCII)。由于英语没有任何重音字母,
-故可使用以上十五个字符集中的任何一个来表示。</p>
-
-<h1>ISO/IEC 10646 / UCS</h1>
-
-<p>1993年,ISO/IEC 10646标准第一次发表,ISO/IEC 10646是ISO 646的扩展,定义了1个31位的字符集。ISO
-10646标准中定义的字符集为UCS,<font color="#bd260d">UCS是Universal Character
-Set的缩写,中文译作通用字符集。</font></p>
-
-<p>版本:</p>
-
-<ul>
-<li>ISO/IEC 10646-1:第一次发表于1993年,现在的公开版本是2000年发表的ISO/IEC 10646-1:2000。</li>
-<li>ISO/IEC 10646-2:在2001年发表。</li>
-</ul>
-
-
-<p>包含字符:</p>
-
-<p>最初的ISO 10646-1:1993的编码标准,即Unicode
-1.1,收录中国大陆、台湾、日本及韩国通用字符集的汉字共计20,902个,当然每个版本的Unicode标准的字符集所包含的字符数不尽相同,
-UCS包含了已知语言的所有字符,除了拉丁语、希腊语、斯拉夫语、希伯来语、阿拉伯语、亚美尼亚语、格鲁吉亚语,还包括中文、日文、韩文这样的方块文字,
-此外还包括了大量的图形、印刷、数学、科学符号。
-UCS给每个字符分配一个唯一的代码,并且赋予了一个正式的名字,通常在表示一个Unicode值的十六进制数的前面加上&#8221;U+&ldquo;,例如&#8221;U+0041&rdquo;
-代表字符&#8221;A&#8221;。</p>
-
-<p>编码方案:</p>
-
-<p>UCS仅仅是一个超大的字符集,关于UCS制定的编码方案有两种:UCS-2和UCS-4,<font color="#bd260d">Unicode默认以UCS-2编码。</font>
-顾名思义,UCS-2就是用两个字节编码,UCS-4就是用4个字节(实际上只用了31位,最高位必须为0)编码。那么UCS-
-2其实可以容纳的字符数为65536(2的16次方),而UCS-4可以容纳的字符数为2147483648(2的31次方)。其实对于UCS-
-2已经是完全够用了,基本可以包含世界所有国家的常用文字,如果需要考虑一些偏僻字,那么UCS-4则绝对可以满足了,
-21亿个字符哪怕是整个宇宙也够用了吧！</p>
-
-<h1>UTF-8</h1>
-
-<p>Unicode 诞生,随之而来的计算机网络也发展了起来,Unicode
-如何在网络上传输也是一个必须考虑的问题,于是在1992年,面向网络传输的UTF标准出现了。 UTF是Unicode Transformation
-Format的缩写,中文译作Unicode转换格式。其实我们从现在可以把Unicode看作是一个标准或组织,而UCS就是一个字符集,
-那么UCS在网络中的传输标准就是UTF了。
-前面提到了UCS的编码实现方式为UCS-2和UCS-4,即要么是每个字符为2个字节,要么是4个字节。
-如果一个仅包含基本7位ASCII字符的Unicode文件,每个字符都使用2字节的原Unicode编码传输,其第一字节的8位始终为0,
-这就造成了比较大的浪费。但是,聪明的人们发明了UTF-8,UTF-8采用可变字节编码,这样可以大大节省带宽,并增加网络传输效率。</p>
-
-<p>UTF-8使用1~4个字节表示一个符号,根据不同的符号而变化字节长度。UTF-8的编码规则很简单,只有二条:</p>
-
-<p>1）对于单字节的符号,字节的第一位设为0,后面7位为这个符号的unicode码。因此对于英语字母,UTF-8编码和ASCII码是相同的。 2.
-对于n字节的符号(n>1),第一个字节的前n位都设为1,第n+1位设为0,后面字节的前两位一律设为10。剩下的没有提及的二进制位,
-全部为这个符号的unicode码。</p>
-
-<p>下表总结了编码规则,字母x表示可用编码的位。</p>
-
-<pre><code>Unicode符号范围 | UTF-8编码方式 (十六进制) | (二进制)
---------------------+---------------------------------------------
-0000 0000-0000 007F | 0xxxxxxx 0000 0080-0000 07FF | 110xxxxx
-10xxxxxx 0000 0800-0000 FFFF | 1110xxxx 10xxxxxx 10xxxxxx 0001
-0000-0010 FFFF | 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
-</code></pre>
-
-<p>跟据上表,解读UTF-8编码非常简单。如果一个字节的第一位是0,则这个字节单独就是一个字符；如果第一位是1,则连续有多少个1,
-就表示当前字符占用多少个字节。</p>
-
-<p>下面,还是以汉字&#8221;严&#8221;为例,演示如何实现UTF-8编码。</p>
-
-<p>已知&#8221;严&#8221;的unicode是4E25(100111000100101),根据上表,可以发现4E25处在第三行的范围内(0000
-0800-0000 FFFF),因此&#8221;严&#8221;的UTF-8编码需要三个字节,即格式是&#8221;1110xxxx 10xxxxxx
-10xxxxxx&#8221;。然后,从&#8221;严&#8221;的最后一个二进制位开始,依次从后向前填入格式中的x,多出的位补0。这样就得到了,&ldquo;严&#8221;的UTF-8编码是&rdquo;
-11100100 10111000 10100101&#8221;,转换成十六进制就是E4B8A5。</p>
-
-<p>其他:</p>
-
-<ul>
-<li>128个ASCII字符只需一个字节编码(Unicode范围由U+0000至U+007F) &ndash; 拉丁文、希腊文、西里尔字母、亚美尼亚语、希伯来文、阿拉伯文、叙利亚文及它拿字母需要二个字节编码(Unicode范围由U+0080至U+07FF)</li>
-<li><font color="#bd260d"><strong>大部分国家的常用字(包括中文)使用三个字节编码</strong></font></li>
-<li>其他极少使用的生僻字符使用四字节编码</li>
-</ul>
-
-
-<h1>GB13000</h1>
-
-<p>前面提到了Unicode的迅速发展,至1993年时,包含CJK的Unicode
-1.1已经发布了,天朝的ZF也意识到了需要一个更大的字符集来走向世界,于是在同一年,中国大陆制定了几乎等同于Unicode1.1的GB13000
-.1-93国家编码标准(简称GB13000)。是的,你没听错,中华人民共和国信息产业部把Unicode里的所有东东拿过来,
-然后自己重新修订发布了下,改为了国家标准GB13000。此标准等同于 ISO/IEC 10646.1:1993和Unicode 1.1。</p>
-
-<h1>GBK</h1>
-
-<p>1995年,在GB13000诞生后不久,中国教育科研网(NCFC)与美国NCFnet直接联网,这一天是中国被国际承认为开始有网际网路的时间。
-此后网络正式开始在中国大陆接通,个人计算机开始在中国流行,虽然当时只是高富帅才消费得起的产品。中国是一个十几亿人口的大国,
-微软意识到了中国是一个巨大的市场,当时的微软也将自己的操作系统市场布局进中国,进入中国随之而来要解决的就是系统的编码兼容问题。
-之前的国家编码标准GB
-2312,基本满足了汉字的计算机处理需要,它所收录的汉字已经覆盖中国大陆99.75%的使用频率。但对于人名、古汉语等方面出现的罕用字和繁体字,
-GB 2312不能处理,因此微软利用了GB2312中未使用的编码空间,收录了GB13000中的所有字符制定了汉字内码扩展规范GBK(K为汉语拼音
-Kuo
-Zhan中&#8221;扩&#8221;字的首字母)。所以这一关系其实是大陆把Unicode1.1借鉴过来改名为了GB13000,
-而微软则利用GB2312中未使用的编码空间收录GB13000制定了GBK。所以GBK是向下完全兼容GB2312的。</p>
-
-<p>包含字符:<br> 共收录21886个字符, 其中汉字21003个, 字符883个</p>
-
-<p>编码方式:<br> GBK只不过是把GB2312中未使用的空间,编码了其他字符,所以GBK同样是用两个字节为每个字符进行编码</p>
-
-<h1>GB18030</h1>
-
-<p>微软到了99年前后,说GBK已经落伍了,现在流行UTF-8标准,准备全盘转换成UTF-8,但中国ZF不是吃素的,
-编写并强制推出了GB18030标准。GB18030的诞生还有一个原因是GBK只包含了大部分的汉字和繁体字等,我们的少数民族兄弟根本木有考虑！
-中国有56个民族,其中有12个民族有自己的文字,那怎么办呢？在2000年,电子工业标准化研究所起草了GB18030标准,项目代号&#8221;GB
-18030-2000&#8221;,全称《信息技术-信息交换用汉字编码字符集-基本集的扩充》。此标准推出后,
-在中国大陆之后的所售产品必须强制支持GB18030标准,不然不得卖！</p>
-
-<p>版本:</p>
-
-<ul>
-<li>GB 18030-2000</li>
-<li>GB 18030-2005</li>
-</ul>
-
-
-<p>包含字符:</p>
-
-<p>GB18030收录了GBK中的所有字符,并将Unicode中其他中文字符(少数民族文字、偏僻字)也一并收录进来重新编码。其中GB
-18030-2000共收录27533个汉字,而GB 18030-2005共包含70244个汉字。</p>
-
-<p>编码方式:</p>
-
-<p>采用多字节编码,每个字符由1或2或4个字节进行编码</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[pthread & mutex(互斥锁)*]]></title>
-    <link href="http://sbxfc.github.io/blog/2015/07/14/pthread/"/>
-    <updated>2015-07-14T10:28:45+08:00</updated>
-    <id>http://sbxfc.github.io/blog/2015/07/14/pthread</id>
-    <content type="html"><![CDATA[<p>pthread 是POSIX thread的简称,而<a href="https://zh.wikipedia.org/wiki/POSIX%E7%BA%BF%E7%A8%8B">POSIX</a>是Unix系统下的接口标准。</p>
-
-<p>通过pthread,我们可以创建一个新的线程。pthread的使用方法非常简单,我们只需要调用pthread_create函数,并传入pthread_t类型的线程ID指针以及回调函数指针即可:</p>
-
-<pre><code>pthread_t tid;
-if (pthread_create(&amp;tid, NULL, thread_func, NULL) != 0){
-    printf("error creating thread.");
-    return EXIT_FAILURE;
-}
-</code></pre>
-
-<p>回调函数调用后会在一个新的线程上运行,当该函数结束时(return),线程终止。除此之外,你也可以通过另外两种方式来终止一个线程:</p>
-
-<ol>
-<li><p>通过同一进程的另外线程cancel掉该线程。</p></li>
-<li><p>调用pthread_exit退出线程。</p></li>
-</ol>
-
-
-<!-- more -->
-
-
-<h1>互斥锁</h1>
-
-<p>线程之间可以共享内存空间,这意味着不同线程可以访问内存中的同一个变量。然而不同线程在同一时间修改一个内存对象会造成一些不可预知的结果。</p>
-
-<p>为了避免意外,我们需要用到pthread里一个非常重要的数据结构 —— 互斥对象(mutex)。互斥对象在使用时结合互斥锁使用,pthread_mutex_lock 和 pthread_mutex_unlock。</p>
-
-<p>互斥锁是这样工作的:线程B锁定了一个互斥对象(mymutex),如果线程A也试图锁定该互斥对象(mymutex)时,线程A就进入休眠状态。一旦线程B释放了互斥对象（调用 pthread_mutex_unlock()) ,线程A 就能够锁定这个互斥对象（换句话说,线程A就将从 pthread_mutex_lock() 函数调用中返回,同时互斥对象被重新锁定）。同样地,当线程A正锁定互斥对象时,如果线程C试图锁定互斥对象的话,线程C也将临时进入睡眠状态。</p>
-
-<pre><code>pthread_mutex_lock(&amp;mymutex);
- /*
-   直至解锁后,mymutex会阻止另一个试图访问此区域的线程
- */
-pthread_mutex_unlock(&amp;mymutex);
-</code></pre>
-
-<p>对已锁定的互斥对象上调用 pthread_mutex_lock() 的所有线程都将进入睡眠状态,这些睡眠的线程将“排队”访问这个互斥对象。</p>
-
-<p><strong>从上述可知,mutex会帮助我们锁定一段逻辑区域的访问。但是,如果一个数据对象有多处调用的情况,我们需要根据实际情况,设计统一的接口。</strong></p>
-
-<h1>互斥锁的使用</h1>
-
-<p>1)互斥对象有两种初始化方式,分为别静态初始化和动态初始化.</p>
-
-<p>静态初始化:</p>
-
-<pre><code>pthread_mutex_t myLock = PTHREAD_MUTEX_INITIALIZER;
-</code></pre>
-
-<p>动态初始化:</p>
-
-<pre><code>pthread_mutex_t myLock;
-pthread_mutex_init(&amp;myLock,NULL);
-</code></pre>
-
-<p>2）销毁</p>
-
-<p>一旦初始化完成之后,我们就可以根据实际情况对操作实施加锁和解锁,但需要留意的是如果是动态初始化(使用pthread_mutex_init()的方式)的互斥对象,在释放或废弃条件变量之前,需要清理它:</p>
-
-<pre><code>/*
- * 使用pthread_mutex_init()初始化的互斥对象,
- * 应当使用 pthread_mutex_destroy() 清理它。
- * pthread_mutex_destroy() 接受一个指向 pthread_mutext_t 的指针作为参数
- * 并释放创建互斥对象时分配给它的任何资源。
- */
-pthread_mutex_destroy(myLock);   
-</code></pre>
-
-<p>3）尝试锁定</p>
-
-<p>假如,我们不知道互斥对象是否被锁定。当我们使用 pthread_mutex_lock 对互斥对象加锁时,可能互斥对象已经锁定,这时pthread_mutex_lock操作就会进入休眠。为了避免这种情况,我们可以使用 pthread_mutex_trylock 去尝试锁定互斥对象。如果互斥对象当前处于解锁状态，那么您将获得该锁并且函数将返回零。然而,如果互斥对象已锁定,这个调用也不会阻塞。</p>
-
-<h1>条件变量</h1>
-
-<p>如果线程在等待某个特定条件发生,按照上述方式就需要不停地对数据加锁、解锁进行检测。这样不但浪费了时间和资源,而且繁忙的查询效率也非常低。这时,我们可以利用pthread_cond_wait.</p>
-
-<p>以查询特殊条件为例:<br>
-首先,线程A执行对数据的检测并没有找到满足条件的数据。此时,通过pthread_cond_wait()函数将线程A设置为等待休眠状态:</p>
-
-<pre><code>pthread_mutex_lock(&amp;mymutex);
-pthread_cond_wait(&amp;mycond, &amp;mymutex);
-</code></pre>
-
-<p>pthread_cond_wait()被调用后所做的第一件事就是对互斥对象(mymutex)进行解锁,并等待条件mycond发生。</p>
-
-<p>此时,pthread_cond_wait() 调用还未返回,等待条件mycond通常是一个阻塞操作,这意味着线程将睡眠,在它苏醒之前不会消耗 CPU 周期。这正是我们期待发生的情况,线程将一直睡眠，直到特定条件发生,在这期间不会发生任何浪费 CPU 时间的繁忙查询。从线程的角度来看,它只是在等待 pthread_cond_wait() 调用返回。</p>
-
-<p>假如另一个线程B锁定了mymutex并对数据条件做了修改。在对互斥对象解锁之后,线程B立即调用了函数 pthread_cond_broadcast(&amp;mycond)。此操作之后,线程B的操作将使所有等待 mycond 条件变量的线程立即苏醒,这意味着第一个线程现在将苏醒。</p>
-
-<pre><code>pthread_mutex_lock(&amp;mymutex);
-//修改数据条件操作 
-pthread_mutex_unlock(&amp;mymutex);
-pthread_cond_broadcast(&amp;mycond);
-</code></pre>
-
-<p>您可能会认为在线程B调用 pthread_cond_broadcast(&amp;mymutex) 之后,线程A的 pthread_cond_wait() 会立即返回。不是那样!实际上，pthread_cond_wait() 将执行最后一个操作:重新锁定 mymutex。一旦 pthread_cond_wait() 锁定了互斥对象,那么它将返回并允许线程A继续执行。</p>
-
-<p>1)初始化和清除</p>
-
-<p>和互斥对象一样,条件变量在使用时也需要初始化:</p>
-
-<pre><code>pthread_cond_t mycond;
-pthread_cond_init(&amp;mycond,NULL);
-</code></pre>
-
-<p>在释放或废弃条件变量之前，需要毁坏它,如下所示:</p>
-
-<pre><code>pthread_cond_destroy(&amp;mycond);
-</code></pre>
-
-<p>2）等待</p>
-
-<p>一旦初始化了互斥对象和条件变量，就可以等待某个条件，如下所示:</p>
-
-<pre><code>pthread_cond_wait(&amp;mycond, &amp;mymutex);
-</code></pre>
-
-<p>请注意，代码在逻辑上应该包含 mycond 和 mymutex。一个特定条件只能有一个互斥对象,而且条件变量应该表示互斥数据“内部”的一种特殊的条件更改。一个互斥对象可以用许多条件变量（例如，cond_empty、cond_full、cond_cleanup），但每个条件变量只能有一个互斥对象。</p>
-
-<p>3）发送信号和广播</p>
-
-<p>对于发送信号和广播，需要注意一点。如果线程更改某些共享数据，而且它想要唤醒所有正在等待的线程，则应使用 pthread_cond_broadcast 调用，如下所示：</p>
-
-<pre><code>pthread_cond_broadcast(&amp;mycond);
-</code></pre>
-
-<p>在某些情况下，活动线程只需要唤醒第一个正在睡眠的线程。假设您只对队列添加了一个工作作业。那么只需要唤醒一个工作程序线程（再唤醒其它线程是不礼貌的！）:</p>
-
-<pre><code>pthread_cond_signal(&amp;mycond);
-</code></pre>
-
-<p>此函数只唤醒一个线程。</p>
-
-<h1>参见</h1>
-
-<p>POSIX 线程[维基百科]:<a href="https://zh.wikipedia.org/wiki/POSIX%E7%BA%BF%E7%A8%8B">https://zh.wikipedia.org/wiki/POSIX%E7%BA%BF%E7%A8%8B</a></p>
-
-<p>POSIX 线程详解:<a href="http://www.ibm.com/developerworks/cn/linux/thread/posix_thread1/#icomments">http://www.ibm.com/developerworks/cn/linux/thread/posix_thread1/#icomments</a></p>
-
-<p>POSIX 线程详解，第 2部分:<a href="https://www.ibm.com/developerworks/cn/linux/thread/posix_thread2/">https://www.ibm.com/developerworks/cn/linux/thread/posix_thread2/</a></p>
-
-<h1>示例</h1>
-
-<p><a href="https://github.com/sbxfc/objc/tree/master/threads/pthread/pthread">https://github.com/sbxfc/objc/tree/master/threads/pthread/pthread</a></p>
 ]]></content>
   </entry>
   

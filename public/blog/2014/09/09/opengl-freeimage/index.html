@@ -6,10 +6,10 @@
     
 
 <meta charset="utf-8">
-<title>使用FreeImage库(Mac OS) - sbxfc</title>
+<title>在 macOS 下使用 FreeImage 库 - sbxfc</title>
 <meta name="author" content="sbxfc">
 <meta name="description"
-      content="使用FreeImage库(Mac OS) FreeImage是一个开源图片开发库,最后一个版本3.1.6。 下载地址: http://freeimage.sourceforge.net/download.html 编译FreeImage库: $ cd /Users/Downloads/ &hellip;">
+      content="在 macOS 下使用 FreeImage 库 FreeImage是一个开源图片开发库,最后一个版本3.1.6。 下载&amp;编译 3.1.6版本我在Mac下没有编译通过,我用的是3.1.54版本。 3.1.54下载地址 : http://sourceforge.net/projects/ &hellip;">
 
 
 <!-- http://t.co/dKP3o1e -->
@@ -17,8 +17,8 @@
 <meta name="MobileOptimized" content="320">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <!---->
-<script src="//ajax.useso.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
-<link href='http://fonts.useso.com/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<script src="http://lib.sinaapp.com/js/jquery/2.0.3/jquery-2.0.3.min.js"></script>
+<link href='http://fonts.lug.ustc.edu.cn/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
 <link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
 <script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
 <script>hljs.initHighlightingOnLoad();</script>
@@ -74,41 +74,47 @@
 <article class="entry" role="article">
 
   <header>
-    <h2 class="entry_title">使用FreeImage库(Mac OS)</h2>
+    <h2 class="entry_title">在 macOS 下使用 FreeImage 库</h2>
     
   </header>
 
   <div class="entry_content"><p>FreeImage是一个开源图片开发库,最后一个版本3.1.6。</p>
 
-<p>下载地址:</p>
+<h1>下载&amp;编译</h1>
 
-<p><a href="http://freeimage.sourceforge.net/download.html">http://freeimage.sourceforge.net/download.html</a></p>
+<p>3.1.6版本我在Mac下没有编译通过,我用的是3.1.54版本。</p>
 
-<p>编译FreeImage库:</p>
+<p>3.1.54下载地址 : <a href="http://sourceforge.net/projects/freeimage/">http://sourceforge.net/projects/freeimage/</a></p>
+
+<p>编译:</p>
 
 <pre><code>$ cd /Users/Downloads/FreeImage
 $ make
 </code></pre>
 
-<p>3.1.6版本我在Mac下没有编译通过,我用的是3.1.54版本并做了两次修改:</p>
+<p>不出意外,编译会出错,因为Makefile.osx里的配置已经过期。
+下载新的 Makefile.osx并替换:<br>
+<a href="https://github.com/sbxfc/FreeImage-Makefile.osx">https://github.com/sbxfc/FreeImage-Makefile.osx</a></p>
 
-<p>3.1.54下载地址:<br>
-<a href="http://sourceforge.net/projects/freeimage/">http://sourceforge.net/projects/freeimage/</a></p>
-
-<p>一,正常编译会出错,因为Makefile.osx里的配置已经过期。
-下载并替换掉包里的Makefile.osx文件:<br>
-<a href="https://github.com/opengl-records/FreeImage-Makefile.osx">https://github.com/opengl-records/FreeImage-Makefile.osx</a></p>
-
-<p>二,在 Source/OpenEXR/IlmImf/ImfAutoArray.h 里,添加:</p>
+<p>然后,在 Source/OpenEXR/IlmImf/ImfAutoArray.h 里添加:</p>
 
 <pre><code>#include &lt;cstring&gt;
 </code></pre>
 
-<p>参见:</p>
+<p>问题看这里↓:</p>
 
 <p><a href="http://stackoverflow.com/questions/19080303/how-to-compile-freeimage-on-mac-os-x-10-8">http://stackoverflow.com/questions/19080303/how-to-compile-freeimage-on-mac-os-x-10-8</a></p>
 
-<p>使用FreeImage库时，需要设置一下Hearder search paths和 Lib search patchs,并在Build Phases里将libfreeimage.a添加进来。</p>
+<h1>运行</h1>
+
+<p>在使用FreeImage库时，需要设置一下Hearder Search paths和 Lib Search patchs,并在Build Phases里将libfreeimage.a添加进来。</p>
+
+<h1>参见</h1>
+
+<ul>
+<li><a href="http://freeimage.sourceforge.net/download.html">3.1.6 下载地址</a></li>
+</ul>
+
 </div>
 
   <footer>

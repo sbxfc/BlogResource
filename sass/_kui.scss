@@ -136,7 +136,28 @@ header[role="banner"] {
   dt{
     margin-top: .6em;
     font-style: italic;
-    left:0px;
+  }
+
+  blockquote {
+    background:#f9f9f9;
+    border-left:8px solid #ccc;
+    margin:1.5em 0px;
+    padding:.5em 20px;
+    padding-top: 1.5em 110px;
+    // quotes:"\201C""\201D""\2018""\2019";
+  }
+
+  // blockquote:before {
+  //   color:#ccc;
+  //   content:open-quote;
+  //   font-size:2em;
+  //   line-height:1.0em;
+  //   margin-right:1.25em;
+  //   vertical-align:0em;
+  // }
+
+  blockquote p {
+    display:inline;
   }
 
   /*细边框样式*/
@@ -158,7 +179,10 @@ header[role="banner"] {
 	/*隔行变色*/
   table tr:nth-child(odd){background:#F4F4F4;}
 
+
+
 }
+
 
 
 /*标题*/

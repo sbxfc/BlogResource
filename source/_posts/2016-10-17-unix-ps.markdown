@@ -1,0 +1,75 @@
+---
+layout: post
+title: "查看类UNIX系统下的进程"
+date: 2016-10-17 16:52:11 +0800
+comments: true
+categories: 
+---
+
+#ps
+
+ps程序 ( process status 的简称) 是类Unix系统下用来查看系统进程的命令。在终端里,不带参数运行时,该命令显示与当前登陆用户相关的bash命令:
+
+	$ps
+	 PID  TTY        TIME 	 CMD
+	 6122 ttys003    0:00.25 -bash
+	 6356 ttys003    0:00.01 /Users/sbxfc/...
+ 
+如果添加 <font color='#bd260d'>**-l**</font> 参数,则会在此基础上显示更详细的信息:
+
+	$ps -l
+	  UID  PID   PPID     F 	CPU PRI NI SZ    	 RSS  WCHAN  S   ADDR TTY           TIME CMD
+	  501  6122  6121     4006   0  31  0  2463084   3212 -      S   0    ttys003    0:00.26 -bash
+	  501  6356     1     4006   0  31  0  2463148   3052 -      S   0    ttys003    0:00.01 /Users/sbxfc/...
+
+如果是查看所有程序,通常会使用 <font color='#bd260d'>**aux**</font> 参数。其中 <font color='#bd260d'>**a**</font> 列出了一个终端上的所有进程,包括其他用户运行的,<font color='#bd260d'>**x**</font>列出所有没有控制终端的进程,<font color='#bd260d'>**u**</font> 添加了一列显示每个进程的控制用户。需要注意的是，为了提高兼容性，使用此语法时"aux" 前没有 "-" 。
+
+	$ps aux
+	USER   PID   %CPU %MEM VSZ     RSS   	TT  STAT STARTED   TIME COMMAND
+	sbxfc  6105  12.1 1.1  3034064 141676  ??  S    4:55下午  5:00.59 /Applications/Google Chrome.app/Contents/...
+	sbxfc  5813  5.6  0.5  2784956 62488   ??  S    3:47下午  0:35.94 /Applications/Utilities/Terminal.app/Contents
+	sbxfc  261   4.6  1.8  3049408 223952  ??  S    9:55上午  19:03.62 /Applications/QQ.app/Contents/MacOS/QQ
+	sbxfc  6552  2.5  0.2  2516792 22536   ??  S    6:34下午  0:00.35 /System/Library/Frameworks/CoreServices...
+	...
+
+#配合grep使用
+
+ps 可以配合 grep 使用并擦出火花:
+
+	$ ps aux | grep chrome
+	sbxfc 6720   0.0  0.0  2434840    772 s001  S+    7:01下午   0:00.00 grep chrome
+
+#其他有用参数
+
+指定用户运行的进程:
+
+	$ ps -u sbxfc
+
+#对应列名
+
+列名	|内容
+------------ | ------------- 
+ %CPU|	进程正在使用多少个CPU
+ %MEM|	进程正在使用多少内存
+ADDR	|进程的内存地址
+C或CP|	CPU使用率和调度信息
+COMMAND*	|进程名，包括参数（如果有的话）
+NI	|nice值
+F	|标志
+PID	|进程ID
+PPID	|父进程ID
+PRI	|进程优先级
+RSS	|真实内存用量
+S or STAT	|进程状态码
+START or STIME	|进程启动时间
+SZ	|虚拟内存用量
+TIME	|总CPU用量
+TT或TTY	|与进程相关的终端
+UID或USER	|进程所有者的用户名
+WCHAN	|进程所等待事件的内存地址
+
+
+#参见
+- <https://zh.wikipedia.org/wiki/Ps_(Unix)>
+- <https://www.ibm.com/support/knowledgecenter/zh/ssw_aix_72/com.ibm.aix.cmds4/ps.htm>
+- <http://linux.vbird.org/linux_basic/0440processcontrol.php#process_1>
