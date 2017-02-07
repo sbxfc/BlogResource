@@ -1,0 +1,70 @@
+---
+layout: post
+title: "netcat"
+date: 2016-11-07 17:00:35 +0800
+comments: true
+categories: 
+---
+
+参数 | 作用 
+------------ | ------------- 
+-w | 设置超时时间(单位:秒) 
+-v | 显示命令执行过程
+-n | 直接使用IP地址,而不通过域名系统 
+-z | 零模式IO(与目标服务器连接成功后即关闭,用于扫描端口)。
+-l | 使用监听模式，管控传入的资料。
+	
+>端口扫描 
+
+	$nc -v -z -w 2 192.168.1.66 79-80
+	nc: connectx to 192.168.1.66 port 79 (tcp) failed: Connection refused
+	found 0 associations
+	found 1 connections:
+	     1:	flags=82<CONNECTED,PREFERRED>
+		outif en0
+		src 192.168.1.49 port 61201
+		dst 123.57.38.225 port 80
+		rank info not available
+		TCP aux info available
+	
+	Connection to 123.57.38.225 port 80 [tcp/http] succeeded!
+
+>传输文件
+	
+	/* 从主机118复制文件到主机49*/
+	/* 首先,主机49监听端口*/
+	$ nc -l 6666 > /Users/sbxfc/test.txt
+	/* 然后,主机118写入 */
+	$ nc 192.168.1.49 6666 < /root/Documents/tmp_20161107.txt
+
+>聊天
+
+	/* 从主机118复制文件到主机49*/
+	/* 首先,主机49监听端口*/
+	$ nc -l 7777 > /Users/sbxfc/test.txt
+	/* 然后,主机118连接后,在控制台输入就可以保存至test.txt的文件上*/
+	$ nc 192.168.1.49 7777 
+	
+>模拟 HTTP 获取信息
+	
+	$nc cn.bing.com 80 
+	GET / HTTP/1.1
+	Host: cn.bing.com //接下来,两次回车
+	
+	HTTP/1.1 200 OK
+	Cache-Control: private, max-age=0
+	Content-Length: 120331
+	Content-Type: text/html; charset=utf-8
+	Vary: Accept-Encoding
+	Server: Microsoft-IIS/8.5
+	P3P: CP="NON UNI COM NAV STA LOC CURa DEVa PSAa PSDa OUR IND"
+	
+	<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" ...>
+	<html lang="zh" xml:lang="zh" xmlns="http://www.w3.org/1999/xhtml">
+	<script type="text/javascript">
+	...省略一大堆...
+
+#参见 
+
+- <https://zh.wikipedia.org/wiki/Netcat>
+- <https://www.oschina.net/translate/linux-netcat-command>

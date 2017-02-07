@@ -1,0 +1,239 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>在亚马逊EC2 RHEL主机上安装nginx - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="在亚马逊EC2 RHEL主机上安装nginx 首先登陆亚马逊的EC2控制台,把安全组里的入站端口HTTP服务的默认端口80打开。 下载并安装EPEL: $wget http://download.fedoraproject.org/pub/epel/5/x86_64/epel-release-5 &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="http://lib.sinaapp.com/js/jquery/2.0.3/jquery-2.0.3.min.js"></script>
+<link href='http://fonts.lug.ustc.edu.cn/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2017/01/22/nginx-install">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">在亚马逊EC2 RHEL主机上安装nginx</h2>
+    
+  </header>
+
+  <div class="entry_content"><p>首先登陆亚马逊的EC2控制台,把安全组里的入站端口HTTP服务的默认端口80打开。</p>
+
+<p>下载并安装EPEL:</p>
+
+<pre><code>$wget http://download.fedoraproject.org/pub/epel/5/x86_64/epel-release-5-4.noarch.rpm
+$rpm -ivh epel-release-5-4.noarch.rpm
+</code></pre>
+
+<p>安装nginx,看一眼安装提示,没问题就确认下载:</p>
+
+<pre><code>$yum install nginx
+</code></pre>
+
+<p>启动nginx</p>
+
+<pre><code>$/etc/init.d/nginx start    
+</code></pre>
+
+<p>然后就可以直接输入地址在浏览器里测试了,现在的首页是nginx的欢迎页面。</p>
+
+<h1>配置虚拟主机</h1>
+
+<p>建立静态资源目录:</p>
+
+<pre><code>$mkdir -p /var/www/ok2.site/public
+</code></pre>
+
+<p>在该public目录下建立首页index.html文件:</p>
+
+<pre><code>&lt;html&gt;
+&lt;body&gt;
+&lt;h1&gt; HOST :)&lt;/h1&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+
+<p>修改www目录的访问权限:</p>
+
+<pre><code>$chmod 755 /var/www
+</code></pre>
+
+<p>设置虚拟主机的配置文件:</p>
+
+<pre><code>$vi /etc/nginx/conf.d/ok2.site.conf 
+
+#
+# A virtual host using mix of IP-, name-, and port-based configuration
+#
+
+server {
+    listen        80;
+#    listen       somename:8080;
+    server_name   ok2.site;
+
+    location / {
+        root   /var/www/ok2.site/public;
+        index  index.html index.htm;
+    }
+}
+</code></pre>
+
+<p>重启服务:</p>
+
+<pre><code>$service nginx restart
+</code></pre>
+
+<p>当然,你可以根据不同的域名配置多台虚拟主机 :)</p>
+
+<p><img src="/images/2017/01/tmp01276c3d.png" alt="" /></p>
+
+<h1>参见:</h1>
+
+<ul>
+<li><a href="http://comtechies.com/how-to-install-and-configure-nginx-on-amazon-ec2-rhel-and-ubuntu-instances.html">http://comtechies.com/how-to-install-and-configure-nginx-on-amazon-ec2-rhel-and-ubuntu-instances.html</a></li>
+</ul>
+
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2017-01-22 18:13:21 +0800" pubdate>Jan 22<span>nd</span>, 2017</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2017 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2017/01/22/nginx-install';
+	var disqus_url = 'http://sbxfc.github.io/blog/2017/01/22/nginx-install';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

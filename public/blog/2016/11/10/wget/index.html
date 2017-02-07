@@ -1,0 +1,490 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>wget - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="wget wget是一个用于网络下载的自由工具,它支持HTTP、HTTPS以及FTP协议。 wget支持递归下载并按照robots.txt协议对远程服务器上的HTML页面信息,按照其目录结构进行拷贝。并且 wget 非常稳定,在不稳定的网络下有很强的适应性.如果是由于网络的原因下载失败, &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="http://lib.sinaapp.com/js/jquery/2.0.3/jquery-2.0.3.min.js"></script>
+<link href='http://fonts.lug.ustc.edu.cn/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2016/11/10/wget">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">wget</h2>
+    
+  </header>
+
+  <div class="entry_content"><p>wget是一个用于网络下载的自由工具,它支持HTTP、HTTPS以及FTP协议。</p>
+
+<p>wget支持递归下载并按照robots.txt协议对远程服务器上的HTML页面信息,按照其目录结构进行拷贝。并且 wget 非常稳定,在不稳定的网络下有很强的适应性.如果是由于网络的原因下载失败,wget会不断的尝试,直到整个文件下载完毕。如果是服务器打断下载过程,它会再次联到服务器上从停止的地方继续下载。这对从那些限定了链接时间的服务器上下载大文件非常有用。</p>
+
+<p>wget的命令格式:</p>
+
+<pre><code>wget [options] [URL]
+</code></pre>
+
+<blockquote><p>下载文件</p></blockquote>
+
+<pre><code>//这个命令会尝试将服务器首页下载下来
+wget http://rungame.me/
+
+//加 -x 会强制创建与服务器上一样的目录
+wget -x http://rungame.me/
+
+//加-nd 则不会创建目录
+wget -nd http://rungame.me/
+
+//-r 会按照递归的方式下载服务器下的全部内容
+wget -r http://rungame.me/
+</code></pre>
+
+<blockquote><p>断点续传</p></blockquote>
+
+<p>当文件特别大或者网络特别慢的时候,往往一个文件还没有下载完,连接就已经被切断,此时就需要断点续传。</p>
+
+<pre><code>wget -c http://rungame.me/
+</code></pre>
+
+<blockquote><p>批量下载</p></blockquote>
+
+<p>如果有多个文件需要下载,那么可以生成一个文件,把每个文件的URL写一行,例如生成文件 download.txt,然后用命令把文本里的文件都下载下来:</p>
+
+<pre><code>wget -i download.txt    
+</code></pre>
+
+<blockquote><p>选择性下载</p></blockquote>
+
+<p>可以指定wget只下载一类文件或者不下载什么文件。</p>
+
+<pre><code>//忽略gif文件
+wget -m --reject=gif http://rungame.me/
+//只下载png图片
+wget -m --accept=png http://rungame.me/
+</code></pre>
+
+<blockquote><p>使用代理服务器进行下载</p></blockquote>
+
+<h1>参数</h1>
+
+<table>
+<thead>
+<tr>
+<th>命令参数 </th>
+<th> 分类 </th>
+<th> 作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>-V, –version  </td>
+<td> 启动  </td>
+<td> 显示wget版本</td>
+</tr>
+<tr>
+<td>-h, –help  </td>
+<td> 启动  </td>
+<td> 帮助</td>
+</tr>
+<tr>
+<td>-b, -background </td>
+<td> 启动  </td>
+<td>启动后进入后台操作。 </td>
+</tr>
+<tr>
+<td>-c, &mdash;continue </td>
+<td> 下载  </td>
+<td> 继续接收已下载了一部分的文件。</td>
+</tr>
+<tr>
+<td>-o, –output-file=FILE </td>
+<td> 下载 </td>
+<td> 将下载的内容保存至指定的文件</td>
+</tr>
+<tr>
+<td>-a, –append-output=FILE </td>
+<td> 记录  </td>
+<td> 把记录追加到FILE文件中</td>
+</tr>
+<tr>
+<td>-d, –debug </td>
+<td> 输出  </td>
+<td>打印调试输出</td>
+</tr>
+<tr>
+<td>-q, –quiet </td>
+<td> 输出  </td>
+<td> 安静模式(没有输出)</td>
+</tr>
+<tr>
+<td>-v, –verbose  </td>
+<td> 输出  </td>
+<td> 冗长模式(这是缺省设置)</td>
+</tr>
+<tr>
+<td>-nv, –non-verbose</td>
+<td> 输出  </td>
+<td> 关掉冗长模式，但不是安静模式</td>
+</tr>
+<tr>
+<td>-i, –input-file=FILE </td>
+<td> 输入  </td>
+<td>下载在FILE文件中出现的URLs</td>
+</tr>
+<tr>
+<td>-F, –force-html </td>
+<td> 输入  </td>
+<td> 把输入文件当作HTML格式文件对待</td>
+</tr>
+<tr>
+<td>-B, –base=URL </td>
+<td> 输入  </td>
+<td> 将URL作为在-F -i参数指定的文件中出现的相对链接的前缀</td>
+</tr>
+<tr>
+<td>–sslcertfile=FILE </td>
+<td> 输入  </td>
+<td>  可选客户端证书</td>
+</tr>
+<tr>
+<td>–sslcertkey=KEYFILE </td>
+<td> 输入  </td>
+<td>  可选客户端证书的KEYFILE</td>
+</tr>
+<tr>
+<td>–egd-file=FILE </td>
+<td> 输入  </td>
+<td> 指定EGD socket的文件名</td>
+</tr>
+<tr>
+<td>–bind-address=ADDRESS </td>
+<td> 下载  </td>
+<td> 指定本地使用地址(主机名或IP，当本地有多个IP或名字时使用)</td>
+</tr>
+<tr>
+<td>-t, –tries=NUMBER </td>
+<td> 下载  </td>
+<td> 设定最大尝试链接次数(0 表示无限制).</td>
+</tr>
+<tr>
+<td>-O –output-document=FILE </td>
+<td> 下载  </td>
+<td>  把文档写到FILE文件中</td>
+</tr>
+<tr>
+<td>-nc, –no-clobber  </td>
+<td> 下载  </td>
+<td> 不要覆盖存在的文件或使用.#前缀</td>
+</tr>
+<tr>
+<td>-c, –continue  </td>
+<td> 下载  </td>
+<td> 接着下载没下载完的文件</td>
+</tr>
+<tr>
+<td>–progress=TYPE </td>
+<td> 下载  </td>
+<td> 设定进程条标记</td>
+</tr>
+<tr>
+<td>-N, –timestamping </td>
+<td> 下载  </td>
+<td> 不要重新下载文件除非比本地文件新</td>
+</tr>
+<tr>
+<td>-S, –server-response </td>
+<td> 下载  </td>
+<td> 打印服务器的回应</td>
+</tr>
+<tr>
+<td>–spider </td>
+<td> 下载  </td>
+<td> 不下载任何东西</td>
+</tr>
+<tr>
+<td>-T, –timeout=SECONDS </td>
+<td> 下载  </td>
+<td> 设定响应超时的秒数</td>
+</tr>
+<tr>
+<td>-w, –wait=SECONDS  </td>
+<td> 下载  </td>
+<td> 两次尝试之间间隔SECONDS秒</td>
+</tr>
+<tr>
+<td>–waitretry=SECONDS  </td>
+<td> 下载  </td>
+<td> 在重新链接之间等待1…SECONDS秒</td>
+</tr>
+<tr>
+<td>–random-wait  </td>
+<td> 下载  </td>
+<td>在下载之间等待0…2*WAIT秒</td>
+</tr>
+<tr>
+<td>-Y, –proxy=on/off  </td>
+<td> 下载  </td>
+<td>打开或关闭代理</td>
+</tr>
+<tr>
+<td>-Q, –quota=NUMBER  </td>
+<td> 下载  </td>
+<td>设置下载的容量限制</td>
+</tr>
+<tr>
+<td>–limit-rate=RATE  </td>
+<td> 下载  </td>
+<td> 限定下载输率</td>
+</tr>
+<tr>
+<td>-nd &mdash;no-directories </td>
+<td> 目录  </td>
+<td>不创建目录 </td>
+</tr>
+<tr>
+<td>-x, &mdash;force-directories </td>
+<td> 目录  </td>
+<td> 强制创建目录</td>
+</tr>
+<tr>
+<td>-nH, –no-host-directories </td>
+<td> 目录  </td>
+<td> 不创建主机目录</td>
+</tr>
+<tr>
+<td>-P, –directory-prefix=PREFIX </td>
+<td> 目录  </td>
+<td> 将文件保存到目录 PREFIX/…</td>
+</tr>
+<tr>
+<td>–cut-dirs=NUMBER </td>
+<td> 目录  </td>
+<td>  忽略 NUMBER层远程目录</td>
+</tr>
+<tr>
+<td>&mdash;http-user=用户 </td>
+<td> HTTP  </td>
+<td> 配置http用户名</td>
+</tr>
+<tr>
+<td>&mdash;http-passwd=密码 </td>
+<td> HTTP  </td>
+<td> 配置 http 用户密码</td>
+</tr>
+<tr>
+<td>-C, –cache=on/off </td>
+<td> HTTP  </td>
+<td>允许/不允许服务器端的数据缓存 (一般情况下允许)</td>
+</tr>
+<tr>
+<td>-E, –html-extension </td>
+<td> HTTP  </td>
+<td>将所有text/html文档以.html扩展名保存</td>
+</tr>
+<tr>
+<td>–ignore-length </td>
+<td> HTTP  </td>
+<td> 忽略 `Content-Length’头域</td>
+</tr>
+<tr>
+<td>–header=STRING </td>
+<td> HTTP  </td>
+<td> 在headers中插入字符串 STRING</td>
+</tr>
+<tr>
+<td>&mdash;proxy-user=用户 </td>
+<td> HTTP  </td>
+<td> 配置代理服务器用户名 </td>
+</tr>
+<tr>
+<td>&mdash;proxy-passwd=密码 </td>
+<td> HTTP  </td>
+<td>配置代理服务器用户密码</td>
+</tr>
+<tr>
+<td>&mdash;referer=URL </td>
+<td> HTTP  </td>
+<td> 在 HTTP 请求中包含“Referer：URL”头</td>
+</tr>
+<tr>
+<td>-r,-recursive </td>
+<td> 递归下载  </td>
+<td> 递归下载</td>
+</tr>
+<tr>
+<td>-m, &mdash;mirror </td>
+<td> 递归下载   </td>
+<td> 等效于 -r -N -l inf -nr 的选项</td>
+</tr>
+<tr>
+<td>-l, &mdash;level=数字 </td>
+<td> 递归下载  </td>
+<td> 最大递归深度(inf 或 0 表示无限)</td>
+</tr>
+<tr>
+<td>-A, &mdash;accept=列表 </td>
+<td> 递归下载  </td>
+<td> 接受的文件样式列表，以逗号分隔。  </td>
+</tr>
+<tr>
+<td>-R, &mdash;reject=列表 </td>
+<td> 递归下载  </td>
+<td> 排除的文件样式列表，以逗号分隔。</td>
+</tr>
+</tbody>
+</table>
+
+
+<h1>参见</h1>
+
+<ul>
+<li><a href="https://zh.wikipedia.org/wiki/Wget">https://zh.wikipedia.org/wiki/Wget</a></li>
+<li><a href="http://www.cnblogs.com/peida/archive/2013/03/18/2965369.html">http://www.cnblogs.com/peida/archive/2013/03/18/2965369.html</a></li>
+</ul>
+
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2016-11-10 16:19:18 +0800" pubdate>Nov 10<span>th</span>, 2016</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2017 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2016/11/10/wget';
+	var disqus_url = 'http://sbxfc.github.io/blog/2016/11/10/wget';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

@@ -6,10 +6,10 @@
     
 
 <meta charset="utf-8">
-<title>WLAN密钥流解密 - sbxfc</title>
+<title>WLAN密钥解密 - sbxfc</title>
 <meta name="author" content="sbxfc">
 <meta name="description"
-      content="WLAN密钥流解密 解密操作 使用工具 Wireshark 和 Aircrack-ng 首先,打开 Wireshark 并监听无线网接口。如果已开启WIFI,这时候就可以看到许多杂乱无章的捕获数据。 我们进行一下过滤,通过过滤 Beacon帧来寻找WIFI热点(Access Point,简称AP &hellip;">
+      content="WLAN密钥解密 解密操作 使用工具 Wireshark 和 Aircrack-ng 首先,打开 Wireshark 并监听无线网接口。如果已开启WIFI,这时候就可以看到许多杂乱无章的捕获数据。 我们进行一下过滤,通过过滤 Beacon帧来寻找WIFI热点(Access Point,简称AP &hellip;">
 
 
 <!-- http://t.co/dKP3o1e -->
@@ -74,7 +74,7 @@
 <article class="entry" role="article">
 
   <header>
-    <h2 class="entry_title">WLAN密钥流解密</h2>
+    <h2 class="entry_title">WLAN密钥解密</h2>
     
   </header>
 
@@ -121,13 +121,13 @@ $ ./deauth en1 -s xx:xx:xx:xx:b0:73 -a c8:e0:eb:58:34:bd --rate 1 - number 10
 
 <h1>四次握手</h1>
 
-<p>802.11i 中的 RSN（Robust Security Network）定义了在无线网络下的一个安全的连接流程。这个流程也就是 RSNA（Robust Security Network Association）,定义了认证、加密以及密钥管理。</p>
+<p>802.11i 中的 RSN（Robust Security Network）定义了无线网络下的安全的连接流程。这个流程也就是 RSNA（Robust Security Network Association）,定义了无线网络下的认证、加密以及密钥管理。</p>
 
-<p>STA 通过 802.1x 的认证后,AP 与 STA 都会拿到同一组 session key。有RADIUS(认证服务器)时称为 PMK(Pairwise Master Key),无 RADIUS 时 PSK(Pre-Shared Key) 即PMK。之后进行 4-way handshake。</p>
+<p>STA 通过 802.1x 的认证后,AP 与 STA 都会拿到同一组 session key。有 RADIUS(认证服务器)时称为 PMK(Pairwise Master Key),无 RADIUS 时 PSK(Pre-Shared Key) 即PMK。之后进行 4-way handshake。</p>
 
-<blockquote><p>在没有RADIUS时,AP 与 STA 会预先设定好一组passphrase,并用来衍生出PMK。</p></blockquote>
+<blockquote><p>在没有RADIUS时,AP 与 STA 会预先设定好一组 passphrase,并用其衍生出PMK。</p></blockquote>
 
-<p>对于网络安全而言,key愈少愈好。因此 4-way handshake 用来建立 512 bits的PTK(Pairwise Transient Key)。PTK 由 PMK,AP Nonce,STA Nonce,AP&#8217;MAC,STA&#8217;MAC生成。4-way handshake 也会产生GTK（Group Temporal Key）,用来解密 multicast和broadcast traffic。这个GTK是所有STA公用一个key。</p>
+<p>对于网络安全而言,key愈少愈好。4-way handshake 建立了 512 bits的PTK(Pairwise Transient Key)。PTK 由 PMK,AP Nonce,STA Nonce,AP&#8217;MAC,STA&#8217;MAC 生成。4-way handshake 也会产生GTK（Group Temporal Key）,用来解密 multicast和broadcast traffic。这个GTK是所有STA公用的一个key。</p>
 
 <p><img src="/images/2016/10/tmp13152092.png" alt="4-handshake" /></p>
 
@@ -141,12 +141,14 @@ $ ./deauth en1 -s xx:xx:xx:xx:b0:73 -a c8:e0:eb:58:34:bd --rate 1 - number 10
 
 <p>WPA1 TKIP的 PTK 长度512bits,WPA2 CCMP的PTK长度为384bits。其中,TMK1 和 TMK2 只用在 TKIP 加密data时。</p>
 
+<p>PTK由几部分组成:</p>
+
 <table>
 <thead>
 <tr>
-<th>区域 </th>
+<th>内存区域 </th>
 <th> 简称 </th>
-<th> 长度</th>
+<th> 长度(bits)</th>
 <th> 名称 </th>
 <th> 用途</th>
 </tr>
@@ -155,35 +157,35 @@ $ ./deauth en1 -s xx:xx:xx:xx:b0:73 -a c8:e0:eb:58:34:bd --rate 1 - number 10
 <tr>
 <td>0-127   </td>
 <td> KCK  </td>
-<td> 128 bits</td>
+<td>128 </td>
 <td> EAPOL-Key Confirmation Key</td>
 <td> 计算WPA EAPOL key message 的MIC</td>
 </tr>
 <tr>
 <td>128-255  </td>
 <td> KEK  </td>
-<td> 128 bits</td>
+<td>128</td>
 <td> EAPOL-Key Encryption Key</td>
 <td> 加密额外要送给STA的data,如 GTK or RSN IE</td>
 </tr>
 <tr>
 <td>256-383  </td>
 <td> TEK </td>
-<td> 128 bits</td>
+<td>128</td>
 <td> Temporal Encryption Key</td>
 <td> 解密unicast packets</td>
 </tr>
 <tr>
 <td>384-447  </td>
 <td> TMK1  </td>
-<td> 64 bits</td>
+<td>64</td>
 <td> Temporal AP Tx MIC Key</td>
 <td> 计算AP 发送的unicast packet的MIC</td>
 </tr>
 <tr>
 <td>448-511  </td>
 <td> TMK2  </td>
-<td> 64 bits</td>
+<td>64</td>
 <td> Temporal AP Rx MIC Key</td>
 <td> 计算STA 发送的unicast packet的MIC</td>
 </tr>
@@ -191,7 +193,7 @@ $ ./deauth en1 -s xx:xx:xx:xx:b0:73 -a c8:e0:eb:58:34:bd --rate 1 - number 10
 </table>
 
 
-<p>生成PTK算法:</p>
+<p>PTK算法:</p>
 
 <p>首先使用PBKDF2（Password-Based Key Derivation Function 2）算法生成一个32字节的PMK key，该算法需要执行4096*2轮,同时由于使用了SSID（0-32字符）进行salt。</p>
 
@@ -203,7 +205,7 @@ $ ./deauth en1 -s xx:xx:xx:xx:b0:73 -a c8:e0:eb:58:34:bd --rate 1 - number 10
 <pre><code> PTK = PRF-512(PMK, “Pairwise key expansion”, Min(AP_Mac, Sta_Mac) ||Max(AP_Mac, Sta_Mac) || Min(ANonce, SNonce) || Max(ANonce, SNonce))
 </code></pre>
 
-<p>生成MIC算法:</p>
+<p>MIC算法:</p>
 
 <pre><code>//WAP1
 MIC = HMAC(EVP_sha1(), KCK, 16, eapol_data，eapol_size) 
@@ -215,9 +217,9 @@ MIC = HMAC(EVP_md5(), KCK, 16, eapol_data，eapol_size)
 
 <p><img src="/images/2016/10/142303547147.png" alt="4-handshake" /></p>
 
-<p>破解时,利用我们字典中 PSK 和 ssid 生成PMK。</p>
+<p>破解时,利用我们字典中 PSK 和 ESSID 生成PMK。</p>
 
-<p>然后结合已知的MAC，AP的BSSID，A-NONCE，S-NONCE计算出PTK。</p>
+<p>然后结合已知的STA&#8217;MAC、BSSID、AP&#8217;NONCE、STA&#8217;NONCE计算出PTK。</p>
 
 <p>然后加上原始的报文数据算出MIC,并与AP发送的MIC比较。如果一致，那么该PSK就是密钥。</p>
 
@@ -225,6 +227,7 @@ MIC = HMAC(EVP_md5(), KCK, 16, eapol_data，eapol_size)
 
 <ul>
 <li><a href="https://zh.wikipedia.org/wiki/%E6%B5%81%E5%8A%A0%E5%AF%86">https://zh.wikipedia.org/wiki/%E6%B5%81%E5%8A%A0%E5%AF%86</a></li>
+<li><a href="http://www.cnblogs.com/rainbowzc/p/5410876.html">http://www.cnblogs.com/rainbowzc/p/5410876.html</a></li>
 </ul>
 
 </div>
@@ -270,7 +273,7 @@ MIC = HMAC(EVP_md5(), KCK, 16, eapol_data，eapol_size)
       <footer role="contentinfo">
 	<!-- include footer -->
 	<p>
-  Copyright &copy; 2016 - sbxfc -
+  Copyright &copy; 2017 - sbxfc -
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
 </p>
 

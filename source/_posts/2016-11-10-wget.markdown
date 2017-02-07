@@ -1,0 +1,114 @@
+---
+layout: post
+title: "wget"
+date: 2016-11-10 16:19:18 +0800
+comments: true
+categories: 
+---
+
+wget是一个用于网络下载的自由工具,它支持HTTP、HTTPS以及FTP协议。
+
+wget支持递归下载并按照robots.txt协议对远程服务器上的HTML页面信息,按照其目录结构进行拷贝。并且 wget 非常稳定,在不稳定的网络下有很强的适应性.如果是由于网络的原因下载失败,wget会不断的尝试,直到整个文件下载完毕。如果是服务器打断下载过程,它会再次联到服务器上从停止的地方继续下载。这对从那些限定了链接时间的服务器上下载大文件非常有用。
+
+wget的命令格式:
+
+	wget [options] [URL]
+
+>下载文件
+	
+	//这个命令会尝试将服务器首页下载下来
+	wget http://rungame.me/
+	
+	//加 -x 会强制创建与服务器上一样的目录
+	wget -x http://rungame.me/
+	
+	//加-nd 则不会创建目录
+	wget -nd http://rungame.me/
+	
+	//-r 会按照递归的方式下载服务器下的全部内容
+	wget -r http://rungame.me/
+
+>断点续传
+
+当文件特别大或者网络特别慢的时候,往往一个文件还没有下载完,连接就已经被切断,此时就需要断点续传。
+	
+	wget -c http://rungame.me/
+
+> 批量下载
+
+如果有多个文件需要下载,那么可以生成一个文件,把每个文件的URL写一行,例如生成文件 download.txt,然后用命令把文本里的文件都下载下来:
+
+	wget -i download.txt 	
+	
+>选择性下载
+
+可以指定wget只下载一类文件或者不下载什么文件。
+
+	//忽略gif文件
+	wget -m --reject=gif http://rungame.me/
+	//只下载png图片
+	wget -m --accept=png http://rungame.me/
+	
+>使用代理服务器进行下载
+
+
+
+#参数
+
+命令参数 | 分类 | 作用
+------------ | ------------- | ------------- 
+-V, –version  | 启动  | 显示wget版本
+-h, –help  | 启动  | 帮助
+-b, -background | 启动  |启动后进入后台操作。 
+-c, --continue | 下载  | 继续接收已下载了一部分的文件。
+-o, –output-file=FILE | 下载 | 将下载的内容保存至指定的文件
+-a, –append-output=FILE | 记录  | 把记录追加到FILE文件中
+-d, –debug | 输出  |打印调试输出
+-q, –quiet | 输出  | 安静模式(没有输出)
+-v, –verbose  | 输出  | 冗长模式(这是缺省设置)
+-nv, –non-verbose| 输出  | 关掉冗长模式，但不是安静模式
+-i, –input-file=FILE | 输入  |下载在FILE文件中出现的URLs
+-F, –force-html | 输入  | 把输入文件当作HTML格式文件对待
+-B, –base=URL | 输入  | 将URL作为在-F -i参数指定的文件中出现的相对链接的前缀
+–sslcertfile=FILE | 输入  |  可选客户端证书
+–sslcertkey=KEYFILE | 输入  |  可选客户端证书的KEYFILE
+–egd-file=FILE | 输入  | 指定EGD socket的文件名
+–bind-address=ADDRESS | 下载  | 指定本地使用地址(主机名或IP，当本地有多个IP或名字时使用)
+-t, –tries=NUMBER | 下载  | 设定最大尝试链接次数(0 表示无限制).
+-O –output-document=FILE | 下载  |  把文档写到FILE文件中
+-nc, –no-clobber  | 下载  | 不要覆盖存在的文件或使用.#前缀
+-c, –continue  | 下载  | 接着下载没下载完的文件
+–progress=TYPE | 下载  | 设定进程条标记
+-N, –timestamping | 下载  | 不要重新下载文件除非比本地文件新
+-S, –server-response | 下载  | 打印服务器的回应
+–spider | 下载  | 不下载任何东西
+-T, –timeout=SECONDS | 下载  | 设定响应超时的秒数
+-w, –wait=SECONDS  | 下载  | 两次尝试之间间隔SECONDS秒
+–waitretry=SECONDS  | 下载  | 在重新链接之间等待1…SECONDS秒
+–random-wait  | 下载  |在下载之间等待0…2*WAIT秒
+-Y, –proxy=on/off  | 下载  |打开或关闭代理
+-Q, –quota=NUMBER  | 下载  |设置下载的容量限制
+–limit-rate=RATE  | 下载  | 限定下载输率
+-nd --no-directories | 目录  |不创建目录 
+-x, --force-directories | 目录  | 强制创建目录
+-nH, –no-host-directories | 目录  | 不创建主机目录
+-P, –directory-prefix=PREFIX | 目录  | 将文件保存到目录 PREFIX/…
+–cut-dirs=NUMBER | 目录  |  忽略 NUMBER层远程目录
+--http-user=用户 | HTTP  | 配置http用户名
+--http-passwd=密码 | HTTP  | 配置 http 用户密码
+-C, –cache=on/off | HTTP  |允许/不允许服务器端的数据缓存 (一般情况下允许)
+-E, –html-extension | HTTP  |将所有text/html文档以.html扩展名保存
+–ignore-length | HTTP  | 忽略 `Content-Length’头域
+–header=STRING | HTTP  | 在headers中插入字符串 STRING
+--proxy-user=用户 | HTTP  | 配置代理服务器用户名 
+--proxy-passwd=密码 | HTTP  |配置代理服务器用户密码
+--referer=URL | HTTP  | 在 HTTP 请求中包含“Referer：URL”头
+-r,-recursive | 递归下载  | 递归下载
+-m, --mirror | 递归下载   | 等效于 -r -N -l inf -nr 的选项
+-l, --level=数字 | 递归下载  | 最大递归深度(inf 或 0 表示无限)
+-A, --accept=列表 | 递归下载  | 接受的文件样式列表，以逗号分隔。  
+-R, --reject=列表 | 递归下载  | 排除的文件样式列表，以逗号分隔。
+#参见
+
+- <https://zh.wikipedia.org/wiki/Wget>
+- <http://www.cnblogs.com/peida/archive/2013/03/18/2965369.html>

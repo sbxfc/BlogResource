@@ -1,0 +1,94 @@
+---
+layout: post
+title: "Linux下的命令"
+date: 2016-11-17 14:32:56 +0800
+comments: true
+categories: 
+---
+
+#系统信息
+
+	uname -a
+	
+	
+	
+#文件系统
+
+	$touch a.txt
+
+如果a.txt不存在，生成一个新的空文档a.txt。如果a.txt存在，那么只更改该文档的时间信息。
+
+	$ls .
+
+是list的简写，列出当前目录下的所有文件名
+
+	$ls -l a.txt
+
+列出文件的详细信息
+
+	$cp a.txt b.txt
+	
+cp是copy的简写，用来复制文件。在工作目录下，将a.txt复制到文件b.txt
+
+	$cp a.txt ..
+	
+将a.txt复制到父目录的a.txt
+
+	$mv a.txt c.txt
+	
+mv是move的简写，用来移动文件。将a.txt移动成为c.txt (相当于重命名rename)
+
+将文件 log1.txt,log2.txt,log3.txt 移动到目录docs中:
+
+	mv log1.txt log2.txt log3.txt /tmp/docs/
+	 
+将文件 log1.txt,log2.txt,log3.txt 移动到目录docs中:
+
+	mv -t /tmp/docs/ log1.txt log2.txt log3.txt 
+	
+参数 | 作用 
+------------ | ------------- 
+-b  | 若需覆盖文件，则覆盖前先进行备份 
+-f | force 强制的意思，如果目标文件已经存在，不会询问而直接覆盖
+-i | 若目标文件存在时,询问是否覆盖
+-u | 若目标文件已经存在,且 source 比较新，才会更新(update)
+-t | 即指定mv的目标目录,该选项适用于移动多个源文件到一个目录的情况,此时目标目录在前,源文件在后。
+
+	$rm a.txt
+
+rm是remove的缩写，用于删除文件。删除a.txt
+
+	$rm -r /tmp/docs/ 
+
+删除从/tmp/docs/向下的整个子文件系统。-r表示recursive， 是指重复删除的操作，/tmp/docs/文件夹为空，然后删除/tmp/docs/文件夹本身。
+
+(程序员总是对这个命令很感兴趣,   $rm -rf /   它会删除整个文件树。f的目的是告诉rm放心干，不用再确认了…… 一般情况下，应该没有人会用这个命令。)
+	
+#解压缩
+
+>.tar 
+
+	//解包
+	tar xvf FileName.tar
+	//打包 （注：tar是打包，不是压缩！）
+	tar cvf FileName.tar DirName
+
+>.gz
+	
+	//解压1
+	gunzip FileName.gz
+	//解压2
+	gzip -d FileName.gz
+	//压缩
+	gzip FileName
+
+>.tar.gz 和 .tgz
+
+	//解压:
+	tar zxvf FileName.tar.gz
+	//压缩:
+	tar zcvf FileName.tar.gz DirName
+	
+
+
+

@@ -1,0 +1,303 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>dig工具 - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="dig工具 dig 的全称是 Domain Information Groper,意即域名信息挖掘工具。 直接输入dig查询,会显示全球13个DNS根域名服务器信息: $ dig ; &lt;&lt;&gt;&gt; DiG 9.8.3-P1 &lt;&lt;&gt;&gt;
+;; global &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="http://lib.sinaapp.com/js/jquery/2.0.3/jquery-2.0.3.min.js"></script>
+<link href='http://fonts.lug.ustc.edu.cn/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2016/11/17/dig">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">dig工具</h2>
+    
+  </header>
+
+  <div class="entry_content"><p>dig 的全称是 Domain Information Groper,意即域名信息挖掘工具。</p>
+
+<p>直接输入dig查询,会显示全球13个DNS根域名服务器信息:</p>
+
+<pre><code>$ dig
+
+; &lt;&lt;&gt;&gt; DiG 9.8.3-P1 &lt;&lt;&gt;&gt;
+;; global options: +cmd
+;; Got answer:
+;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOERROR, id: 56638
+;; flags: qr rd ra; QUERY: 1, ANSWER: 13, AUTHORITY: 0, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;.              IN  NS
+
+;; ANSWER SECTION:
+.           402014  IN  NS  f.root-servers.net.
+.           402014  IN  NS  d.root-servers.net.
+.           402014  IN  NS  j.root-servers.net.
+.           402014  IN  NS  e.root-servers.net.
+.           402014  IN  NS  g.root-servers.net.
+.           402014  IN  NS  a.root-servers.net.
+.           402014  IN  NS  b.root-servers.net.
+.           402014  IN  NS  h.root-servers.net.
+.           402014  IN  NS  k.root-servers.net.
+.           402014  IN  NS  l.root-servers.net.
+.           402014  IN  NS  m.root-servers.net.
+.           402014  IN  NS  c.root-servers.net.
+.           402014  IN  NS  i.root-servers.net.
+
+;; Query time: 16 msec
+;; SERVER: 114.114.114.114#53(114.114.114.114)
+;; WHEN: Thu Dec 22 16:43:01 2016
+;; MSG SIZE  rcvd: 228
+</code></pre>
+
+<p>使用追踪功能(+trace),我们可以查询到每级DNS服务器对域名的解析全过程</p>
+
+<pre><code>$ dig +trace rungame.me
+
+; &lt;&lt;&gt;&gt; DiG 9.8.3-P1 &lt;&lt;&gt;&gt; +trace rungame.me
+;; global options: +cmd
+.           227759  IN  NS  b.root-servers.net.
+.           227759  IN  NS  d.root-servers.net.
+.           227759  IN  NS  e.root-servers.net.
+.           227759  IN  NS  a.root-servers.net.
+.           227759  IN  NS  h.root-servers.net.
+.           227759  IN  NS  k.root-servers.net.
+.           227759  IN  NS  c.root-servers.net.
+.           227759  IN  NS  j.root-servers.net.
+.           227759  IN  NS  m.root-servers.net.
+.           227759  IN  NS  i.root-servers.net.
+.           227759  IN  NS  g.root-servers.net.
+.           227759  IN  NS  l.root-servers.net.
+.           227759  IN  NS  f.root-servers.net.
+;; Received 228 bytes from 114.114.114.114#53(114.114.114.114) in 210 ms
+
+me.         172800  IN  NS  a0.cctld.afilias-nst.info.
+me.         172800  IN  NS  a2.me.afilias-nst.info.
+me.         172800  IN  NS  b0.cctld.afilias-nst.org.
+me.         172800  IN  NS  b2.me.afilias-nst.org.
+me.         172800  IN  NS  c0.cctld.afilias-nst.info.
+me.         172800  IN  NS  d0.cctld.afilias-nst.org.
+me.         172800  IN  NS  ns.nic.me.
+me.         172800  IN  NS  ns2.nic.me.
+;; Received 486 bytes from 198.97.190.53#53(198.97.190.53) in 1171 ms
+
+rungame.me.     86400   IN  NS  f1g1ns1.dnspod.net.
+rungame.me.     86400   IN  NS  f1g1ns2.dnspod.net.
+;; Received 82 bytes from 199.249.119.1#53(199.249.119.1) in 281 ms
+
+rungame.me.     600 IN  CNAME   sbxfc.github.io.
+rungame.me.     86400   IN  NS  f1g1ns2.dnspod.net.
+rungame.me.     86400   IN  NS  f1g1ns1.dnspod.net.
+;; Received 121 bytes from 182.140.167.188#53(182.140.167.188) in 50 ms
+</code></pre>
+
+<p>或者,使用指定的DNS服务器查询A记录</p>
+
+<pre><code>$ dig @8.8.8.8 rungame.me A
+
+; &lt;&lt;&gt;&gt; DiG 9.8.3-P1 &lt;&lt;&gt;&gt; @8.8.8.8 rungame.me A
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOERROR, id: 63802
+;; flags: qr rd ra; QUERY: 1, ANSWER: 3, AUTHORITY: 0, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;rungame.me.            IN  A
+
+;; ANSWER SECTION:
+rungame.me.     599 IN  CNAME   sbxfc.github.io.
+sbxfc.github.io.    3599    IN  CNAME   github.map.fastly.net.
+github.map.fastly.net.  11  IN  A   151.101.100.133
+
+;; Query time: 198 msec
+;; SERVER: 8.8.8.8#53(8.8.8.8)
+;; WHEN: Wed Nov 16 15:45:04 2016
+;; MSG SIZE  rcvd: 108
+</code></pre>
+
+<p>部分参数描述:</p>
+
+<table>
+<thead>
+<tr>
+<th>参数 </th>
+<th> 描述 </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>+trace </td>
+<td> 从顶级根域名开始追踪查询过程</td>
+</tr>
+<tr>
+<td>+tcp </td>
+<td> 使用TCP代替默认的UDP查询</td>
+</tr>
+<tr>
+<td>-q </td>
+<td> 逆向查询,可以查询IP到域名的映射</td>
+</tr>
+<tr>
+<td>-x </td>
+<td> 逆向查询,可以查询IP到域名的映射</td>
+</tr>
+<tr>
+<td>-t </td>
+<td> 设置查询类型,默认情况下是A，也可以设置MX等类型</td>
+</tr>
+<tr>
+<td>-f </td>
+<td> dig支持从一个文件里读取内容进行批量查询</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2016-11-17 10:54:59 +0800" pubdate>Nov 17<span>th</span>, 2016</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2017 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2016/11/17/dig';
+	var disqus_url = 'http://sbxfc.github.io/blog/2016/11/17/dig';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

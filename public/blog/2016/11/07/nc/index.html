@@ -1,0 +1,256 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>netcat - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="netcat 参数 作用 -w 设置超时时间(单位:秒) -v 显示命令执行过程 -n 直接使用IP地址,而不通过域名系统 -z 零模式IO(与目标服务器连接成功后即关闭,用于扫描端口)。 -l 使用监听模式，管控传入的资料。 端口扫描 $nc -v -z -w 2 192.168.1.66 &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="http://lib.sinaapp.com/js/jquery/2.0.3/jquery-2.0.3.min.js"></script>
+<link href='http://fonts.lug.ustc.edu.cn/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2016/11/07/nc">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">netcat</h2>
+    
+  </header>
+
+  <div class="entry_content"><table>
+<thead>
+<tr>
+<th>参数 </th>
+<th> 作用 </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>-w </td>
+<td> 设置超时时间(单位:秒) </td>
+</tr>
+<tr>
+<td>-v </td>
+<td> 显示命令执行过程</td>
+</tr>
+<tr>
+<td>-n </td>
+<td> 直接使用IP地址,而不通过域名系统 </td>
+</tr>
+<tr>
+<td>-z </td>
+<td> 零模式IO(与目标服务器连接成功后即关闭,用于扫描端口)。</td>
+</tr>
+<tr>
+<td>-l </td>
+<td> 使用监听模式，管控传入的资料。</td>
+</tr>
+</tbody>
+</table>
+
+
+<blockquote><p>端口扫描</p></blockquote>
+
+<pre><code>$nc -v -z -w 2 192.168.1.66 79-80
+nc: connectx to 192.168.1.66 port 79 (tcp) failed: Connection refused
+found 0 associations
+found 1 connections:
+     1: flags=82&lt;CONNECTED,PREFERRED&gt;
+    outif en0
+    src 192.168.1.49 port 61201
+    dst 123.57.38.225 port 80
+    rank info not available
+    TCP aux info available
+
+Connection to 123.57.38.225 port 80 [tcp/http] succeeded!
+</code></pre>
+
+<blockquote><p>传输文件</p></blockquote>
+
+<pre><code>/* 从主机118复制文件到主机49*/
+/* 首先,主机49监听端口*/
+$ nc -l 6666 &gt; /Users/sbxfc/test.txt
+/* 然后,主机118写入 */
+$ nc 192.168.1.49 6666 &lt; /root/Documents/tmp_20161107.txt
+</code></pre>
+
+<blockquote><p>聊天</p></blockquote>
+
+<pre><code>/* 从主机118复制文件到主机49*/
+/* 首先,主机49监听端口*/
+$ nc -l 7777 &gt; /Users/sbxfc/test.txt
+/* 然后,主机118连接后,在控制台输入就可以保存至test.txt的文件上*/
+$ nc 192.168.1.49 7777 
+</code></pre>
+
+<blockquote><p>模拟 HTTP 获取信息</p></blockquote>
+
+<pre><code>$nc cn.bing.com 80 
+GET / HTTP/1.1
+Host: cn.bing.com //接下来,两次回车
+
+HTTP/1.1 200 OK
+Cache-Control: private, max-age=0
+Content-Length: 120331
+Content-Type: text/html; charset=utf-8
+Vary: Accept-Encoding
+Server: Microsoft-IIS/8.5
+P3P: CP="NON UNI COM NAV STA LOC CURa DEVa PSAa PSDa OUR IND"
+
+&lt;!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" ...&gt;
+&lt;html lang="zh" xml:lang="zh" xmlns="http://www.w3.org/1999/xhtml"&gt;
+&lt;script type="text/javascript"&gt;
+...省略一大堆...
+</code></pre>
+
+<h1>参见</h1>
+
+<ul>
+<li><a href="https://zh.wikipedia.org/wiki/Netcat">https://zh.wikipedia.org/wiki/Netcat</a></li>
+<li><a href="https://www.oschina.net/translate/linux-netcat-command">https://www.oschina.net/translate/linux-netcat-command</a></li>
+</ul>
+
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2016-11-07 17:00:35 +0800" pubdate>Nov 7<span>th</span>, 2016</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2017 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2016/11/07/nc';
+	var disqus_url = 'http://sbxfc.github.io/blog/2016/11/07/nc';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

@@ -1,0 +1,39 @@
+---
+layout: post
+title: "curl"
+date: 2016-11-11 10:45:37 +0800
+comments: true
+categories: 
+---
+
+>下载首页,并在控制台显示
+
+	curl rungame.me
+	
+>下载指定路径下的文件并保存
+
+	curl -O http://rungame.me/images/photo.gif
+	
+>将下载的文件保存至指定的文件中
+
+	curl -o index.html http://rungame.me/
+
+参数 |  作用 
+------------  | ------------
+-o {FILE} |  保存至指定的文件中
+-O |  下载指定路径下的文件并保存
+-i |  会显示 Response Header信息和页面源码
+-I |  只会显示 Response Header信息
+-v |  可以显示HTTTP的请求的通信过程
+--trace {OUTPUT_FILE} |  显示详细的HTTTP请求过程
+--trace-ascii {OUTPUT_FILE} |  显示详细的HTTTP请求过程
+--referer |  设置HTTP请求中的Referer
+
+
+
+#参见
+
+- <https://curl.haxx.se/docs/manpage.html>
+
+- <http://blog.51yip.com/linux/1049.html>
+	

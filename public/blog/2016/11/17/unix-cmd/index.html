@@ -1,0 +1,281 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <!-- include head -->
+    
+
+<meta charset="utf-8">
+<title>Linux下的命令 - sbxfc</title>
+<meta name="author" content="sbxfc">
+<meta name="description"
+      content="Linux下的命令 系统信息 uname -a 文件系统 $touch a.txt 如果a.txt不存在，生成一个新的空文档a.txt。如果a.txt存在，那么只更改该文档的时间信息。 $ls . 是list的简写，列出当前目录下的所有文件名 $ls -l a.txt 列出文件的详细信息 $cp &hellip;">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!---->
+<script src="http://lib.sinaapp.com/js/jquery/2.0.3/jquery-2.0.3.min.js"></script>
+<link href='http://fonts.lug.ustc.edu.cn/css?family=Open+Sans:400italic,400,700' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/8.0/styles/monokai_sublime.min.css">
+<script src="http://yandex.st/highlightjs/8.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!---->
+
+<link rel="canonical" href="http://sbxfc.github.io/blog/2016/11/17/unix-cmd">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css"
+      media="screen, projection"
+      rel="stylesheet"
+      type="text/css">
+<link href="/atom.xml"
+      rel="alternate"
+      title="sbxfc"
+      type="application/atom+xml">
+
+
+<script src="/javascripts/modernizr-2.0.js" type="text/javascript"></script>
+<script src="/javascripts/ender.js" type="text/javascript"></script>
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+
+
+
+    <!-- /include -->
+  </head>
+  <body>
+    <div id="wrapper">
+
+      <header role="banner" class="site_metas">
+	<!-- include header -->
+	
+<hgroup>
+  <h1><a href="/">sbxfc</a></h1>
+  
+  <h2>IF YOU LOVE SOMETHING,SET IT FREE</h2>
+  
+</hgroup>
+
+	<!-- /include -->
+        <!-- include social_service_links -->
+	
+
+        <!-- /include -->
+      </header>
+
+      <div id="content">
+	<!-- content -->
+	
+
+  
+
+
+<article class="entry" role="article">
+
+  <header>
+    <h2 class="entry_title">Linux下的命令</h2>
+    
+  </header>
+
+  <div class="entry_content"><h1>系统信息</h1>
+
+<pre><code>uname -a
+</code></pre>
+
+<h1>文件系统</h1>
+
+<pre><code>$touch a.txt
+</code></pre>
+
+<p>如果a.txt不存在，生成一个新的空文档a.txt。如果a.txt存在，那么只更改该文档的时间信息。</p>
+
+<pre><code>$ls .
+</code></pre>
+
+<p>是list的简写，列出当前目录下的所有文件名</p>
+
+<pre><code>$ls -l a.txt
+</code></pre>
+
+<p>列出文件的详细信息</p>
+
+<pre><code>$cp a.txt b.txt
+</code></pre>
+
+<p>cp是copy的简写，用来复制文件。在工作目录下，将a.txt复制到文件b.txt</p>
+
+<pre><code>$cp a.txt ..
+</code></pre>
+
+<p>将a.txt复制到父目录的a.txt</p>
+
+<pre><code>$mv a.txt c.txt
+</code></pre>
+
+<p>mv是move的简写，用来移动文件。将a.txt移动成为c.txt (相当于重命名rename)</p>
+
+<p>将文件 log1.txt,log2.txt,log3.txt 移动到目录docs中:</p>
+
+<pre><code>mv log1.txt log2.txt log3.txt /tmp/docs/
+</code></pre>
+
+<p>将文件 log1.txt,log2.txt,log3.txt 移动到目录docs中:</p>
+
+<pre><code>mv -t /tmp/docs/ log1.txt log2.txt log3.txt 
+</code></pre>
+
+<table>
+<thead>
+<tr>
+<th>参数 </th>
+<th> 作用 </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>-b  </td>
+<td> 若需覆盖文件，则覆盖前先进行备份 </td>
+</tr>
+<tr>
+<td>-f </td>
+<td> force 强制的意思，如果目标文件已经存在，不会询问而直接覆盖</td>
+</tr>
+<tr>
+<td>-i </td>
+<td> 若目标文件存在时,询问是否覆盖</td>
+</tr>
+<tr>
+<td>-u </td>
+<td> 若目标文件已经存在,且 source 比较新，才会更新(update)</td>
+</tr>
+<tr>
+<td>-t </td>
+<td> 即指定mv的目标目录,该选项适用于移动多个源文件到一个目录的情况,此时目标目录在前,源文件在后。</td>
+</tr>
+</tbody>
+</table>
+
+
+<pre><code>$rm a.txt
+</code></pre>
+
+<p>rm是remove的缩写，用于删除文件。删除a.txt</p>
+
+<pre><code>$rm -r /tmp/docs/ 
+</code></pre>
+
+<p>删除从/tmp/docs/向下的整个子文件系统。-r表示recursive， 是指重复删除的操作，/tmp/docs/文件夹为空，然后删除/tmp/docs/文件夹本身。</p>
+
+<p>(程序员总是对这个命令很感兴趣,   $rm -rf /   它会删除整个文件树。f的目的是告诉rm放心干，不用再确认了…… 一般情况下，应该没有人会用这个命令。)</p>
+
+<h1>解压缩</h1>
+
+<blockquote><p>.tar</p></blockquote>
+
+<pre><code>//解包
+tar xvf FileName.tar
+//打包 （注：tar是打包，不是压缩！）
+tar cvf FileName.tar DirName
+</code></pre>
+
+<blockquote><p>.gz</p></blockquote>
+
+<pre><code>//解压1
+gunzip FileName.gz
+//解压2
+gzip -d FileName.gz
+//压缩
+gzip FileName
+</code></pre>
+
+<blockquote><p>.tar.gz 和 .tgz</p></blockquote>
+
+<pre><code>//解压:
+tar zxvf FileName.tar.gz
+//压缩:
+tar zcvf FileName.tar.gz DirName
+</code></pre>
+</div>
+
+  <footer>
+    <p class="meta">
+
+      
+
+      
+      <time datetime="2016-11-17 14:32:56 +0800" pubdate>Nov 17<span>th</span>, 2016</time>
+      
+
+      
+      <span class="categories">
+	
+      </span>
+      
+
+    </p>
+
+    
+
+    
+    <section>
+      <h3 id="comments">Comments</h3>
+      <div id="disqus_thread" aria-live="polite">
+	<noscript>
+	  Javascript 未启用。
+	  (<a href="http://disqus.com/?ref_noscript">Disqus</a>)
+	</noscript>
+      </div>
+    </section>
+    
+
+  </footer>
+  
+</div>
+
+	<!-- /content -->
+      </div>
+
+      <footer role="contentinfo">
+	<!-- include footer -->
+	<p>
+  Copyright &copy; 2017 - sbxfc -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+	<!-- /include -->
+      </footer>
+      
+      <!-- include after_footer -->
+      
+
+<script type="text/javascript">
+      var disqus_shortname = 'sbxfc17';
+      
+	
+	// var disqus_developer = 1;
+	var disqus_identifier = 'http://sbxfc.github.io/blog/2016/11/17/unix-cmd';
+	var disqus_url = 'http://sbxfc.github.io/blog/2016/11/17/unix-cmd';
+	var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+      <!-- /include -->
+
+    </div>
+  </body>
+</html>

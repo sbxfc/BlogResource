@@ -1,0 +1,235 @@
+---
+layout: post
+title: "HTTP协议"
+date: 2016-11-08 12:19:14 +0800
+comments: true
+categories: 
+---
+
+HTTP 全称是 HyperText Transfer Protocol ,即超文本传输协议,简称为 HTTP。
+
+HTTP 最初的设计目的是将HTML页面从Web服务器加载到浏览器,但现在它的作用不止如此。当前HTTP版本有 HTTP/1.0、HTTP/1.1 和 HTTP/2 。
+
+#URL地址
+在介绍HTTP协议之前,不得不提到一个与其息息相关的东西 URL,统一资源定位符,英语：Uniform / Universal Resource Locator，简称为 URL。
+
+当我们在浏览器里输入一个URL时,实际上，这里面包含了一些我们想告诉Web服务器的一些信息,这些信息通过HTTP协议由浏览器发送至Web服务器。
+
+URL中包含了五个基本元素:
+
+1. 传送协议。
+2. 服务器地址。（通常为域名,有时为IP地址）
+3. 端口号。(若为HTTP的默认值“:80”可省略)
+4. 资源路径。（以“/”字符分割的服务器下的目录名称）
+5. 查询参数。 (URL以GET的方式向服务器数据,其中,参数以“?”字符为起点，每个参数以“&”隔开，再以“=”分开参数名称与数据）
+
+一个例子:
+
+	http://www.google.com/imghp?hl=zh-CN&tab=wi&ei=6AcjWJC2KZfijwOdvZfIAg&ved=0EKouCBYoAQ
+	
+1. http,是传输协议；
+2. www.google.com 是服务器。
+3. /imghp,是资源路径。
+4. ?hl=zh-CN&tab=wi&ei=6AcjWJC2KZfijwOdvZfIAg&ved=0EKouCBYoAQ 是发送至服务器的查询数据。
+
+
+#协议的结构
+
+HTTP协议分为两部分:
+
+>1.Request 部分
+
+在HTTP请求中,第一行必须是一个请求行,用来说明请求类型,要访问的资源以及使用的版本号,紧接着是 HTTP Header,然后是body,即发给服务器的查询信息。当使用的是"GET" 方法的时候,body是为空。
+	
+    GET http://rungame.me/ HTTP/1.1 //<--请求行
+    Host: rungame.me
+    Proxy-Connection: keep-alive
+    Cache-Control: max-age=0
+    Upgrade-Insecure-Requests: 1
+    User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 ...
+    Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
+    Accept-Encoding: gzip, deflate, sdch
+    Accept-Language: zh-CN,zh;q=0.8,en;q=0.6,ja;q=0.4,ceb;q=0.2,ko;q=0.2
+    If-Modified-Since: Thu, 03 Nov 2016 02:43:30 GMT
+    ...body...
+    
+>2.Response 部分
+
+Response 也分成了三部分,第一部分用状态行替代了请求行。状态行提供了一个状态码来说明所请求的资源情况。第二部分是 Header,然后是返回的请求资源主体 body。
+	
+
+    HTTP/1.1 200 OK //<--状态行
+    Server: GitHub.com
+    Content-Type: image/png
+    Last-Modified: Thu, 03 Nov 2016 02:43:30 GMT
+    Access-Control-Allow-Origin: *
+    Expires: Wed, 09 Nov 2016 12:15:13 GMT
+    Cache-Control: max-age=600
+    X-GitHub-Request-Id: C71B4A18:22F4:4416C6F:582310F9
+    Content-Length: 1990
+    Accept-Ranges: bytes
+    Date: Wed, 09 Nov 2016 12:05:13 GMT
+    Via: 1.1 varnish
+    Age: 0
+    X-Served-By: cache-sea1926-SEA
+    X-Cache: MISS
+    X-Cache-Hits: 0
+    X-Timer: S1478693113.536324,VS0,VE84
+    Vary: Accept-Encoding
+    X-Fastly-Request-ID: 9d29c1e4626c3decd2a6c4384ba997e75f9452d5
+    X-Cache: MISS from 192-241-238-165
+    X-Cache-Lookup: MISS from 192-241-238-165:1434
+    Connection: keep-alive
+
+    <!DOCTYPE html>
+	...
+    
+#HTTP Request Header
+
+HTTP 请求头包含许多键值对，这些键值对有什么意义与作用？
+
+<font color='#bd260d'>**1.Cache : **</font> 
+	
+- If-Modified-Since <br>
+用法：If-Modified-Since: Thu, 03 Nov 2016 02:43:30 GMT<br>
+把浏览器端缓存页面的最后修改时间发送到服务器去，服务器会把这个时间与服务器上实际文件的最后修改时间进行对比。如果时间一致，那么返回304，客户端就直接使用本地缓存文件。如果时间不一致，就会返回200和新的文件内容。客户端接到之后，会丢弃旧文件，把新文件缓存起来，并显示在浏览器中。
+
+- If-None-Match <br>用法：If-None-Match: "03f2b33c0bfcc1:0" <br>If-None-Match和ETag一起工作，工作原理是在HTTP Response中添加ETag信息。 当用户再次请求该资源时，将在HTTP Request 中加入If-None-Match信息(ETag的值)。如果服务器验证资源的ETag没有改变（该资源没有更新），将返回一个304状态告诉客户端使用本地缓存文件。否则将返回200状态和新的资源和Etag. 使用这样的机制将提高网站的性能 。
+
+- Pragma：Pragma: no-cache  <br>Pargma只有一个用法， 例如： Pragma: no-cache <br>作用： 防止页面被缓存， 在HTTP/1.1版本中，它和Cache-Control:no-cache作用一模一样 
+
+- Cache-Control  <br>用法： <br>Cache-Control:Public 可以被任何缓存所缓存（）<br>
+Cache-Control:Private 内容只缓存到私有缓存中<br>
+Cache-Control:no-cache 所有内容都不会被缓存<br>
+作用：用来指定Response-Request遵循的缓存机制<br>
+
+<font color='#bd260d'>**2.Client : **</font> 
+
+- Accept  <br>用法：Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8<br>作用： 浏览器端可以接受的媒体类型；<br> 
+Accept: */* 代表浏览器可以处理所有回发的类型，(一般浏览器发给服务器都是发这个） <br> 
+Accept: text/html 代表浏览器可以接受服务器回发的类型为 text/html ；如果服务器无法返回text/html类型的数据，服务器应该返回一个406错误(non acceptable) 
+
+
+- Accept-Encoding   <br>用法：Accept-Encoding: gzip, deflate, sdch<br>作用： 浏览器申明自己接收的文件编码方法，通常指定压缩方法，是否支持压缩，支持什么压缩方法（gzip，deflate），（注意：这不是指字符编码） 
+
+- Accept-Language    <br>用法：zh-CN,zh;<br>作用： 浏览器申明自己接收的语言。 <br>
+语言跟字符集的区别：中文是语言，中文有多种字符集，比如big5，gb2312，gbk等等；  
+
+- User-Agent   <br>用法： User-Agent: User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5)...<br>作用：告诉HTTP服务器,客户端使用的操作系统和浏览器的名称和版本.  
+
+- Accept-Charset   <br>用法：Accept-Charset：utf-8 <br>作用：浏览器申明自己接收的字符集，这就是本文前面介绍的各种字符集和字符编码，如gb2312，utf-8（通常我们说Charset包括了相应的字符编码方案）  
+
+<font color='#bd260d'>**3.Cookie/Login : **</font> 
+
+- Cookie<br>作用：最重要的header, 将cookie的值发送给HTTP 服务器
+
+<font color='#bd260d'>**4.Entity : **</font> 
+
+- Content-Length   <br>用法：Content-Length: 38<br>作用：发送给HTTP服务器数据的长度。 
+
+ - Content-Type   <br>用法：Content-Type: application/x-www-form-urlencoded<br>不常出现，一般出现在response头部，用于指定数据文件类型 
+ 
+<font color='#bd260d'>**5.Miscellaneous : **</font>
+
+- Referer <br>用法：Referer: http://ce.sysu.edu.cn/hope/<br>作用：提供了Request的上下文信息的服务器，告诉服务器我是从哪个链接过来的，比如从我主页上链接到一个朋友那里，他的服务器就能够从HTTP Referer中统计出每天有多少用户点击我主页上的链接访问他的网站。 
+
+<font color='#bd260d'>**6.Transport : **</font>
+
+- Connection<br>Connection: keep-alive： 当一个网页打开完成后，客户端和服务器之间用于传输HTTP数据的TCP连接不会关闭，如果客户端再次访问这个服务器上的网页，会继续使用这一条已经建立的连接<br>Connection: close： 代表一个Request完成后，客户端和服务器之间用于传输HTTP数据的TCP连接会关闭， 当客户端再次发送Request，需要重新建立TCP连接 
+
+
+- Host <br>用法：Host: rungame.me<br>作用: 请求报头域主要用于指定被请求资源的Internet主机和端口号（默认80），它通常从HTTP URL中提取出来的
+
+
+
+#HTTP Response Header
+
+<font color='#bd260d'>**1.Cache ： **</font>
+
+- Date <br>用法：Date: Sat, 11 Feb 2012 11:35:14 GMT<br>作用: 生成消息的具体时间和日期 
+
+
+- Expires <br>用法：Expires: Tue, 08 Feb 2022 11:35:14 GMT <br>作用: 浏览器会在指定过期时间内使用本地缓存 
+
+- Vary <br>用法：Vary: Accept-Encoding 
+
+<font color='#bd260d'>**2.Cookie/Login ：**</font>
+
+- P3P <br>用法：<br>P3P: CP=CURa ADMa DEVa PSAo PSDo OUR BUS UNI PUR INT DEM STA PRE COM NAV OTC NOI DSP COR<br>作用: 用于跨域设置Cookie, 这样可以解决iframe跨域访问cookie的问题 
+
+
+- Set-Cookie<br> 
+Set-Cookie: sc=4c31523a; path=/; domain=.acookie.taobao.com<br>作用：非常重要的header, 用于把cookie 发送到客户端浏览器， 每一个写入cookie都会生成一个Set-Cookie.
+
+<font color='#bd260d'>**3.Entity ：**</font>
+
+- ETag <br>用法：ETag: "03f2b33c0bfcc1:0"<br>作用: 和request header的If-None-Match 配合使用 
+
+
+- Last-Modified <br>用法：Last-Modified: Wed, 21 Dec 2011 09:09:10 GMT<br>作用：用于指示资源的最后修改日期和时间。（实例请看上节的If-Modified-Since的实例） 
+
+
+- Content-Type <br>用法：<br>Content-Type: text/html; charset=utf-8<br>
+Content-Type:text/html;charset=GB2312<br>
+Content-Type: image/jpeg<br>
+作用：WEB服务器告诉浏览器自己响应的对象的类型和字符集 
+
+
+- Content-Encoding <br>用法：Content-Encoding：gzip<br>作用：WEB服务器表明自己使用了什么压缩方法（gzip，deflate）压缩响应中的对象。 
+
+
+- Content-Language <br>用法： Content-Language:da<br>WEB服务器告诉浏览器自己响应的对象的语言
+
+<font color='#bd260d'>**4.Miscellaneous ： **</font>
+
+- Server <br>
+用法：Server: Microsoft-IIS/7.5<br>作用：指明HTTP服务器的软件信息 
+
+
+- X-AspNet-Version <br>用法：X-AspNet-Version: 4.0.30319<br>作用：如果网站是用ASP.NET开发的，这个header用来表示ASP.NET的版本 
+
+- X-Powered-By <br>用法：X-Powered-By: ASP.NET<br>作用：表示网站是用什么技术开发的 
+
+<font color='#bd260d'>**5.Transport ：**</font>
+
+- Connection <br>用法与作用： <br>Connection: keep-alive：当一个网页打开完成后，客户端和服务器之间用于传输HTTP数据的TCP连接不会关闭，如果客户端再次访问这个服务器上的网页，会继续使用这一条已经建立的连接<br>Connection: close：代表一个Request完成后，客户端和服务器之间用于传输HTTP数据的TCP连接会关闭， 当客户端再次发送Request，需要重新建立TCP连接
+
+<font color='#bd260d'>**6.Location头域 ：**</font>
+
+- Location <br>用法：Location：http://ce.sysu.edu.cn/hope/ <br>作用： 用于重定向一个新的位置， 包含新的URL地址
+
+#状态码
+
+
+响应类型 | 描述
+------------ | ------------- 
+1xx消息 | 请求已被服务器接收，继续处理  
+2xx成功 | 请求已成功被服务器接收、理解、并接受 
+3xx重定向 | 需要后续操作才能完成这一请求
+4xx请求错误 | 请求含有词法错误或者无法被执行 
+5xx服务器错误 | 服务器在处理某个正确请求时发生错误
+
+#例子
+
+客户端请求:
+	
+	GET / HTTP/1.1
+	Host: cn.bing.com 
+	
+服务器应答:
+
+	HTTP/1.1 200 OK
+	Cache-Control: private, max-age=0
+	Content-Length: 120331
+	Content-Type: text/html; charset=utf-8
+	Vary: Accept-Encoding
+	Server: Microsoft-IIS/8.5
+	P3P: CP="NON UNI COM NAV STA LOC CURa DEVa PSAa PSDa OUR IND"
+	
+	<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" ...>
+	<html lang="zh" xml:lang="zh" xmlns="http://www.w3.org/1999/xhtml">
+	<script type="text/javascript">
+	...省略一大堆...
+	
+#参见
+- <https://zh.wikipedia.org/wiki/%E7%BB%9F%E4%B8%80%E8%B5%84%E6%BA%90%E5%AE%9A%E4%BD%8D%E7%AC%A6>

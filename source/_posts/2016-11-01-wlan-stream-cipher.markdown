@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "WLAN密钥流解密"
+title: "WLAN密钥解密"
 date: 2016-11-01 16:10:22 +0800
 comments: true
 categories:
@@ -49,13 +49,13 @@ categories:
 
 #四次握手
 
-802.11i 中的 RSN（Robust Security Network）定义了在无线网络下的一个安全的连接流程。这个流程也就是 RSNA（Robust Security Network Association）,定义了认证、加密以及密钥管理。
+802.11i 中的 RSN（Robust Security Network）定义了无线网络下的安全的连接流程。这个流程也就是 RSNA（Robust Security Network Association）,定义了无线网络下的认证、加密以及密钥管理。
 
-STA 通过 802.1x 的认证后,AP 与 STA 都会拿到同一组 session key。有RADIUS(认证服务器)时称为 PMK(Pairwise Master Key),无 RADIUS 时 PSK(Pre-Shared Key) 即PMK。之后进行 4-way handshake。
+STA 通过 802.1x 的认证后,AP 与 STA 都会拿到同一组 session key。有 RADIUS(认证服务器)时称为 PMK(Pairwise Master Key),无 RADIUS 时 PSK(Pre-Shared Key) 即PMK。之后进行 4-way handshake。
 
-> 在没有RADIUS时,AP 与 STA 会预先设定好一组passphrase,并用来衍生出PMK。
+> 在没有RADIUS时,AP 与 STA 会预先设定好一组 passphrase,并用其衍生出PMK。
 
-对于网络安全而言,key愈少愈好。因此 4-way handshake 用来建立 512 bits的PTK(Pairwise Transient Key)。PTK 由 PMK,AP Nonce,STA Nonce,AP'MAC,STA'MAC生成。4-way handshake 也会产生GTK（Group Temporal Key）,用来解密 multicast和broadcast traffic。这个GTK是所有STA公用一个key。
+对于网络安全而言,key愈少愈好。4-way handshake 建立了 512 bits的PTK(Pairwise Transient Key)。PTK 由 PMK,AP Nonce,STA Nonce,AP'MAC,STA'MAC 生成。4-way handshake 也会产生GTK（Group Temporal Key）,用来解密 multicast和broadcast traffic。这个GTK是所有STA公用的一个key。
 
 ![4-handshake](/images/2016/10/tmp13152092.png)
 
@@ -66,15 +66,17 @@ STA 通过 802.1x 的认证后,AP 与 STA 都会拿到同一组 session key。�
 
 WPA1 TKIP的 PTK 长度512bits,WPA2 CCMP的PTK长度为384bits。其中,TMK1 和 TMK2 只用在 TKIP 加密data时。
 
-区域 | 简称 | 长度| 名称 | 用途
------------- | ------------- | ------------| ------------
-0-127   | KCK  | 128 bits| EAPOL-Key Confirmation Key| 计算WPA EAPOL key message 的MIC
-128-255  | KEK  | 128 bits| EAPOL-Key Encryption Key| 加密额外要送给STA的data,如 GTK or RSN IE
-256-383  | TEK | 128 bits| Temporal Encryption Key| 解密unicast packets
-384-447  | TMK1  | 64 bits| Temporal AP Tx MIC Key| 计算AP 发送的unicast packet的MIC
-448-511  | TMK2  | 64 bits| Temporal AP Rx MIC Key| 计算STA 发送的unicast packet的MIC
+PTK由几部分组成:
 
-生成PTK算法:
+内存区域 | 简称 | 长度(bits)| 名称 | 用途
+------------ | ------------- | ------------| ------------
+0-127   | KCK  |128 | EAPOL-Key Confirmation Key| 计算WPA EAPOL key message 的MIC
+128-255  | KEK  |128| EAPOL-Key Encryption Key| 加密额外要送给STA的data,如 GTK or RSN IE
+256-383  | TEK |128| Temporal Encryption Key| 解密unicast packets
+384-447  | TMK1  |64| Temporal AP Tx MIC Key| 计算AP 发送的unicast packet的MIC
+448-511  | TMK2  |64| Temporal AP Rx MIC Key| 计算STA 发送的unicast packet的MIC
+
+PTK算法:
 
 首先使用PBKDF2（Password-Based Key Derivation Function 2）算法生成一个32字节的PMK key，该算法需要执行4096*2轮,同时由于使用了SSID（0-32字符）进行salt。
 
@@ -84,7 +86,7 @@ PTK使用PRF-512（pseudo random functions 512bits）算法产生，通过PMK、
 	 
 	 PTK = PRF-512(PMK, “Pairwise key expansion”, Min(AP_Mac, Sta_Mac) ||Max(AP_Mac, Sta_Mac) || Min(ANonce, SNonce) || Max(ANonce, SNonce))
 
-生成MIC算法:
+MIC算法:
 	
 	//WAP1
 	MIC = HMAC(EVP_sha1(), KCK, 16, eapol_data，eapol_size) 
@@ -95,9 +97,9 @@ PTK使用PRF-512（pseudo random functions 512bits）算法产生，通过PMK、
 
 ![4-handshake](/images/2016/10/142303547147.png)
 
-破解时,利用我们字典中 PSK 和 ssid 生成PMK。
+破解时,利用我们字典中 PSK 和 ESSID 生成PMK。
 
-然后结合已知的MAC，AP的BSSID，A-NONCE，S-NONCE计算出PTK。
+然后结合已知的STA'MAC、BSSID、AP'NONCE、STA'NONCE计算出PTK。
 
 然后加上原始的报文数据算出MIC,并与AP发送的MIC比较。如果一致，那么该PSK就是密钥。
 
@@ -105,3 +107,4 @@ PTK使用PRF-512（pseudo random functions 512bits）算法产生，通过PMK、
 #参见
 
 - <https://zh.wikipedia.org/wiki/%E6%B5%81%E5%8A%A0%E5%AF%86>
+- <http://www.cnblogs.com/rainbowzc/p/5410876.html>
